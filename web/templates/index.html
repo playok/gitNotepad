@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Notepad</title>
+    <link rel="stylesheet" href="/static/lib/fonts/fonts.css">
+    <link rel="stylesheet" href="/static/lib/highlight/github-dark.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Git Notepad</h1>
+                <div class="sidebar-header-actions">
+                    <button id="newNoteBtn" class="header-icon-btn" title="New Note (Ctrl+N)">
+                        <span>&#10133;</span>
+                    </button>
+                    <button id="helpBtn" class="header-icon-btn" title="Help (F1)">
+                        <span>?</span>
+                    </button>
+                    <button id="settingsBtn" class="header-icon-btn" title="Settings">
+                        <span>&#9881;</span>
+                    </button>
+                    <button id="themeToggle" class="header-icon-btn" title="Toggle theme">
+                        <span class="icon-sun">&#9728;</span>
+                        <span class="icon-moon">&#9790;</span>
+                    </button>
+                    {{if .user}}
+                    <div class="user-menu" id="userMenu">
+                        <button class="header-icon-btn" id="userMenuBtn" title="{{.user.Username}}">
+                            <span>&#128100;</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="user-dropdown-header">
+                                <span class="user-icon-large">&#128100;</span>
+                                <div class="user-info">
+                                    <span class="user-name-large">{{.user.Username}}</span>
+                                    {{if .user.IsAdmin}}<span class="user-role">Admin</span>{{end}}
+                                </div>
+                            </div>
+                            <div class="user-dropdown-divider"></div>
+                            {{if .user.IsAdmin}}
+                            <a href="#" class="user-dropdown-item" id="adminUsersBtn">
+                                <span>&#128101;</span> Manage Users
+                            </a>
+                            {{end}}
+                            <a href="#" class="user-dropdown-item" id="logoutBtn">
+                                <span>&#128682;</span> Logout
+                            </a>
+                        </div>
+                    </div>
+                    {{end}}
+                    <button id="sidebarCollapseBtn" class="header-icon-btn" title="Toggle sidebar (Ctrl+B)">
+                        <span class="collapse-icon">&#9664;</span>
+                    </button>
+                </div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search notes...">
+            </div>
+            <ul id="noteList" class="note-list">
+                <!-- Notes will be loaded here -->
+            </ul>
+        </aside>
+
+        <!-- Sidebar Splitter -->
+        <div class="sidebar-splitter" id="sidebarSplitter">
+            <div class="splitter-handle"></div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <h2>Select a note or create a new one</h2>
+                <p>Your notes are automatically saved and version controlled with Git.</p>
+            </div>
+
+            <!-- Editor -->
+            <div id="editor" class="editor" style="display: none;">
+                <div class="editor-header">
+                    <div class="editor-title-row">
+                        <input type="text" id="noteTitle" class="note-title-input" placeholder="Note title...">
+                        <span id="saveStatus" class="save-status"></span>
+                    </div>
+                    <div class="editor-actions">
+                        <select id="noteType" class="note-type-select" title="Note type">
+                            <option value="markdown">MD</option>
+                            <option value="asciidoc">ADOC</option>
+                            <option value="txt">TXT</option>
+                        </select>
+                        <button id="prettyJsonBtn" class="btn-icon" title="Format JSON (Ctrl+Shift+F)">{&nbsp;}</button>
+                        <button id="uploadBtn" class="btn-icon" title="Upload file">&#128206;</button>
+                        <input type="file" id="fileInput" style="display: none;" multiple>
+                        <label class="private-toggle" title="Private note">
+                            <input type="checkbox" id="notePrivate">
+                            <span class="private-icon">&#128274;</span>
+                        </label>
+                        <button id="historyBtn" class="btn-icon" title="History">&#128337;</button>
+                        <button id="saveBtn" class="btn-icon" title="Save">&#128190;</button>
+                        <button id="deleteBtn" class="btn-icon btn-icon-danger" title="Delete">&#128465;</button>
+                    </div>
+                </div>
+                <!-- Attachments Section -->
+                <div id="attachmentsSection" class="attachments-section" style="display: none;">
+                    <div class="attachments-header">
+                        <span class="attachments-icon">&#128206;</span>
+                        <span class="attachments-title">Attachments</span>
+                        <span id="attachmentsCount" class="attachments-count">0</span>
+                        <button id="attachmentsToggle" class="attachments-toggle" title="Toggle attachments">
+                            <span class="toggle-icon">&#9660;</span>
+                        </button>
+                    </div>
+                    <div id="attachmentsList" class="attachments-list">
+                        <!-- Attachments will be rendered here -->
+                    </div>
+                </div>
+                <div class="editor-body">
+                    <div class="editor-pane">
+                        <div id="codemirrorEditor" class="codemirror-wrapper"></div>
+                        <textarea id="noteContent" style="display:none;"></textarea>
+                    </div>
+                    <div class="splitter" id="editorSplitter">
+                        <div class="splitter-handle"></div>
+                    </div>
+                    <div id="previewPane" class="preview-pane">
+                        <div id="previewContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Modal -->
+            <div id="passwordModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h3>Private Note</h3>
+                    <p>Enter password to access this note:</p>
+                    <input type="password" id="passwordInput" placeholder="Password">
+                    <div class="modal-actions">
+                        <button id="passwordCancel" class="btn btn-secondary">Cancel</button>
+                        <button id="passwordSubmit" class="btn btn-primary">Unlock</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Set Password Modal -->
+            <div id="setPasswordModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h3>Set Password</h3>
+                    <p>Enter a password for this private note:</p>
+                    <input type="password" id="setPasswordInput" placeholder="Password">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password">
+                    <div class="modal-actions">
+                        <button id="setPasswordCancel" class="btn btn-secondary">Cancel</button>
+                        <button id="setPasswordSubmit" class="btn btn-primary">Set Password</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Modal -->
+            <div id="historyModal" class="modal" style="display: none;">
+                <div class="modal-content modal-large">
+                    <h3>Version History</h3>
+                    <div id="historyList" class="history-list">
+                        <!-- History items will be loaded here -->
+                    </div>
+                    <div class="modal-actions">
+                        <button id="historyClose" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version View Modal -->
+            <div id="versionModal" class="modal" style="display: none;">
+                <div class="modal-content modal-large">
+                    <h3>Version: <span id="versionHash"></span></h3>
+                    <div id="versionContent" class="version-content"></div>
+                    <div class="modal-actions">
+                        <button id="versionRestore" class="btn btn-primary">Restore this version</button>
+                        <button id="versionClose" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Users Modal -->
+            <div id="adminUsersModal" class="modal" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3>User Management</h3>
+                        <button id="addUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+                    </div>
+                    <div id="usersList" class="users-list">
+                        <!-- Users will be loaded here -->
+                    </div>
+                    <div class="modal-actions">
+                        <button id="adminUsersClose" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add User Modal -->
+            <div id="addUserModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h3>Add New User</h3>
+                    <form id="addUserForm">
+                        <div class="form-group">
+                            <label for="newUsername">Username</label>
+                            <input type="text" id="newUsername" placeholder="Username" required minlength="3" maxlength="32">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Password</label>
+                            <input type="password" id="newPassword" placeholder="Password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newIsAdmin">
+                                <span>Administrator</span>
+                            </label>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" id="addUserCancel" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div id="settingsModal" class="modal" style="display: none;">
+                <div class="modal-content modal-large settings-modal">
+                    <div class="settings-header">
+                        <h3>Settings</h3>
+                        <button id="settingsClose" class="modal-close-btn">&times;</button>
+                    </div>
+                    <div class="settings-body">
+                        <div class="settings-tabs">
+                            <button class="settings-tab active" data-tab="general">
+                                <span>&#9881;</span> General
+                            </button>
+                            {{if .user}}{{if .user.IsAdmin}}
+                            <button class="settings-tab" data-tab="users">
+                                <span>&#128101;</span> Users
+                            </button>
+                            {{end}}{{end}}
+                            <button class="settings-tab" data-tab="data">
+                                <span>&#128451;</span> Data
+                            </button>
+                            <button class="settings-tab" data-tab="stats">
+                                <span>&#128202;</span> Usage
+                            </button>
+                        </div>
+                        <div class="settings-content">
+                            <!-- General Tab -->
+                            <div class="settings-panel active" id="settingsGeneral">
+                                <h4>General Settings</h4>
+                                <div class="settings-section">
+                                    <div class="settings-item">
+                                        <div class="settings-item-info">
+                                            <span class="settings-item-label">Theme</span>
+                                            <span class="settings-item-desc">Choose light or dark mode</span>
+                                        </div>
+                                        <select id="settingsTheme" class="settings-select">
+                                            <option value="light">Light</option>
+                                            <option value="dark">Dark</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-item">
+                                        <div class="settings-item-info">
+                                            <span class="settings-item-label">Default Note Type</span>
+                                            <span class="settings-item-desc">Default format for new notes</span>
+                                        </div>
+                                        <select id="settingsDefaultType" class="settings-select">
+                                            <option value="markdown">Markdown</option>
+                                            <option value="asciidoc">AsciiDoc</option>
+                                            <option value="txt">Plain Text</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-item">
+                                        <div class="settings-item-info">
+                                            <span class="settings-item-label">Auto Save</span>
+                                            <span class="settings-item-desc">Automatically save changes</span>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="settingsAutoSave" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-item">
+                                        <div class="settings-item-info">
+                                            <span class="settings-item-label">Line Numbers</span>
+                                            <span class="settings-item-desc">Show line numbers in editor</span>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="settingsLineNumbers" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Users Tab (Admin only) -->
+                            <div class="settings-panel" id="settingsUsers">
+                                <div class="settings-panel-header">
+                                    <h4>User Management</h4>
+                                    <button id="settingsAddUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+                                </div>
+                                <div id="settingsUsersList" class="users-list">
+                                    <!-- Users will be loaded here -->
+                                </div>
+                            </div>
+
+                            <!-- Data Tab -->
+                            <div class="settings-panel" id="settingsData">
+                                <h4>Data Management</h4>
+                                <div class="settings-section">
+                                    <div class="data-action-card">
+                                        <div class="data-action-icon">&#128229;</div>
+                                        <div class="data-action-info">
+                                            <span class="data-action-title">Export Notes</span>
+                                            <span class="data-action-desc">Download all your notes as a ZIP file</span>
+                                        </div>
+                                        <button id="exportNotesBtn" class="btn btn-primary">Export</button>
+                                    </div>
+                                    <div class="data-action-card">
+                                        <div class="data-action-icon">&#128228;</div>
+                                        <div class="data-action-info">
+                                            <span class="data-action-title">Import Notes</span>
+                                            <span class="data-action-desc">Import notes from a ZIP file</span>
+                                        </div>
+                                        <div class="import-controls">
+                                            <input type="file" id="importFileInput" accept=".zip" style="display: none;">
+                                            <button id="importNotesBtn" class="btn btn-secondary">Import</button>
+                                        </div>
+                                    </div>
+                                    <div class="data-action-card danger">
+                                        <div class="data-action-icon">&#128465;</div>
+                                        <div class="data-action-info">
+                                            <span class="data-action-title">Delete All Notes</span>
+                                            <span class="data-action-desc">Permanently delete all your notes</span>
+                                        </div>
+                                        <button id="deleteAllNotesBtn" class="btn btn-danger">Delete All</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stats Tab -->
+                            <div class="settings-panel" id="settingsStats">
+                                <h4>Usage Statistics</h4>
+                                <div class="stats-grid" id="statsGrid">
+                                    <div class="stat-card">
+                                        <span class="stat-icon">&#128196;</span>
+                                        <span class="stat-value" id="statTotalNotes">-</span>
+                                        <span class="stat-label">Total Notes</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-icon">&#128206;</span>
+                                        <span class="stat-value" id="statTotalAttachments">-</span>
+                                        <span class="stat-label">Attachments</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-icon">&#128274;</span>
+                                        <span class="stat-value" id="statPrivateNotes">-</span>
+                                        <span class="stat-label">Private Notes</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-icon">&#128190;</span>
+                                        <span class="stat-value" id="statStorageUsed">-</span>
+                                        <span class="stat-label">Storage Used</span>
+                                    </div>
+                                </div>
+                                <div class="stats-details">
+                                    <h5>Notes by Type</h5>
+                                    <div class="stats-bar-chart" id="notesByType">
+                                        <!-- Chart will be rendered here -->
+                                    </div>
+                                    <h5>Recent Activity</h5>
+                                    <div class="recent-activity" id="recentActivity">
+                                        <!-- Recent activity will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/lib/marked.min.js"></script>
+    <script src="/static/lib/highlight/highlight.min.js"></script>
+    <script src="/static/lib/asciidoctor.min.js"></script>
+    <!-- CodeMirror 5 -->
+    <link rel="stylesheet" href="/static/lib/codemirror/codemirror.min.css">
+    <link rel="stylesheet" href="/static/lib/codemirror/dracula.min.css">
+    <script src="/static/lib/codemirror/codemirror.min.js"></script>
+    <script src="/static/lib/codemirror/overlay.min.js"></script>
+    <script src="/static/lib/codemirror/xml.min.js"></script>
+    <script src="/static/lib/codemirror/markdown.min.js"></script>
+    <script src="/static/lib/codemirror/gfm.min.js"></script>
+    <script src="/static/lib/codemirror/continuelist.min.js"></script>
+    <script>
+        // Set up Asciidoctor global (compatible with 3.x)
+        (function() {
+            // 3.x uses Asciidoctor$$module$build$asciidoctor_browser factory function
+            if (typeof Asciidoctor$$module$build$asciidoctor_browser === 'function') {
+                var asciidoctorInstance = Asciidoctor$$module$build$asciidoctor_browser();
+                window.Asciidoctor = function() { return asciidoctorInstance; };
+            }
+            // Fallback for 2.x and earlier
+            else if (typeof Opal !== 'undefined' && Opal.Asciidoctor) {
+                window.Asciidoctor = function() { return Opal.Asciidoctor; };
+            }
+        })();
+    </script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

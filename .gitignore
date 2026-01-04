@@ -1,0 +1,19 @@
+# Compiled binary
+gitnotepad
+gitnotepad.exe
+
+# Data directory (user notes)
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/

@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+storage:
+  path: "./data"
+  auto_init_git: true
+
+editor:
+  default_type: "markdown"
+  auto_save: false
+
+auth:
+  enabled: true
+  session_timeout: 168  # 7 days in hours
+  admin_username: "admin"
+  admin_password: "admin123"  # Change this on first login!
+
+database:
+  path: "./data/gitnotepad.db"

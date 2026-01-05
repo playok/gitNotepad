@@ -1,7 +1,9 @@
 package git
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -118,10 +120,12 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 		return fmt.Errorf("failed to get status: %w", err)
 	}
 
-	// Only commit if there are staged changes
+	// Only commit if there are actual staged changes (not just untracked files)
 	hasChanges := false
 	for _, s := range status {
-		if s.Staging != git.Unmodified {
+		// Check for actual staged changes: Added, Modified, Deleted, Renamed, Copied
+		if s.Staging == git.Added || s.Staging == git.Modified || s.Staging == git.Deleted ||
+			s.Staging == git.Renamed || s.Staging == git.Copied {
 			hasChanges = true
 			break
 		}
@@ -139,7 +143,11 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 		},
 	})
 
+	// Handle EOF error (occurs when commit would be empty)
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil // Treat as no changes to commit
+		}
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 
@@ -173,10 +181,12 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 		return fmt.Errorf("failed to get status: %w", err)
 	}
 
-	// Only commit if there are staged changes
+	// Only commit if there are actual staged changes (not just untracked files)
 	hasChanges := false
 	for _, s := range status {
-		if s.Staging != git.Unmodified {
+		// Check for actual staged changes: Added, Modified, Deleted, Renamed, Copied
+		if s.Staging == git.Added || s.Staging == git.Modified || s.Staging == git.Deleted ||
+			s.Staging == git.Renamed || s.Staging == git.Copied {
 			hasChanges = true
 			break
 		}
@@ -194,7 +204,11 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 		},
 	})
 
+	// Handle EOF error (occurs when commit would be empty)
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil // Treat as no changes to commit
+		}
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 

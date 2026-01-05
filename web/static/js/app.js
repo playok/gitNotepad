@@ -1997,7 +1997,7 @@ async function verifyPassword() {
 
 async function saveNote() {
     const title = noteTitle.value.trim();
-    const content = noteContent.value;
+    const content = getEditorContent();
     const type = noteType.value;
     const isPrivate = notePrivate.checked;
 
@@ -2055,7 +2055,7 @@ async function saveNote() {
             // Update original content after successful save
             originalContent = {
                 title: noteTitle.value,
-                content: noteContent.value,
+                content: getEditorContent(),
                 type: noteType.value,
                 private: notePrivate.checked
             };
@@ -2172,9 +2172,10 @@ async function showVersion(hash) {
 
 function restoreVersion() {
     const content = versionContent.textContent;
-    noteContent.value = content;
+    setEditorContent(content);
     updatePreview();
     versionModal.style.display = 'none';
+    triggerAutoSave();
 }
 
 // Tree Structure Functions

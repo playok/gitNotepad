@@ -107,8 +107,28 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 		relPath = filepath.Base(filePath)
 	}
 
+	// Add file to staging
 	if _, err := w.Add(relPath); err != nil {
-		return err
+		return fmt.Errorf("failed to add file: %w", err)
+	}
+
+	// Check if there are changes to commit
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get status: %w", err)
+	}
+
+	// Only commit if there are staged changes
+	hasChanges := false
+	for _, s := range status {
+		if s.Staging != git.Unmodified {
+			hasChanges = true
+			break
+		}
+	}
+
+	if !hasChanges {
+		return nil // No changes to commit
 	}
 
 	_, err = w.Commit(message, &git.CommitOptions{
@@ -119,7 +139,11 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 		},
 	})
 
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to commit: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Repository) RemoveAndCommit(filePath, message string) error {
@@ -140,7 +164,26 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 	}
 
 	if _, err := w.Remove(relPath); err != nil {
-		return err
+		return fmt.Errorf("failed to remove file: %w", err)
+	}
+
+	// Check if there are changes to commit
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get status: %w", err)
+	}
+
+	// Only commit if there are staged changes
+	hasChanges := false
+	for _, s := range status {
+		if s.Staging != git.Unmodified {
+			hasChanges = true
+			break
+		}
+	}
+
+	if !hasChanges {
+		return nil // No changes to commit
 	}
 
 	_, err = w.Commit(message, &git.CommitOptions{
@@ -151,7 +194,11 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 		},
 	})
 
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to commit: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Repository) GetHistory(filePath string) ([]Commit, error) {

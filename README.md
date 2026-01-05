@@ -13,7 +13,9 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **파일 첨부**: 이미지 및 파일 업로드
 - **다크/라이트 테마**: 시스템 테마 연동
 - **오프라인 지원**: 모든 라이브러리 로컬 포함
-- **단축 URL**: 노트 공유용 짧은 링크 생성
+- **단축 URL**: 노트 공유용 짧은 링크 생성 (만료일 설정 가능)
+- **크로스 플랫폼**: CGO 없이 Linux/macOS/Windows 빌드
+- **Nginx 프록시**: 서브 경로에서 운영 가능
 
 ## 스크린샷
 
@@ -31,7 +33,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 
 ## 요구 사항
 
-- Go 1.21 이상
+- Go 1.21 이상 (CGO 불필요)
 - Git (버전 관리 기능 사용 시)
 
 ## 설치 및 실행
@@ -60,6 +62,14 @@ make run
 ```
 
 브라우저에서 `http://localhost:8080` 접속
+
+### CLI 옵션
+
+```bash
+gitnotepad --help           # 도움말 출력
+gitnotepad --nginx          # nginx 프록시 설정 가이드 출력
+gitnotepad -config my.yaml  # 설정 파일 지정
+```
 
 ## 초기 설정
 
@@ -131,6 +141,19 @@ make run
 3. 원하는 버전 선택하여 내용 확인
 4. "Restore" 버튼으로 복원
 
+### 노트 공유
+
+**공유 링크 생성:**
+1. 에디터 상단의 공유 버튼 클릭
+2. 만료일 설정 (Never 또는 날짜 선택)
+3. 생성된 링크 복사하여 공유
+
+**만료 옵션:**
+- `Never`: 무기한 유효
+- 날짜 선택: 해당 날짜까지 유효
+
+> 만료된 링크는 매일 자정에 자동 정리됩니다 (노트는 유지됨)
+
 ### JSON 포맷팅
 
 1. JSON 텍스트 선택 (또는 전체)
@@ -145,6 +168,7 @@ make run
 server:
   port: 8080          # 서버 포트
   host: "0.0.0.0"     # 바인딩 주소
+  base_path: ""       # 서브 경로 (nginx 프록시용, 예: "/note")
 
 storage:
   path: "./data"      # 노트 저장 경로
@@ -181,6 +205,29 @@ server:
 auth:
   enabled: true
   admin_password: "강력한비밀번호"
+```
+
+### Nginx 리버스 프록시
+
+서브 경로(`/note`)에서 운영하려면:
+
+**config.yaml:**
+```yaml
+server:
+  port: 8080
+  host: "127.0.0.1"
+  base_path: "/note"  # 서브 경로 설정
+```
+
+**nginx.conf:**
+```nginx
+location /note {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
 ```
 
 ## 키보드 단축키
@@ -221,6 +268,25 @@ auth:
 | `make windows` | Windows 빌드 |
 | `make darwin` | macOS 빌드 (amd64, arm64) |
 | `make release` | 모든 플랫폼 빌드 |
+
+### Windows (make 없이)
+
+Windows에서는 `build.cmd`를 사용할 수 있습니다:
+
+```cmd
+build          :: 현재 OS용 빌드
+build run      :: 바로 실행
+build dev      :: config.yaml로 실행
+build clean    :: 빌드 결과물 삭제
+build test     :: 테스트 실행
+build deps     :: 의존성 설치
+build tidy     :: go.mod 정리
+build linux    :: Linux 빌드
+build windows  :: Windows 빌드
+build darwin   :: macOS 빌드
+build release  :: 모든 플랫폼 빌드
+build help     :: 도움말
+```
 
 ## 디렉토리 구조
 

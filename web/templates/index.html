@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Notepad</title>
-    <link rel="stylesheet" href="/static/lib/fonts/fonts.css">
-    <link rel="stylesheet" href="/static/lib/highlight/github-dark.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <script>window.BASE_PATH = '{{.basePath}}';</script>
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/fonts/fonts.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/highlight/github-dark.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/css/style.css">
 </head>
 <body>
     <div class="container">
@@ -388,18 +389,18 @@
         </main>
     </div>
 
-    <script src="/static/lib/marked.min.js"></script>
-    <script src="/static/lib/highlight/highlight.min.js"></script>
-    <script src="/static/lib/asciidoctor.min.js"></script>
+    <script src="{{.basePath}}/static/lib/marked.min.js"></script>
+    <script src="{{.basePath}}/static/lib/highlight/highlight.min.js"></script>
+    <script src="{{.basePath}}/static/lib/asciidoctor.min.js"></script>
     <!-- CodeMirror 5 -->
-    <link rel="stylesheet" href="/static/lib/codemirror/codemirror.min.css">
-    <link rel="stylesheet" href="/static/lib/codemirror/dracula.min.css">
-    <script src="/static/lib/codemirror/codemirror.min.js"></script>
-    <script src="/static/lib/codemirror/overlay.min.js"></script>
-    <script src="/static/lib/codemirror/xml.min.js"></script>
-    <script src="/static/lib/codemirror/markdown.min.js"></script>
-    <script src="/static/lib/codemirror/gfm.min.js"></script>
-    <script src="/static/lib/codemirror/continuelist.min.js"></script>
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/codemirror/codemirror.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/codemirror/dracula.min.css">
+    <script src="{{.basePath}}/static/lib/codemirror/codemirror.min.js"></script>
+    <script src="{{.basePath}}/static/lib/codemirror/overlay.min.js"></script>
+    <script src="{{.basePath}}/static/lib/codemirror/xml.min.js"></script>
+    <script src="{{.basePath}}/static/lib/codemirror/markdown.min.js"></script>
+    <script src="{{.basePath}}/static/lib/codemirror/gfm.min.js"></script>
+    <script src="{{.basePath}}/static/lib/codemirror/continuelist.min.js"></script>
     <script>
         // Set up Asciidoctor global (compatible with 3.x)
         (function() {
@@ -414,6 +415,6 @@
             }
         })();
     </script>
-    <script src="/static/js/app.js"></script>
+    <script src="{{.basePath}}/static/js/app.js"></script>
 </body>
 </html>

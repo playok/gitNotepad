@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Expired - Git Notepad</title>
+    <link rel="stylesheet" href="{{.basePath}}/static/css/style.css">
+    <style>
+        .expired-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: hsl(var(--background));
+            padding: 1rem;
+        }
+
+        .expired-card {
+            text-align: center;
+            max-width: 400px;
+            padding: 3rem 2rem;
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .expired-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.6;
+        }
+
+        .expired-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+            margin-bottom: 0.75rem;
+        }
+
+        .expired-message {
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .expired-btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            text-decoration: none;
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: opacity 0.15s;
+        }
+
+        .expired-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="expired-container">
+        <div class="expired-card">
+            <div class="expired-icon">&#128279;</div>
+            <h1 class="expired-title">Link Expired</h1>
+            <p class="expired-message">
+                This shared link has expired and is no longer available.<br>
+                Please request a new link from the note owner.
+            </p>
+            <a href="{{.basePath}}/" class="expired-btn">Go to Home</a>
+        </div>
+    </div>
+</body>
+</html>

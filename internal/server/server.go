@@ -74,49 +74,60 @@ func (s *Server) setupRoutes() {
 	noteHandler := handler.NewNoteHandler(s.repo, s.config)
 	gitHandler := handler.NewGitHandler(s.repo)
 	authHandler := handler.NewAuthHandler(s.repo, userRepo, sessionRepo)
-	shortLinkHandler := handler.NewShortLinkHandler(s.repo)
-	imageHandler := handler.NewImageHandler(s.config.Storage.Path)
-	fileHandler := handler.NewFileHandler(s.config.Storage.Path)
+	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config.Server.BasePath)
+	imageHandler := handler.NewImageHandler(s.config.Storage.Path, s.config.Server.BasePath)
+	fileHandler := handler.NewFileHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	adminHandler := handler.NewAdminHandler(userRepo)
 	statsHandler := handler.NewStatsHandler(s.config)
 
-	// Serve static files
-	s.router.Static("/static", "./web/static")
+	// Load templates
 	s.router.LoadHTMLGlob("./web/templates/*")
 
+	// Get base path for routing
+	basePath := s.config.Server.BasePath
+
+	// Create base group for all routes
+	base := s.router.Group(basePath)
+
+	// Serve static files under base path
+	base.Static("/static", "./web/static")
+
 	// Login page (public)
-	s.router.GET("/login", func(c *gin.Context) {
+	base.GET("/login", func(c *gin.Context) {
 		c.HTML(200, "login.html", gin.H{
-			"config": s.config,
+			"config":   s.config,
+			"basePath": basePath,
 		})
 	})
 
 	// Public API routes
-	s.router.POST("/api/auth/login", authHandler.Login)
+	base.POST("/api/auth/login", authHandler.Login)
 
 	// Short link redirect (public)
-	s.router.GET("/s/:code", shortLinkHandler.Redirect)
+	base.GET("/s/:code", shortLinkHandler.Redirect)
 
 	// Config endpoint (public)
-	s.router.GET("/api/config", func(c *gin.Context) {
+	base.GET("/api/config", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"editor": s.config.Editor,
+			"editor":   s.config.Editor,
+			"basePath": basePath,
 		})
 	})
 
 	// Protected routes (require authentication)
 	if s.config.Auth.Enabled {
 		// Main page - require auth
-		s.router.GET("/", authMiddleware.RequireAuth(), func(c *gin.Context) {
+		base.GET("/", authMiddleware.RequireAuth(), func(c *gin.Context) {
 			user := middleware.GetCurrentUser(c)
 			c.HTML(200, "index.html", gin.H{
-				"config": s.config,
-				"user":   user,
+				"config":   s.config,
+				"user":     user,
+				"basePath": basePath,
 			})
 		})
 
 		// Protected API routes
-		api := s.router.Group("/api")
+		api := base.Group("/api")
 		api.Use(authMiddleware.RequireAuth())
 		{
 			// Auth
@@ -154,7 +165,7 @@ func (s *Server) setupRoutes() {
 		}
 
 		// Admin routes
-		admin := s.router.Group("/api/admin")
+		admin := base.Group("/api/admin")
 		admin.Use(authMiddleware.RequireAuth(), authMiddleware.RequireAdmin())
 		{
 			admin.GET("/users", adminHandler.ListUsers)
@@ -164,13 +175,14 @@ func (s *Server) setupRoutes() {
 		}
 	} else {
 		// Auth disabled - no authentication required
-		s.router.GET("/", func(c *gin.Context) {
+		base.GET("/", func(c *gin.Context) {
 			c.HTML(200, "index.html", gin.H{
-				"config": s.config,
+				"config":   s.config,
+				"basePath": basePath,
 			})
 		})
 
-		api := s.router.Group("/api")
+		api := base.Group("/api")
 		{
 			// Notes CRUD
 			api.GET("/notes", noteHandler.List)
@@ -206,8 +218,8 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Public image/file serving (always accessible)
-	s.router.GET("/images/:filename", imageHandler.Serve)
-	s.router.GET("/files/:filename", fileHandler.Serve)
+	base.GET("/images/:filename", imageHandler.Serve)
+	base.GET("/files/:filename", fileHandler.Serve)
 }
 
 func (s *Server) Run() error {

@@ -14,13 +14,15 @@ import (
 
 type FileHandler struct {
 	storagePath string
+	basePath    string
 }
 
-func NewFileHandler(storagePath string) *FileHandler {
+func NewFileHandler(storagePath string, basePath string) *FileHandler {
 	filePath := filepath.Join(storagePath, "files")
 	os.MkdirAll(filePath, 0755)
 	return &FileHandler{
 		storagePath: filePath,
+		basePath:    basePath,
 	}
 }
 
@@ -57,8 +59,8 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	// Return URL for the file
-	fileURL := fmt.Sprintf("/files/%s", filename)
+	// Return URL for the file (with base path for nginx proxy support)
+	fileURL := fmt.Sprintf("%s/files/%s", h.basePath, filename)
 	c.JSON(http.StatusOK, gin.H{
 		"url":          fileURL,
 		"filename":     filename,

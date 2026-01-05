@@ -1,6 +1,7 @@
 server:
   port: 8080
   host: "0.0.0.0"
+  base_path: ""  # Set to "/note" for nginx proxy_pass to /note
 
 storage:
   path: "./data"

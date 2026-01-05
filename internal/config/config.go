@@ -15,8 +15,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port int    `yaml:"port"`
-	Host string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Host     string `yaml:"host"`
+	BasePath string `yaml:"base_path"`
 }
 
 type StorageConfig struct {

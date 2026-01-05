@@ -1,3 +1,6 @@
+// Base path for nginx proxy support
+const basePath = window.BASE_PATH || '';
+
 // State
 let currentNote = null;
 let currentPassword = null;
@@ -151,6 +154,11 @@ function initCodeMirror() {
 
     cmEditorReady = true;
     console.log('CodeMirror 5 initialized');
+
+    // Refresh after initialization to fix gutter width calculation
+    setTimeout(() => {
+        cmEditor.refresh();
+    }, 0);
 }
 
 // Initialize
@@ -512,6 +520,21 @@ function createShareModal() {
                 <input type="text" id="shareLinkInput" readonly>
                 <button id="copyLinkBtn" class="btn btn-primary">Copy</button>
             </div>
+            <div class="share-expiry-container" style="margin-top: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">Link expiration:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                        <input type="radio" name="expiryType" id="expiryNever" value="never" checked>
+                        <span style="font-size: 0.875rem;">Never</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                        <input type="radio" name="expiryType" id="expiryDate" value="date">
+                        <span style="font-size: 0.875rem;">Expires on:</span>
+                    </label>
+                    <input type="date" id="shareLinkExpiryDate" style="padding: 0.375rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.875rem;" disabled>
+                </div>
+            </div>
+            <div id="shareLinkExpiryInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
             <div id="shareLinkStatus" class="share-status"></div>
             <div class="modal-actions">
                 <button id="regenerateLinkBtn" class="btn btn-secondary">Regenerate</button>
@@ -528,6 +551,34 @@ function createShareModal() {
         modal.style.display = 'none';
     });
 
+    // Expiry type radio buttons
+    const expiryNever = document.getElementById('expiryNever');
+    const expiryDate = document.getElementById('expiryDate');
+    const expiryDateInput = document.getElementById('shareLinkExpiryDate');
+
+    expiryNever.addEventListener('change', () => {
+        expiryDateInput.disabled = true;
+        updateShareLinkExpiry();
+    });
+
+    expiryDate.addEventListener('change', () => {
+        expiryDateInput.disabled = false;
+        if (!expiryDateInput.value) {
+            // Set default to 7 days from now
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 7);
+            expiryDateInput.value = defaultDate.toISOString().split('T')[0];
+        }
+        updateShareLinkExpiry();
+    });
+
+    expiryDateInput.addEventListener('change', updateShareLinkExpiry);
+
+    // Set min date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+
     // Close on outside click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -542,19 +593,29 @@ async function showShareModal() {
     const modal = document.getElementById('shareModal');
     const input = document.getElementById('shareLinkInput');
     const status = document.getElementById('shareLinkStatus');
+    const expiryNever = document.getElementById('expiryNever');
+    const expiryDateRadio = document.getElementById('expiryDate');
+    const expiryDateInput = document.getElementById('shareLinkExpiryDate');
+    const expiryInfo = document.getElementById('shareLinkExpiryInfo');
 
     modal.style.display = 'flex';
     input.value = 'Generating...';
     status.textContent = '';
+    expiryInfo.textContent = '';
+    expiryNever.checked = true;
+    expiryDateInput.disabled = true;
+    expiryDateInput.value = '';
 
     try {
         // Try to get existing short link first
-        let response = await fetch(`/api/notes/${currentNote.id}/shortlink`);
+        let response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`);
 
         if (response.status === 404) {
             // Generate new short link
-            response = await fetch(`/api/notes/${currentNote.id}/shortlink`, {
-                method: 'POST'
+            response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expires_in: 0 })
             });
         }
 
@@ -562,6 +623,19 @@ async function showShareModal() {
             const data = await response.json();
             const fullUrl = `${window.location.origin}${data.shortLink}`;
             input.value = fullUrl;
+
+            // Update expiry info and UI
+            if (data.expiresAt) {
+                const expiryDate = new Date(data.expiresAt);
+                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+                expiryDateRadio.checked = true;
+                expiryDateInput.disabled = false;
+                expiryDateInput.value = expiryDate.toISOString().split('T')[0];
+            } else {
+                expiryInfo.textContent = 'This link never expires';
+                expiryNever.checked = true;
+                expiryDateInput.disabled = true;
+            }
         } else {
             input.value = '';
             status.textContent = 'Failed to generate link';
@@ -571,6 +645,62 @@ async function showShareModal() {
         console.error('Failed to get short link:', error);
         input.value = '';
         status.textContent = 'Error generating link';
+        status.className = 'share-status error';
+    }
+}
+
+function getExpiryDays() {
+    const expiryNever = document.getElementById('expiryNever');
+    const expiryDateInput = document.getElementById('shareLinkExpiryDate');
+
+    if (expiryNever.checked) {
+        return 0; // Never expires
+    }
+
+    if (expiryDateInput.value) {
+        const selectedDate = new Date(expiryDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffTime = selectedDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(1, diffDays);
+    }
+
+    return 7; // Default 7 days
+}
+
+async function updateShareLinkExpiry() {
+    if (!currentNote) return;
+
+    const input = document.getElementById('shareLinkInput');
+    if (!input.value || input.value === 'Generating...') return;
+
+    const expiryInfo = document.getElementById('shareLinkExpiryInfo');
+    const status = document.getElementById('shareLinkStatus');
+    const expiresIn = getExpiryDays();
+
+    try {
+        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expires_in: expiresIn })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.expiresAt) {
+                const expiryDate = new Date(data.expiresAt);
+                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+            } else {
+                expiryInfo.textContent = 'This link never expires';
+            }
+            status.textContent = 'Expiry updated!';
+            status.className = 'share-status success';
+            setTimeout(() => { status.textContent = ''; }, 2000);
+        }
+    } catch (error) {
+        console.error('Failed to update expiry:', error);
+        status.textContent = 'Error updating expiry';
         status.className = 'share-status error';
     }
 }
@@ -602,19 +732,23 @@ async function regenerateShortLink() {
 
     const input = document.getElementById('shareLinkInput');
     const status = document.getElementById('shareLinkStatus');
+    const expiryInfo = document.getElementById('shareLinkExpiryInfo');
+    const expiresIn = getExpiryDays();
 
     input.value = 'Regenerating...';
     status.textContent = '';
 
     try {
         // Delete existing
-        await fetch(`/api/notes/${currentNote.id}/shortlink`, {
+        await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
             method: 'DELETE'
         });
 
-        // Generate new
-        const response = await fetch(`/api/notes/${currentNote.id}/shortlink`, {
-            method: 'POST'
+        // Generate new with expiry
+        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expires_in: expiresIn })
         });
 
         if (response.ok) {
@@ -623,6 +757,14 @@ async function regenerateShortLink() {
             input.value = fullUrl;
             status.textContent = 'New link generated!';
             status.className = 'share-status success';
+
+            // Update expiry info
+            if (data.expiresAt) {
+                const expiryDate = new Date(data.expiresAt);
+                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+            } else {
+                expiryInfo.textContent = 'This link never expires';
+            }
         }
     } catch (error) {
         console.error('Failed to regenerate link:', error);
@@ -881,7 +1023,7 @@ async function renameNote(id, newTitle) {
     if (!note) return;
 
     try {
-        const response = await fetch(`/api/notes/${id}`, {
+        const response = await fetch(`${basePath}/api/notes/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -906,10 +1048,10 @@ async function duplicateNote(id) {
 
     // Load full note content
     try {
-        const response = await fetch(`/api/notes/${id}`);
+        const response = await fetch(`${basePath}/api/notes/${id}`);
         const fullNote = await response.json();
 
-        const newResponse = await fetch('/api/notes', {
+        const newResponse = await fetch(basePath + '/api/notes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1134,13 +1276,13 @@ async function performAutoSave() {
 
         let response;
         if (currentNote) {
-            response = await fetch(`/api/notes/${currentNote.id}`, {
+            response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(noteData)
             });
         } else {
-            response = await fetch('/api/notes', {
+            response = await fetch(basePath + '/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(noteData)
@@ -1258,7 +1400,7 @@ function prettyJson() {
 
 async function deleteNoteById(id) {
     try {
-        const response = await fetch(`/api/notes/${id}`, {
+        const response = await fetch(`${basePath}/api/notes/${id}`, {
             method: 'DELETE'
         });
 
@@ -1388,7 +1530,7 @@ async function uploadAndInsertImage(file) {
         const formData = new FormData();
         formData.append('image', file);
 
-        const response = await fetch('/api/images', {
+        const response = await fetch(basePath + '/api/images', {
             method: 'POST',
             body: formData
         });
@@ -1530,7 +1672,7 @@ async function uploadAndAttachFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/files', {
+        const response = await fetch(basePath + '/api/files', {
             method: 'POST',
             body: formData
         });
@@ -1579,7 +1721,7 @@ async function uploadAndInsertFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/files', {
+        const response = await fetch(basePath + '/api/files', {
             method: 'POST',
             body: formData
         });
@@ -1738,7 +1880,10 @@ function parseAttachmentsFromContent(content) {
         const url = match[2];
 
         // Only include uploaded files (from /files/ or /images/ paths)
-        if (url.startsWith('/files/') || url.startsWith('/images/')) {
+        const filesPath = basePath + '/files/';
+        const imagesPath = basePath + '/images/';
+        if (url.startsWith(filesPath) || url.startsWith(imagesPath) ||
+            url.startsWith('/files/') || url.startsWith('/images/')) {
             attachments.push({
                 name: name,
                 url: url,
@@ -1766,7 +1911,7 @@ function loadAttachmentsFromNote(note) {
 // API Functions
 async function loadNotes() {
     try {
-        const response = await fetch('/api/notes');
+        const response = await fetch(basePath + '/api/notes');
         notes = await response.json();
         if (!notes) notes = [];
         renderNoteTree();
@@ -1784,7 +1929,7 @@ async function loadNote(id) {
             headers['X-Note-Password'] = currentPassword;
         }
 
-        const response = await fetch(`/api/notes/${id}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${id}`, { headers });
         const note = await response.json();
 
         if (note.locked) {
@@ -1826,7 +1971,7 @@ async function verifyPassword() {
     if (!password) return;
 
     try {
-        const response = await fetch('/api/auth/verify', {
+        const response = await fetch(basePath + '/api/auth/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1891,13 +2036,13 @@ async function saveNote() {
     try {
         let response;
         if (currentNote && currentNote.id) {
-            response = await fetch(`/api/notes/${currentNote.id}`, {
+            response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify(data)
             });
         } else {
-            response = await fetch('/api/notes', {
+            response = await fetch(basePath + '/api/notes', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(data)
@@ -1937,7 +2082,7 @@ async function deleteNote() {
     }
 
     try {
-        const response = await fetch(`/api/notes/${currentNote.id}`, {
+        const response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
             method: 'DELETE',
             headers
         });
@@ -1965,12 +2110,20 @@ async function showHistory() {
     }
 
     try {
-        const response = await fetch(`/api/notes/${currentNote.id}/history`, { headers });
-        const commits = await response.json();
+        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/history`, { headers });
+        const data = await response.json();
 
+        if (!response.ok) {
+            console.error('History API error:', data.error);
+            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || 'Failed to load history'}</p>`;
+            historyModal.style.display = 'flex';
+            return;
+        }
+
+        const commits = Array.isArray(data) ? data : [];
         historyList.innerHTML = '';
 
-        if (!commits || commits.length === 0) {
+        if (commits.length === 0) {
             historyList.innerHTML = '<p style="padding: 20px; color: var(--text-secondary);">No history available</p>';
         } else {
             commits.forEach(commit => {
@@ -2003,7 +2156,7 @@ async function showVersion(hash) {
     }
 
     try {
-        const response = await fetch(`/api/notes/${currentNote.id}/version/${hash}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/version/${hash}`, { headers });
         const data = await response.json();
 
         currentVersionHash = hash;
@@ -2252,6 +2405,11 @@ function showEditorPane() {
     emptyState.style.display = 'none';
     editor.style.display = 'flex';
     togglePreview();
+
+    // Refresh CodeMirror after editor becomes visible to fix gutter width
+    if (cmEditor) {
+        setTimeout(() => cmEditor.refresh(), 0);
+    }
 }
 
 function hideEditor() {
@@ -2513,7 +2671,7 @@ async function authFetch(url, options = {}) {
 
     if (response.status === 401) {
         // Redirect to login page on authentication failure
-        window.location.href = '/login';
+        window.location.href = basePath + '/login';
         throw new Error('Authentication required');
     }
 
@@ -2547,11 +2705,11 @@ function initUserMenu() {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             try {
-                await fetch('/api/auth/logout', { method: 'POST' });
+                await fetch(basePath + '/api/auth/logout', { method: 'POST' });
             } catch (err) {
                 console.error('Logout error:', err);
             }
-            window.location.href = '/login';
+            window.location.href = basePath + '/login';
         });
     }
 

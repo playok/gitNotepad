@@ -14,13 +14,15 @@ import (
 
 type ImageHandler struct {
 	storagePath string
+	basePath    string
 }
 
-func NewImageHandler(storagePath string) *ImageHandler {
+func NewImageHandler(storagePath string, basePath string) *ImageHandler {
 	imgPath := filepath.Join(storagePath, "images")
 	os.MkdirAll(imgPath, 0755)
 	return &ImageHandler{
 		storagePath: imgPath,
+		basePath:    basePath,
 	}
 }
 
@@ -70,8 +72,8 @@ func (h *ImageHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	// Return URL for the image
-	imageURL := fmt.Sprintf("/images/%s", filename)
+	// Return URL for the image (with base path for nginx proxy support)
+	imageURL := fmt.Sprintf("%s/images/%s", h.basePath, filename)
 	c.JSON(http.StatusOK, gin.H{
 		"url":      imageURL,
 		"filename": filename,

@@ -4,33 +4,45 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 
 ## 기술 스택
 
-**Backend:** Go 1.25.4, Gin Framework, go-git/v5
-**Frontend:** Vanilla JavaScript, Marked.js, Highlight.js
+**Backend:** Go 1.21+, Gin Framework, go-git/v5
+**Frontend:** Vanilla JavaScript, CodeMirror 5, Marked.js, Highlight.js
+**Database:** SQLite (modernc.org/sqlite - CGO 불필요, 크로스 플랫폼)
 **Storage:** 파일 기반 (YAML frontmatter + Git)
 
 ## 프로젝트 구조
 
 ```
-├── main.go                 # 애플리케이션 진입점
+├── main.go                 # 애플리케이션 진입점 (--nginx 옵션 지원)
 ├── config.yaml             # 설정 파일
+├── build.cmd               # Windows 빌드 스크립트
+├── Makefile                # Linux/macOS 빌드
 ├── internal/
-│   ├── config/config.go    # 설정 로딩
+│   ├── config/config.go    # 설정 로딩 (base_path 포함)
+│   ├── database/database.go # SQLite 초기화 (modernc.org/sqlite)
 │   ├── model/note.go       # 노트 모델 및 파일 I/O
 │   ├── git/repository.go   # Git 작업 래퍼
 │   ├── handler/            # HTTP 핸들러
 │   │   ├── note.go         # 노트 CRUD
 │   │   ├── git.go          # 버전 히스토리
-│   │   ├── auth.go         # 비밀번호 검증
-│   │   ├── shortlink.go    # 단축 URL
+│   │   ├── auth.go         # 사용자 인증
+│   │   ├── shortlink.go    # 단축 URL (만료 기능 포함)
 │   │   ├── image.go        # 이미지 업로드
 │   │   └── file.go         # 파일 업로드
+│   ├── middleware/         # 인증 미들웨어
+│   ├── repository/         # DB 레포지토리
 │   └── server/server.go    # HTTP 서버 및 라우팅
 ├── web/
 │   ├── static/
 │   │   ├── css/style.css   # 스타일시트
-│   │   └── js/app.js       # 프론트엔드 앱
-│   └── templates/index.html
-└── data/                   # 데이터 저장소 (Git 저장소)
+│   │   ├── js/app.js       # 프론트엔드 앱
+│   │   └── lib/            # 외부 라이브러리 (오프라인용)
+│   └── templates/
+│       ├── index.html      # 메인 페이지
+│       ├── login.html      # 로그인 페이지
+│       └── expired.html    # 링크 만료 페이지
+└── data/                   # 데이터 저장소
+    ├── gitnotepad.db       # SQLite DB
+    └── {username}/         # 사용자별 노트 (Git 저장소)
 ```
 
 ## 빌드 및 실행
@@ -42,8 +54,19 @@ go mod download
 # 실행
 go run main.go [-config config.yaml]
 
-# 빌드
+# 빌드 (CGO 불필요)
 go build -o gitnotepad main.go
+
+# Windows (make 없이)
+build.cmd
+build.cmd run
+```
+
+**CLI 옵션:**
+```bash
+gitnotepad --help           # 도움말
+gitnotepad --nginx          # nginx 프록시 설정 가이드 출력
+gitnotepad -config my.yaml  # 설정 파일 지정
 ```
 
 기본 포트: `8080`
@@ -89,22 +112,33 @@ modified: 2025-12-30T12:00:00+09:00
 server:
   port: 8080
   host: "0.0.0.0"
+  base_path: ""        # nginx 프록시용 (예: "/note")
 storage:
   path: "./data"
   auto_init_git: true
 editor:
   default_type: "markdown"
   auto_save: false
+auth:
+  enabled: true
+  session_timeout: 168  # 7일
+  admin_username: "admin"
+  admin_password: "admin123"
+database:
+  path: "./data/gitnotepad.db"
 ```
 
 ## 주요 기능
 
-- Markdown/텍스트 노트 편집
+- Markdown/AsciiDoc/텍스트 노트 편집 (CodeMirror 5)
 - Git 기반 버전 관리 (자동 커밋)
+- 다중 사용자 인증 (SQLite)
 - 비밀번호 보호 (bcrypt)
-- 단축 URL 생성
+- 단축 URL 생성 (만료일 설정 가능)
 - 이미지/파일 첨부
 - 라이트/다크 테마
+- nginx 리버스 프록시 지원 (base_path)
+- 크로스 플랫폼 빌드 (CGO 불필요)
 - 키보드 단축키 (Ctrl+S 저장, Ctrl+B 사이드바, F1 도움말)
 
 ## 핵심 모듈

@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Git Notepad</title>
+    <script>window.BASE_PATH = '{{.basePath}}';</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/css/style.css">
     <style>
         .login-container {
             min-height: 100vh;
@@ -165,6 +166,7 @@
     </div>
 
     <script>
+        const basePath = window.BASE_PATH || '';
         const loginForm = document.getElementById('loginForm');
         const loginError = document.getElementById('loginError');
         const loginBtn = document.getElementById('loginBtn');
@@ -184,7 +186,7 @@
             loginBtn.textContent = 'Signing in...';
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(basePath + '/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -195,7 +197,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    window.location.href = '/';
+                    window.location.href = basePath + '/';
                 } else {
                     showError(data.error || 'Invalid credentials');
                 }

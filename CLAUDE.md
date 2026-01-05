@@ -145,8 +145,12 @@ database:
 
 - **model/note.go**: 노트 구조체, bcrypt 해싱, YAML frontmatter 파싱
 - **git/repository.go**: go-git 래퍼, 커밋/히스토리/파일 조회
+  - EOF 에러 처리 (빈 커밋 방지)
+  - staged 변경사항 체크 (Added, Modified, Deleted만 커밋)
 - **handler/note.go**: 노트 CRUD API, 비밀번호 검증
-- **server/server.go**: Gin 라우터 설정, 정적 파일 서빙
+- **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
+- **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 정적 파일 서빙
+- **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
 
 ## 보안
 

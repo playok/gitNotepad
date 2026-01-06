@@ -2,6 +2,9 @@ package server
 
 import (
 	"fmt"
+	"html/template"
+	"io/fs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/user/gitnotepad/internal/config"
@@ -10,6 +13,7 @@ import (
 	"github.com/user/gitnotepad/internal/handler"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/repository"
+	"github.com/user/gitnotepad/web"
 )
 
 type Server struct {
@@ -80,8 +84,9 @@ func (s *Server) setupRoutes() {
 	adminHandler := handler.NewAdminHandler(userRepo)
 	statsHandler := handler.NewStatsHandler(s.config)
 
-	// Load templates
-	s.router.LoadHTMLGlob("./web/templates/*")
+	// Load embedded templates
+	tmpl := template.Must(template.New("").ParseFS(web.Templates, "templates/*.html"))
+	s.router.SetHTMLTemplate(tmpl)
 
 	// Get base path for routing
 	basePath := s.config.Server.BasePath
@@ -89,8 +94,9 @@ func (s *Server) setupRoutes() {
 	// Create base group for all routes
 	base := s.router.Group(basePath)
 
-	// Serve static files under base path
-	base.Static("/static", "./web/static")
+	// Serve embedded static files under base path
+	staticFS, _ := fs.Sub(web.Static, "static")
+	base.StaticFS("/static", http.FS(staticFS))
 
 	// Login page (public)
 	base.GET("/login", func(c *gin.Context) {

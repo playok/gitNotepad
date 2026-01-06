@@ -1,6 +1,10 @@
 # Compiled binary
 gitnotepad
 gitnotepad.exe
+gitnotepad_*
+
+# GoReleaser
+dist/
 
 # Data directory (user notes)
 data/

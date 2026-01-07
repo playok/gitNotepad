@@ -14,8 +14,10 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **다크/라이트 테마**: 시스템 테마 연동
 - **오프라인 지원**: 모든 라이브러리 로컬 포함
 - **단축 URL**: 노트 공유용 짧은 링크 생성 (만료일 설정 가능)
+- **데이터 관리**: 노트 내보내기/가져오기, 통계 조회
 - **크로스 플랫폼**: CGO 없이 Linux/macOS/Windows 빌드
 - **Nginx 프록시**: 서브 경로에서 운영 가능
+- **단일 바이너리**: 템플릿/정적 파일 임베디드 (go:embed)
 
 ## 스크린샷
 
@@ -346,6 +348,23 @@ gitNotepad/
 | GET | `/api/git/history/:id` | 버전 히스토리 |
 | GET | `/api/git/version/:id/:hash` | 특정 버전 조회 |
 
+### 공유 링크
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | `/api/notes/:id/shortlink` | 단축 URL 생성 |
+| GET | `/api/notes/:id/shortlink` | 단축 URL 조회 |
+| DELETE | `/api/notes/:id/shortlink` | 단축 URL 삭제 |
+
+### 데이터 관리
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/api/stats` | 통계 조회 |
+| GET | `/api/notes/export` | 노트 내보내기 |
+| POST | `/api/notes/import` | 노트 가져오기 |
+| DELETE | `/api/notes` | 모든 노트 삭제 |
+
 ### 관리자
 
 | 메서드 | 경로 | 설명 |
@@ -353,6 +372,7 @@ gitNotepad/
 | GET | `/api/admin/users` | 사용자 목록 |
 | POST | `/api/admin/users` | 사용자 생성 |
 | DELETE | `/api/admin/users/:id` | 사용자 삭제 |
+| PUT | `/api/admin/users/:id/password` | 비밀번호 변경 |
 
 ## 문제 해결
 

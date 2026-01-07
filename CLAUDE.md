@@ -16,6 +16,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 ├── config.yaml             # 설정 파일
 ├── build.cmd               # Windows 빌드 스크립트
 ├── Makefile                # Linux/macOS 빌드
+├── .goreleaser.yaml        # GoReleaser 릴리즈 자동화
 ├── internal/
 │   ├── config/config.go    # 설정 로딩 (base_path 포함)
 │   ├── database/database.go # SQLite 초기화 (modernc.org/sqlite)
@@ -25,9 +26,11 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 │   │   ├── note.go         # 노트 CRUD
 │   │   ├── git.go          # 버전 히스토리
 │   │   ├── auth.go         # 사용자 인증
+│   │   ├── admin.go        # 사용자 관리 (관리자)
 │   │   ├── shortlink.go    # 단축 URL (만료 기능 포함)
 │   │   ├── image.go        # 이미지 업로드
-│   │   └── file.go         # 파일 업로드
+│   │   ├── file.go         # 파일 업로드
+│   │   └── stats.go        # 통계, 내보내기/가져오기
 │   ├── middleware/         # 인증 미들웨어
 │   ├── repository/         # DB 레포지토리
 │   └── server/server.go    # HTTP 서버 및 라우팅
@@ -80,6 +83,7 @@ gitnotepad -config my.yaml  # 설정 파일 지정
 | POST | /api/notes | 노트 생성 |
 | PUT | /api/notes/:id | 노트 수정 |
 | DELETE | /api/notes/:id | 노트 삭제 |
+| DELETE | /api/notes | 모든 노트 삭제 |
 | GET | /api/notes/:id/history | Git 히스토리 |
 | GET | /api/notes/:id/version/:commit | 특정 버전 조회 |
 | POST | /api/auth/verify | 비밀번호 검증 |
@@ -87,6 +91,13 @@ gitnotepad -config my.yaml  # 설정 파일 지정
 | GET | /s/:code | 단축 URL 리다이렉트 |
 | POST | /api/images | 이미지 업로드 |
 | POST | /api/files | 파일 업로드 |
+| GET | /api/stats | 통계 조회 |
+| GET | /api/notes/export | 노트 내보내기 |
+| POST | /api/notes/import | 노트 가져오기 |
+| GET | /api/admin/users | 사용자 목록 (관리자) |
+| POST | /api/admin/users | 사용자 생성 (관리자) |
+| DELETE | /api/admin/users/:id | 사용자 삭제 (관리자) |
+| PUT | /api/admin/users/:id/password | 비밀번호 변경 (관리자) |
 
 ## 노트 파일 형식
 
@@ -149,8 +160,16 @@ database:
   - staged 변경사항 체크 (Added, Modified, Deleted만 커밋)
 - **handler/note.go**: 노트 CRUD API, 비밀번호 검증
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
-- **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 정적 파일 서빙
+- **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
+- **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
+- **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
+
+## 빌드 및 배포
+
+- **임베디드 리소스**: 템플릿과 정적 파일이 바이너리에 포함됨 (go:embed)
+- **GoReleaser**: `.goreleaser.yaml`로 멀티 플랫폼 릴리즈 자동화
+- **지원 플랫폼**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64, arm64)
 
 ## 보안
 

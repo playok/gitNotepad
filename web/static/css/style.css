@@ -3274,6 +3274,22 @@ code.hljs[data-line-count^="1000"] .line-number {
     letter-spacing: 0.05em;
 }
 
+.calendar-weekday.sunday {
+    color: #dc2626;
+}
+
+.calendar-weekday.saturday {
+    color: #2563eb;
+}
+
+[data-theme="dark"] .calendar-weekday.sunday {
+    color: #f87171;
+}
+
+[data-theme="dark"] .calendar-weekday.saturday {
+    color: #60a5fa;
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -3332,8 +3348,45 @@ code.hljs[data-line-count^="1000"] .line-number {
     margin-bottom: 0.25rem;
 }
 
+.calendar-day.sunday .calendar-day-number {
+    color: #dc2626;
+}
+
+.calendar-day.saturday .calendar-day-number {
+    color: #2563eb;
+}
+
+[data-theme="dark"] .calendar-day.sunday .calendar-day-number {
+    color: #f87171;
+}
+
+[data-theme="dark"] .calendar-day.saturday .calendar-day-number {
+    color: #60a5fa;
+}
+
 .calendar-day.other-month .calendar-day-number {
     color: var(--text-muted);
+}
+
+.calendar-day.other-month.sunday .calendar-day-number {
+    color: rgba(220, 38, 38, 0.4);
+}
+
+.calendar-day.other-month.saturday .calendar-day-number {
+    color: rgba(37, 99, 235, 0.4);
+}
+
+[data-theme="dark"] .calendar-day.other-month.sunday .calendar-day-number {
+    color: rgba(248, 113, 113, 0.4);
+}
+
+[data-theme="dark"] .calendar-day.other-month.saturday .calendar-day-number {
+    color: rgba(96, 165, 250, 0.4);
+}
+
+.calendar-day.selected.sunday .calendar-day-number,
+.calendar-day.selected.saturday .calendar-day-number {
+    color: white;
 }
 
 .calendar-day-dots {

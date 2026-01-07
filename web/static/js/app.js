@@ -3575,6 +3575,11 @@ function renderCalendar() {
         if (isToday) classes += ' today';
         if (isSelected) classes += ' selected';
 
+        // Add weekend classes
+        const dayOfWeek = i % 7;
+        if (dayOfWeek === 0) classes += ' sunday';
+        if (dayOfWeek === 6) classes += ' saturday';
+
         html += `
             <div class="${classes}" data-date="${dateKey}" onclick="selectCalendarDate('${dateKey}')">
                 <span class="calendar-day-number">${dayNumber}</span>

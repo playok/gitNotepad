@@ -3584,3 +3584,75 @@ code.hljs[data-line-count^="1000"] .line-number {
 .date-note-item.dragging::before {
     opacity: 1;
 }
+
+/* ============================================
+   Locale Selector Styles
+   ============================================ */
+
+.locale-selector {
+    position: relative;
+}
+
+.locale-flag {
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+}
+
+.locale-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 140px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+.locale-selector.open .locale-dropdown {
+    display: block;
+}
+
+.locale-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+}
+
+.locale-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.locale-option.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+}
+
+.locale-code {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 24px;
+}
+
+.locale-option.active .locale-code {
+    color: var(--accent);
+}
+
+.locale-name {
+    flex: 1;
+}

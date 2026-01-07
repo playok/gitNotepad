@@ -174,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initKeyboardShortcuts();
     initFileUpload();
     initCalendarView();
+    initLocaleSelector();
     loadNotes().then(() => {
         handleHashNavigation();
         updateCalendarIfVisible();
@@ -182,6 +183,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle hash changes
     window.addEventListener('hashchange', handleHashNavigation);
+
+    // Handle locale changes
+    window.addEventListener('localeChanged', () => {
+        // Re-render dynamic content
+        if (currentViewMode === 'calendar') {
+            renderCalendar();
+            if (calendarSelectedDate) {
+                showNotesForDate(calendarSelectedDate);
+            }
+        }
+    });
 });
 
 // Sidebar Toggle
@@ -2006,7 +2018,7 @@ async function saveNote() {
     const isPrivate = notePrivate.checked;
 
     if (!title) {
-        alert('Please enter a title');
+        alert(i18n.t('msg.enterTitle'));
         return;
     }
 
@@ -2078,7 +2090,7 @@ async function saveNote() {
 async function deleteNote() {
     if (!currentNote || !currentNote.id) return;
 
-    if (!confirm('Are you sure you want to delete this note?')) return;
+    if (!confirm(i18n.t('msg.confirmDelete'))) return;
 
     const headers = {};
     if (currentPassword) {
@@ -3502,9 +3514,10 @@ function renderCalendar() {
     const month = calendarCurrentDate.getMonth();
 
     // Update title
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'];
-    calendarTitle.textContent = `${monthNames[month]} ${year}`;
+    const monthKeys = ['month.january', 'month.february', 'month.march', 'month.april',
+                       'month.may', 'month.june', 'month.july', 'month.august',
+                       'month.september', 'month.october', 'month.november', 'month.december'];
+    calendarTitle.textContent = `${i18n.t(monthKeys[month])} ${year}`;
 
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
@@ -3632,7 +3645,7 @@ function showNotesForDate(date) {
     const notesForDate = notesMap[dateKey] || [];
 
     if (notesForDate.length === 0) {
-        dateNotesList.innerHTML = '<p class="date-notes-empty">No notes for this date</p>';
+        dateNotesList.innerHTML = `<p class="date-notes-empty">${i18n.t('calendar.noNotes')}</p>`;
         return;
     }
 
@@ -3867,3 +3880,56 @@ renderCalendar = function() {
     // Initialize drag & drop on calendar days
     setTimeout(initCalendarDragDrop, 0);
 };
+
+// ============================================
+// Locale Selector
+// ============================================
+
+function initLocaleSelector() {
+    const localeSelector = document.getElementById('localeSelector');
+    const localeSelectorBtn = document.getElementById('localeSelectorBtn');
+    const localeDropdown = document.getElementById('localeDropdown');
+    const localeOptions = document.querySelectorAll('.locale-option');
+    const localeFlag = localeSelectorBtn?.querySelector('.locale-flag');
+
+    if (!localeSelector || !localeSelectorBtn) return;
+
+    // Update flag display based on current locale
+    function updateLocaleDisplay() {
+        const locale = i18n.getLocale();
+        if (localeFlag) {
+            localeFlag.textContent = locale.toUpperCase();
+        }
+        // Update active state
+        localeOptions.forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.locale === locale);
+        });
+    }
+
+    // Toggle dropdown
+    localeSelectorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        localeSelector.classList.toggle('open');
+    });
+
+    // Handle locale selection
+    localeOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const locale = option.dataset.locale;
+            i18n.setLocale(locale);
+            updateLocaleDisplay();
+            localeSelector.classList.remove('open');
+        });
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        if (!localeSelector.contains(e.target)) {
+            localeSelector.classList.remove('open');
+        }
+    });
+
+    // Initialize display
+    updateLocaleDisplay();
+}

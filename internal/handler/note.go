@@ -137,13 +137,13 @@ func (h *NoteHandler) Get(c *gin.Context) {
 		password := c.GetHeader("X-Note-Password")
 		if password == "" {
 			c.JSON(http.StatusOK, gin.H{
-				"id":          note.ID,
-				"title":       note.Title,
-				"type":        note.Type,
-				"private":     note.Private,
-				"locked":      true,
-				"created":     note.Created,
-				"modified":    note.Modified,
+				"id":       note.ID,
+				"title":    note.Title,
+				"type":     note.Type,
+				"private":  note.Private,
+				"locked":   true,
+				"created":  note.Created,
+				"modified": note.Modified,
 			})
 			return
 		}

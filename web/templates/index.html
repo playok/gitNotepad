@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,6 +25,21 @@
                     <button id="settingsBtn" class="header-icon-btn" title="Settings">
                         <span>&#9881;</span>
                     </button>
+                    <div class="locale-selector" id="localeSelector">
+                        <button class="header-icon-btn" id="localeSelectorBtn" title="Language">
+                            <span class="locale-flag">EN</span>
+                        </button>
+                        <div class="locale-dropdown" id="localeDropdown">
+                            <button class="locale-option" data-locale="en">
+                                <span class="locale-code">EN</span>
+                                <span class="locale-name">English</span>
+                            </button>
+                            <button class="locale-option" data-locale="ko">
+                                <span class="locale-code">KO</span>
+                                <span class="locale-name">한국어</span>
+                            </button>
+                        </div>
+                    </div>
                     <button id="themeToggle" class="header-icon-btn" title="Toggle theme">
                         <span class="icon-sun">&#9728;</span>
                         <span class="icon-moon">&#9790;</span>
@@ -68,7 +83,7 @@
                 </button>
             </div>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search notes...">
+                <input type="text" id="searchInput" placeholder="Search notes..." data-i18n-placeholder="sidebar.search">
             </div>
             <ul id="noteList" class="note-list">
                 <!-- Notes will be loaded here -->
@@ -89,16 +104,16 @@
                         <button id="calendarPrevMonth" class="calendar-nav-btn" title="Previous month">&#9664;</button>
                         <h2 id="calendarTitle" class="calendar-title"></h2>
                         <button id="calendarNextMonth" class="calendar-nav-btn" title="Next month">&#9654;</button>
-                        <button id="calendarToday" class="calendar-today-btn">Today</button>
+                        <button id="calendarToday" class="calendar-today-btn" data-i18n="calendar.today">Today</button>
                     </div>
                     <div class="calendar-weekdays">
-                        <div class="calendar-weekday">Sun</div>
-                        <div class="calendar-weekday">Mon</div>
-                        <div class="calendar-weekday">Tue</div>
-                        <div class="calendar-weekday">Wed</div>
-                        <div class="calendar-weekday">Thu</div>
-                        <div class="calendar-weekday">Fri</div>
-                        <div class="calendar-weekday">Sat</div>
+                        <div class="calendar-weekday" data-i18n="weekday.sun">Sun</div>
+                        <div class="calendar-weekday" data-i18n="weekday.mon">Mon</div>
+                        <div class="calendar-weekday" data-i18n="weekday.tue">Tue</div>
+                        <div class="calendar-weekday" data-i18n="weekday.wed">Wed</div>
+                        <div class="calendar-weekday" data-i18n="weekday.thu">Thu</div>
+                        <div class="calendar-weekday" data-i18n="weekday.fri">Fri</div>
+                        <div class="calendar-weekday" data-i18n="weekday.sat">Sat</div>
                     </div>
                     <div id="calendarGrid" class="calendar-grid">
                         <!-- Calendar days will be rendered here -->
@@ -106,21 +121,21 @@
                 </div>
                 <div class="calendar-sidebar">
                     <div class="calendar-sidebar-header">
-                        <h3 id="selectedDateTitle">Select a date</h3>
+                        <h3 id="selectedDateTitle" data-i18n="calendar.selectDate">Select a date</h3>
                         <button id="addNoteForDate" class="btn btn-primary btn-sm" style="display: none;">
-                            <span>&#10133;</span> New Note
+                            <span>&#10133;</span> <span data-i18n="calendar.newNote">New Note</span>
                         </button>
                     </div>
                     <div id="dateNotesList" class="date-notes-list">
-                        <p class="date-notes-empty">Click on a date to view notes</p>
+                        <p class="date-notes-empty" data-i18n="calendar.notesForDate">Click on a date to view notes</p>
                     </div>
                 </div>
             </div>
 
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
-                <h2>Select a note or create a new one</h2>
-                <p>Your notes are automatically saved and version controlled with Git.</p>
+                <h2 data-i18n="app.selectNote">Select a note or create a new one</h2>
+                <p data-i18n="app.subtitle">Your notes are automatically saved and version controlled with Git.</p>
             </div>
 
             <!-- Editor -->
@@ -458,6 +473,7 @@
             }
         })();
     </script>
+    <script src="{{.basePath}}/static/js/i18n.js"></script>
     <script src="{{.basePath}}/static/js/app.js"></script>
 </body>
 </html>

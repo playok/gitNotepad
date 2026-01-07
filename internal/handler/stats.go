@@ -30,12 +30,12 @@ func NewStatsHandler(cfg *config.Config) *StatsHandler {
 }
 
 type UsageStats struct {
-	TotalNotes       int               `json:"totalNotes"`
-	TotalAttachments int               `json:"totalAttachments"`
-	PrivateNotes     int               `json:"privateNotes"`
-	StorageUsed      int64             `json:"storageUsed"`
-	NotesByType      map[string]int    `json:"notesByType"`
-	RecentActivity   []ActivityItem    `json:"recentActivity"`
+	TotalNotes       int            `json:"totalNotes"`
+	TotalAttachments int            `json:"totalAttachments"`
+	PrivateNotes     int            `json:"privateNotes"`
+	StorageUsed      int64          `json:"storageUsed"`
+	NotesByType      map[string]int `json:"notesByType"`
+	RecentActivity   []ActivityItem `json:"recentActivity"`
 }
 
 type ActivityItem struct {

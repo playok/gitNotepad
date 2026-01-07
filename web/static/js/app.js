@@ -173,8 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initSidebarToggle();
     initKeyboardShortcuts();
     initFileUpload();
+    initCalendarView();
     loadNotes().then(() => {
         handleHashNavigation();
+        updateCalendarIfVisible();
     });
     setupEventListeners();
 
@@ -1915,10 +1917,12 @@ async function loadNotes() {
         notes = await response.json();
         if (!notes) notes = [];
         renderNoteTree();
+        updateCalendarIfVisible();
     } catch (error) {
         console.error('Failed to load notes:', error);
         notes = [];
         renderNoteTree();
+        updateCalendarIfVisible();
     }
 }
 
@@ -3376,3 +3380,490 @@ function renderRecentActivity(activities) {
         `;
     }).join('');
 }
+
+// ============================================
+// Calendar View
+// ============================================
+
+let calendarCurrentDate = new Date();
+let calendarSelectedDate = null;
+let currentViewMode = 'list'; // 'list' or 'calendar'
+
+function initCalendarView() {
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const calendarPrevMonth = document.getElementById('calendarPrevMonth');
+    const calendarNextMonth = document.getElementById('calendarNextMonth');
+    const calendarToday = document.getElementById('calendarToday');
+    const addNoteForDate = document.getElementById('addNoteForDate');
+
+    if (listViewBtn) {
+        listViewBtn.addEventListener('click', () => switchToListView());
+    }
+
+    if (calendarViewBtn) {
+        calendarViewBtn.addEventListener('click', () => switchToCalendarView());
+    }
+
+    if (calendarPrevMonth) {
+        calendarPrevMonth.addEventListener('click', () => {
+            calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() - 1);
+            renderCalendar();
+        });
+    }
+
+    if (calendarNextMonth) {
+        calendarNextMonth.addEventListener('click', () => {
+            calendarCurrentDate.setMonth(calendarCurrentDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
+
+    if (calendarToday) {
+        calendarToday.addEventListener('click', () => {
+            calendarCurrentDate = new Date();
+            calendarSelectedDate = new Date();
+            renderCalendar();
+            showNotesForDate(calendarSelectedDate);
+        });
+    }
+
+    if (addNoteForDate) {
+        addNoteForDate.addEventListener('click', () => {
+            if (calendarSelectedDate) {
+                createNoteForDate(calendarSelectedDate);
+            }
+        });
+    }
+
+    // Load saved view mode
+    const savedViewMode = localStorage.getItem('viewMode');
+    if (savedViewMode === 'calendar') {
+        switchToCalendarView();
+    }
+}
+
+function switchToListView() {
+    currentViewMode = 'list';
+    localStorage.setItem('viewMode', 'list');
+
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const calendarView = document.getElementById('calendarView');
+    const noteListEl = document.getElementById('noteList');
+    const searchBox = document.querySelector('.search-box');
+
+    if (listViewBtn) listViewBtn.classList.add('active');
+    if (calendarViewBtn) calendarViewBtn.classList.remove('active');
+    if (calendarView) calendarView.style.display = 'none';
+    if (noteListEl) noteListEl.style.display = '';
+    if (searchBox) searchBox.style.display = '';
+
+    // Show editor or empty state based on current note
+    if (currentNote) {
+        editor.style.display = 'flex';
+        emptyState.style.display = 'none';
+    } else {
+        editor.style.display = 'none';
+        emptyState.style.display = 'flex';
+    }
+}
+
+function switchToCalendarView() {
+    currentViewMode = 'calendar';
+    localStorage.setItem('viewMode', 'calendar');
+
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const calendarView = document.getElementById('calendarView');
+    const noteListEl = document.getElementById('noteList');
+    const searchBox = document.querySelector('.search-box');
+
+    if (listViewBtn) listViewBtn.classList.remove('active');
+    if (calendarViewBtn) calendarViewBtn.classList.add('active');
+    if (calendarView) calendarView.style.display = 'flex';
+    if (noteListEl) noteListEl.style.display = 'none';
+    if (searchBox) searchBox.style.display = 'none';
+
+    // Hide editor and empty state in calendar view
+    editor.style.display = 'none';
+    emptyState.style.display = 'none';
+
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarTitle = document.getElementById('calendarTitle');
+
+    if (!calendarGrid || !calendarTitle) return;
+
+    const year = calendarCurrentDate.getFullYear();
+    const month = calendarCurrentDate.getMonth();
+
+    // Update title
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    calendarTitle.textContent = `${monthNames[month]} ${year}`;
+
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+
+    // Get days from previous month
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+    // Build notes map by date
+    const notesMap = buildNotesMapByDate();
+
+    // Today's date for comparison
+    const today = new Date();
+    const todayStr = formatDateKey(today);
+
+    // Generate calendar days
+    let html = '';
+    let dayCount = 1;
+    let nextMonthDay = 1;
+
+    const totalCells = 42; // 6 rows x 7 days
+
+    for (let i = 0; i < totalCells; i++) {
+        let dayNumber;
+        let dateObj;
+        let isOtherMonth = false;
+
+        if (i < startDayOfWeek) {
+            // Previous month days
+            dayNumber = prevMonthLastDay - startDayOfWeek + i + 1;
+            dateObj = new Date(year, month - 1, dayNumber);
+            isOtherMonth = true;
+        } else if (dayCount <= daysInMonth) {
+            // Current month days
+            dayNumber = dayCount;
+            dateObj = new Date(year, month, dayNumber);
+            dayCount++;
+        } else {
+            // Next month days
+            dayNumber = nextMonthDay;
+            dateObj = new Date(year, month + 1, dayNumber);
+            nextMonthDay++;
+            isOtherMonth = true;
+        }
+
+        const dateKey = formatDateKey(dateObj);
+        const notesForDay = notesMap[dateKey] || [];
+        const isToday = dateKey === todayStr;
+        const isSelected = calendarSelectedDate && dateKey === formatDateKey(calendarSelectedDate);
+
+        let classes = 'calendar-day';
+        if (isOtherMonth) classes += ' other-month';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+
+        html += `
+            <div class="${classes}" data-date="${dateKey}" onclick="selectCalendarDate('${dateKey}')">
+                <span class="calendar-day-number">${dayNumber}</span>
+                ${notesForDay.length > 0 ? `
+                    <span class="calendar-day-notes-count">${notesForDay.length}</span>
+                    <div class="calendar-day-dots">
+                        ${notesForDay.slice(0, 3).map(() => '<span class="calendar-day-dot"></span>').join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    calendarGrid.innerHTML = html;
+}
+
+function buildNotesMapByDate() {
+    const map = {};
+
+    notes.forEach(note => {
+        // Use created date for mapping
+        const dateStr = note.created || note.modified;
+        if (dateStr) {
+            const date = new Date(dateStr);
+            const dateKey = formatDateKey(date);
+            if (!map[dateKey]) {
+                map[dateKey] = [];
+            }
+            map[dateKey].push(note);
+        }
+    });
+
+    return map;
+}
+
+function formatDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function selectCalendarDate(dateKey) {
+    calendarSelectedDate = new Date(dateKey + 'T00:00:00');
+    renderCalendar();
+    showNotesForDate(calendarSelectedDate);
+}
+
+function showNotesForDate(date) {
+    const selectedDateTitle = document.getElementById('selectedDateTitle');
+    const dateNotesList = document.getElementById('dateNotesList');
+    const addNoteForDateBtn = document.getElementById('addNoteForDate');
+
+    if (!selectedDateTitle || !dateNotesList) return;
+
+    // Format date for display
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    selectedDateTitle.textContent = date.toLocaleDateString('en-US', options);
+
+    // Show add note button
+    if (addNoteForDateBtn) {
+        addNoteForDateBtn.style.display = 'inline-flex';
+    }
+
+    // Get notes for this date
+    const dateKey = formatDateKey(date);
+    const notesMap = buildNotesMapByDate();
+    const notesForDate = notesMap[dateKey] || [];
+
+    if (notesForDate.length === 0) {
+        dateNotesList.innerHTML = '<p class="date-notes-empty">No notes for this date</p>';
+        return;
+    }
+
+    // Sort by time (most recent first)
+    notesForDate.sort((a, b) => {
+        const dateA = new Date(a.modified || a.created);
+        const dateB = new Date(b.modified || b.created);
+        return dateB - dateA;
+    });
+
+    dateNotesList.innerHTML = notesForDate.map(note => {
+        const noteDate = new Date(note.modified || note.created);
+        const timeStr = noteDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const typeIcon = note.type === 'markdown' ? '&#128196;' : '&#128221;';
+        const lockIcon = note.private ? '&#128274;' : '';
+
+        return `
+            <div class="date-note-item" data-note-id="${note.id}" onclick="openNoteFromCalendar('${note.id}')">
+                <span class="date-note-icon">${typeIcon}</span>
+                <div class="date-note-info">
+                    <div class="date-note-title">${escapeHtml(note.title)} ${lockIcon}</div>
+                    <div class="date-note-meta">
+                        <span class="date-note-type">${note.type.toUpperCase()}</span>
+                        <span class="date-note-time">${timeStr}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openNoteFromCalendar(noteId) {
+    // Switch to list view and open the note
+    switchToListView();
+    loadNote(noteId);
+}
+
+function createNoteForDate(date) {
+    // Format date for the title (YYYY-MM-DD format)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Switch to list view
+    switchToListView();
+
+    // Reset all fields (same as createNewNote)
+    currentNote = null;
+    currentPassword = null;
+    noteTitle.value = `${dateStr} `;
+    setEditorContent('');
+    noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';
+    notePrivate.checked = false;
+    previewContent.innerHTML = '';
+
+    // Clear attachments
+    currentAttachments = [];
+    renderAttachments();
+
+    // Reset original content
+    originalContent = {
+        title: '',
+        content: '',
+        type: noteType.value,
+        private: false
+    };
+    hasUnsavedChanges = false;
+    updateSaveStatus('');
+
+    // Show editor
+    emptyState.style.display = 'none';
+    editor.style.display = 'flex';
+    togglePreview();
+
+    // Focus on title and position cursor at end
+    setTimeout(() => {
+        noteTitle.focus();
+        noteTitle.setSelectionRange(noteTitle.value.length, noteTitle.value.length);
+        if (cmEditor) {
+            cmEditor.refresh();
+        }
+    }, 100);
+}
+
+// Update calendar when notes are loaded
+function updateCalendarIfVisible() {
+    if (currentViewMode === 'calendar') {
+        renderCalendar();
+        if (calendarSelectedDate) {
+            showNotesForDate(calendarSelectedDate);
+        }
+    }
+}
+
+// ============================================
+// Calendar Drag & Drop
+// ============================================
+
+let calendarDraggedNote = null;
+
+function initCalendarDragDrop() {
+    // This is called after rendering notes for a date
+    const noteItems = document.querySelectorAll('.date-note-item');
+    noteItems.forEach(item => {
+        item.setAttribute('draggable', 'true');
+        item.addEventListener('dragstart', handleCalendarDragStart);
+        item.addEventListener('dragend', handleCalendarDragEnd);
+    });
+
+    // Set up drop zones on calendar days
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    calendarDays.forEach(day => {
+        day.addEventListener('dragover', handleCalendarDragOver);
+        day.addEventListener('dragenter', handleCalendarDragEnter);
+        day.addEventListener('dragleave', handleCalendarDragLeave);
+        day.addEventListener('drop', handleCalendarDrop);
+    });
+}
+
+function handleCalendarDragStart(e) {
+    const noteItem = e.target.closest('.date-note-item');
+    if (!noteItem) return;
+
+    const noteId = noteItem.getAttribute('data-note-id');
+    calendarDraggedNote = notes.find(n => n.id === noteId);
+
+    noteItem.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', noteId);
+
+    // Add dragging class to calendar
+    document.querySelector('.calendar-grid')?.classList.add('drag-active');
+}
+
+function handleCalendarDragEnd(e) {
+    const noteItem = e.target.closest('.date-note-item');
+    if (noteItem) {
+        noteItem.classList.remove('dragging');
+    }
+    calendarDraggedNote = null;
+
+    // Remove all drag states
+    document.querySelector('.calendar-grid')?.classList.remove('drag-active');
+    document.querySelectorAll('.calendar-day.drag-over').forEach(day => {
+        day.classList.remove('drag-over');
+    });
+}
+
+function handleCalendarDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleCalendarDragEnter(e) {
+    e.preventDefault();
+    const calendarDay = e.target.closest('.calendar-day');
+    if (calendarDay) {
+        calendarDay.classList.add('drag-over');
+    }
+}
+
+function handleCalendarDragLeave(e) {
+    const calendarDay = e.target.closest('.calendar-day');
+    if (calendarDay && !calendarDay.contains(e.relatedTarget)) {
+        calendarDay.classList.remove('drag-over');
+    }
+}
+
+async function handleCalendarDrop(e) {
+    e.preventDefault();
+
+    const calendarDay = e.target.closest('.calendar-day');
+    if (!calendarDay || !calendarDraggedNote) return;
+
+    calendarDay.classList.remove('drag-over');
+
+    const newDateKey = calendarDay.getAttribute('data-date');
+    if (!newDateKey) return;
+
+    // Get the note's current time and combine with new date
+    const oldDate = new Date(calendarDraggedNote.created);
+    const newDate = new Date(newDateKey + 'T00:00:00');
+
+    // Keep the original time, just change the date
+    newDate.setHours(oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds());
+
+    // Update note via API
+    try {
+        const response = await fetch(`${basePath}/api/notes/${calendarDraggedNote.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: calendarDraggedNote.title,
+                content: '', // Will be filled by backend if not changed
+                type: calendarDraggedNote.type,
+                private: calendarDraggedNote.private,
+                created: newDate.toISOString()
+            })
+        });
+
+        if (response.ok) {
+            // Reload notes and refresh calendar
+            await loadNotes();
+
+            // Select the target date to show moved note
+            calendarSelectedDate = new Date(newDateKey + 'T00:00:00');
+            renderCalendar();
+            showNotesForDate(calendarSelectedDate);
+        } else {
+            console.error('Failed to move note');
+        }
+    } catch (error) {
+        console.error('Error moving note:', error);
+    }
+}
+
+// Override showNotesForDate to add drag functionality
+const originalShowNotesForDate = showNotesForDate;
+showNotesForDate = function(date) {
+    originalShowNotesForDate(date);
+    // Initialize drag & drop after rendering
+    setTimeout(initCalendarDragDrop, 0);
+};
+
+// Override renderCalendar to add drop zones
+const originalRenderCalendar = renderCalendar;
+renderCalendar = function() {
+    originalRenderCalendar();
+    // Initialize drag & drop on calendar days
+    setTimeout(initCalendarDragDrop, 0);
+};

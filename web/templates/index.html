@@ -59,6 +59,14 @@
                     </button>
                 </div>
             </div>
+            <div class="view-toggle-container">
+                <button class="view-toggle-btn active" id="listViewBtn" title="List View">
+                    <span>&#9776;</span>
+                </button>
+                <button class="view-toggle-btn" id="calendarViewBtn" title="Calendar View">
+                    <span>&#128197;</span>
+                </button>
+            </div>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Search notes...">
             </div>
@@ -74,6 +82,41 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Calendar View -->
+            <div id="calendarView" class="calendar-view" style="display: none;">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="calendarPrevMonth" class="calendar-nav-btn" title="Previous month">&#9664;</button>
+                        <h2 id="calendarTitle" class="calendar-title"></h2>
+                        <button id="calendarNextMonth" class="calendar-nav-btn" title="Next month">&#9654;</button>
+                        <button id="calendarToday" class="calendar-today-btn">Today</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday">Sun</div>
+                        <div class="calendar-weekday">Mon</div>
+                        <div class="calendar-weekday">Tue</div>
+                        <div class="calendar-weekday">Wed</div>
+                        <div class="calendar-weekday">Thu</div>
+                        <div class="calendar-weekday">Fri</div>
+                        <div class="calendar-weekday">Sat</div>
+                    </div>
+                    <div id="calendarGrid" class="calendar-grid">
+                        <!-- Calendar days will be rendered here -->
+                    </div>
+                </div>
+                <div class="calendar-sidebar">
+                    <div class="calendar-sidebar-header">
+                        <h3 id="selectedDateTitle">Select a date</h3>
+                        <button id="addNoteForDate" class="btn btn-primary btn-sm" style="display: none;">
+                            <span>&#10133;</span> New Note
+                        </button>
+                    </div>
+                    <div id="dateNotesList" class="date-notes-list">
+                        <p class="date-notes-empty">Click on a date to view notes</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
                 <h2>Select a note or create a new one</h2>

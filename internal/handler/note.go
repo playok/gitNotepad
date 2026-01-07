@@ -63,6 +63,7 @@ type NoteListItem struct {
 	Title    string    `json:"title"`
 	Type     string    `json:"type"`
 	Private  bool      `json:"private"`
+	Created  time.Time `json:"created"`
 	Modified time.Time `json:"modified"`
 }
 
@@ -99,6 +100,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 			Title:    note.Title,
 			Type:     note.Type,
 			Private:  note.Private,
+			Created:  note.Created,
 			Modified: note.Modified,
 		})
 	}
@@ -236,6 +238,7 @@ type UpdateNoteRequest struct {
 	Private     bool               `json:"private"`
 	Password    *string            `json:"password"`
 	Attachments []model.Attachment `json:"attachments"`
+	Created     *time.Time         `json:"created,omitempty"`
 }
 
 func (h *NoteHandler) Update(c *gin.Context) {
@@ -286,6 +289,11 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	note.Private = req.Private
 	note.Attachments = req.Attachments
 	note.Modified = time.Now()
+
+	// Update created date if provided (for calendar drag & drop)
+	if req.Created != nil {
+		note.Created = *req.Created
+	}
 
 	// Handle password change
 	if req.Password != nil {

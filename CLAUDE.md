@@ -151,6 +151,7 @@ database:
 - nginx 리버스 프록시 지원 (base_path)
 - 크로스 플랫폼 빌드 (CGO 불필요)
 - 키보드 단축키 (Ctrl+S 저장, Ctrl+B 사이드바, F1 도움말)
+- **캘린더 뷰**: 월간 캘린더에서 날짜별 노트 관리, 드래그 앤 드롭으로 날짜 이동
 
 ## 핵심 모듈
 
@@ -164,6 +165,8 @@ database:
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
 - **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
+  - 캘린더 뷰: initCalendarView(), renderCalendar(), buildNotesMapByDate()
+  - 드래그 앤 드롭: handleCalendarDragStart/End/Drop()
 
 ## 빌드 및 배포
 
@@ -177,3 +180,25 @@ database:
 - `X-Note-Password` 헤더로 비밀번호 전달
 - UUID 기반 파일명으로 충돌 방지
 - 경로 탐색 공격 방지
+
+## 캘린더 뷰
+
+### 기능
+- 리스트/캘린더 뷰 전환 (사이드바 상단 토글 버튼)
+- 월간 캘린더 표시 (에디터+프리뷰 영역 대체)
+- 날짜별 노트 매핑 (노트의 created 날짜 기준)
+- 날짜 선택 시 해당 날짜 노트 목록 표시
+- 노트 드래그 앤 드롭으로 날짜 이동
+
+### 구현 세부사항
+- **뷰 전환**: `currentViewMode` 상태 ('list' | 'calendar'), localStorage 저장
+- **캘린더 렌더링**: `renderCalendar()` - 6주 x 7일 그리드 생성
+- **날짜-노트 매핑**: `buildNotesMapByDate()` - notes 배열에서 created 날짜 기준 맵 생성
+- **드래그 앤 드롭**: HTML5 Drag API 사용
+  - `data-note-id` 속성으로 노트 식별
+  - PUT `/api/notes/:id`에 `created` 필드 전송하여 날짜 변경
+- **CSS 클래스**: `.calendar-view`, `.calendar-day`, `.calendar-day.drag-over`
+
+### API 변경사항
+- `NoteListItem`에 `Created` 필드 추가
+- `UpdateNoteRequest`에 `Created *time.Time` 필드 추가 (옵셔널)

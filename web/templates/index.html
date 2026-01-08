@@ -80,21 +80,24 @@
             <!-- Mini Calendar -->
             <div class="mini-calendar" id="miniCalendar">
                 <div class="mini-calendar-header">
+                    <button id="miniCalToggle" class="mini-cal-toggle" title="Toggle calendar">&#9660;</button>
                     <button id="miniCalPrev" class="mini-cal-nav">&#9664;</button>
                     <span id="miniCalTitle" class="mini-cal-title"></span>
                     <button id="miniCalNext" class="mini-cal-nav">&#9654;</button>
                 </div>
-                <div class="mini-calendar-weekdays">
-                    <span class="mini-weekday sunday">S</span>
-                    <span class="mini-weekday">M</span>
-                    <span class="mini-weekday">T</span>
-                    <span class="mini-weekday">W</span>
-                    <span class="mini-weekday">T</span>
-                    <span class="mini-weekday">F</span>
-                    <span class="mini-weekday saturday">S</span>
-                </div>
-                <div id="miniCalGrid" class="mini-calendar-grid">
-                    <!-- Mini calendar days will be rendered here -->
+                <div class="mini-calendar-body" id="miniCalBody">
+                    <div class="mini-calendar-weekdays">
+                        <span class="mini-weekday sunday">S</span>
+                        <span class="mini-weekday">M</span>
+                        <span class="mini-weekday">T</span>
+                        <span class="mini-weekday">W</span>
+                        <span class="mini-weekday">T</span>
+                        <span class="mini-weekday">F</span>
+                        <span class="mini-weekday saturday">S</span>
+                    </div>
+                    <div id="miniCalGrid" class="mini-calendar-grid">
+                        <!-- Mini calendar days will be rendered here -->
+                    </div>
                 </div>
             </div>
             <ul id="noteList" class="note-list">
@@ -119,6 +122,7 @@
             <div id="editor" class="editor" style="display: none;">
                 <div class="editor-header">
                     <div class="editor-title-row">
+                        <span id="noteFolderPath" class="note-folder-path"></span>
                         <input type="text" id="noteTitle" class="note-title-input" placeholder="Note title...">
                         <span id="saveStatus" class="save-status"></span>
                     </div>

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,6 +12,15 @@ import (
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
 )
+
+// decodeGitNoteID base64-decodes the note ID from path parameter
+func decodeGitNoteID(id string) string {
+	decoded, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return id // Return original if decode fails (for backwards compatibility)
+	}
+	return string(decoded)
+}
 
 type GitHandler struct {
 	repo     *git.Repository
@@ -54,7 +64,7 @@ func (h *GitHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 }
 
 func (h *GitHandler) History(c *gin.Context) {
-	id := c.Param("id")
+	id := decodeGitNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
 
 	// Find the note file
@@ -101,7 +111,7 @@ func (h *GitHandler) History(c *gin.Context) {
 }
 
 func (h *GitHandler) Version(c *gin.Context) {
-	id := c.Param("id")
+	id := decodeGitNoteID(c.Param("id"))
 	commit := c.Param("commit")
 	storagePath := h.getUserStoragePath(c)
 

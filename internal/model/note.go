@@ -64,15 +64,19 @@ func (n *Note) CheckPassword(password string) bool {
 	return err == nil
 }
 
-func (n *Note) GetFilename() string {
-	ext := ".md"
+func (n *Note) GetExtension() string {
 	switch n.Type {
 	case "txt":
-		ext = ".txt"
+		return ".txt"
 	case "asciidoc":
-		ext = ".adoc"
+		return ".adoc"
+	default:
+		return ".md"
 	}
-	return n.ID + ext
+}
+
+func (n *Note) GetFilename() string {
+	return n.ID + n.GetExtension()
 }
 
 func (n *Note) ToFileContent() ([]byte, error) {

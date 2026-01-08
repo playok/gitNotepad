@@ -2,6 +2,7 @@ package handler
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
@@ -138,9 +139,18 @@ type GenerateRequest struct {
 	ExpiresIn *int `json:"expires_in"` // Days until expiry (nil = never expires)
 }
 
+// decodeNoteIDParam base64-decodes the note ID from path parameter
+func decodeNoteIDParam(id string) string {
+	decoded, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return id // Return original if decode fails (for backwards compatibility)
+	}
+	return string(decoded)
+}
+
 // Generate creates or returns existing short link for a note
 func (h *ShortLinkHandler) Generate(c *gin.Context) {
-	noteId := c.Param("id")
+	noteId := decodeNoteIDParam(c.Param("id"))
 	if noteId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Note ID required"})
 		return
@@ -237,7 +247,7 @@ func (h *ShortLinkHandler) Redirect(c *gin.Context) {
 
 // Get returns the short link for a note if it exists
 func (h *ShortLinkHandler) Get(c *gin.Context) {
-	noteId := c.Param("id")
+	noteId := decodeNoteIDParam(c.Param("id"))
 	if noteId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Note ID required"})
 		return
@@ -266,7 +276,7 @@ func (h *ShortLinkHandler) Get(c *gin.Context) {
 
 // Delete removes a short link
 func (h *ShortLinkHandler) Delete(c *gin.Context) {
-	noteId := c.Param("id")
+	noteId := decodeNoteIDParam(c.Param("id"))
 	if noteId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Note ID required"})
 		return

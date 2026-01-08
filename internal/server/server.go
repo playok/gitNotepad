@@ -54,6 +54,8 @@ func New(cfg *config.Config) (*Server, error) {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	router.UseRawPath = true
+	router.UnescapePathValues = true
 
 	s := &Server{
 		config: cfg,

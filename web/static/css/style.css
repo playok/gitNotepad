@@ -383,11 +383,37 @@ body {
 .mini-calendar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    gap: 0.25rem;
+}
+
+.mini-calendar.collapsed .mini-calendar-header {
+    margin-bottom: 0;
+}
+
+.mini-cal-toggle {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.mini-cal-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.mini-calendar.collapsed .mini-cal-toggle {
+    transform: rotate(-90deg);
 }
 
 .mini-cal-title {
+    flex: 1;
+    text-align: center;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -407,6 +433,20 @@ body {
 .mini-cal-nav:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+}
+
+.mini-calendar-body {
+    overflow: hidden;
+    transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 0.5rem;
+}
+
+.mini-calendar.collapsed .mini-calendar-body {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
 }
 
 .mini-calendar-weekdays {
@@ -644,6 +684,27 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Folder path display */
+.note-folder-path {
+    display: none;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.25rem 0;
+    white-space: nowrap;
+}
+
+.note-folder-path:not(:empty) {
+    display: flex;
+}
+
+.note-folder-path::after {
+    content: '/';
+    margin: 0 0.25rem;
+    color: var(--text-muted);
 }
 
 .note-title-input {
@@ -1070,7 +1131,7 @@ body {
 /* Preview Pane - GitHub Markdown Style */
 .preview-pane {
     flex: 1;
-    padding: 1.5rem;
+    padding: 0.5rem;
     overflow-y: auto;
     background-color: var(--bg-secondary);
     min-width: 200px;
@@ -1255,6 +1316,13 @@ body {
     height: auto;
     border-radius: var(--radius);
     margin: 16px 0;
+    /* Prevent image dragging to avoid triggering file drop overlay */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    pointer-events: auto;
 }
 
 /* shadcn/ui inspired Modal */

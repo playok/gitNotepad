@@ -1,9 +1,16 @@
 // Base path for nginx proxy support
 const basePath = window.BASE_PATH || '';
 
+// Helper to encode note IDs for URLs (handles folder paths with slashes)
+// Uses base64 encoding to avoid issues with slashes in URLs
+function encodeNoteId(id) {
+    return btoa(unescape(encodeURIComponent(id)));
+}
+
 // State
 let currentNote = null;
 let currentPassword = null;
+let currentNoteFolderPath = ''; // Folder path for current note
 let notes = [];
 let folders = []; // Actual folders from API
 let expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '{}');
@@ -35,6 +42,7 @@ const newNoteBtn = document.getElementById('newNoteBtn');
 const emptyState = document.getElementById('emptyState');
 const editor = document.getElementById('editor');
 const noteTitle = document.getElementById('noteTitle');
+const noteFolderPath = document.getElementById('noteFolderPath');
 const noteContent = document.getElementById('noteContent');
 const codemirrorContainer = document.getElementById('codemirrorEditor');
 const noteType = document.getElementById('noteType');
@@ -618,11 +626,11 @@ async function showShareModal() {
 
     try {
         // Try to get existing short link first
-        let response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`);
+        let response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`);
 
         if (response.status === 404) {
             // Generate new short link
-            response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+            response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ expires_in: 0 })
@@ -690,7 +698,7 @@ async function updateShareLinkExpiry() {
     const expiresIn = getExpiryDays();
 
     try {
-        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ expires_in: expiresIn })
@@ -750,12 +758,12 @@ async function regenerateShortLink() {
 
     try {
         // Delete existing
-        await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+        await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
             method: 'DELETE'
         });
 
         // Generate new with expiry
-        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/shortlink`, {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ expires_in: expiresIn })
@@ -1168,16 +1176,28 @@ async function handleFolderContextMenuAction(e) {
 
     switch (action) {
         case 'new-note-in-folder':
-            // Create new note with folder path prefix
+            // Create new note in folder
             currentNote = null;
             currentPassword = null;
             isViewMode = false; // New notes are created in edit mode
-            noteTitle.value = currentFolderPath + '/';
+            currentNoteFolderPath = currentFolderPath;
+            noteFolderPath.textContent = currentFolderPath;
+            noteTitle.value = '';
             setEditorContent('');
             noteType.value = 'markdown';
             notePrivate.checked = false;
             currentAttachments = [];
             renderAttachments();
+
+            // Reset original content
+            originalContent = {
+                title: '',
+                content: '',
+                type: 'markdown',
+                private: false
+            };
+            hasUnsavedChanges = false;
+            updateSaveStatus('');
 
             showEditorPane();
             noteTitle.focus();
@@ -1257,7 +1277,7 @@ async function renameNote(id, newTitle) {
     if (!note) return;
 
     try {
-        const response = await fetch(`${basePath}/api/notes/${id}`, {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1282,7 +1302,7 @@ async function duplicateNote(id) {
 
     // Load full note content
     try {
-        const response = await fetch(`${basePath}/api/notes/${id}`);
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`);
         const fullNote = await response.json();
 
         const newResponse = await fetch(basePath + '/api/notes', {
@@ -1457,7 +1477,7 @@ function initFullscreenButtons() {
 
 // Auto-save functions
 function isContentChanged() {
-    return noteTitle.value !== originalContent.title ||
+    return getFullNoteTitle() !== originalContent.title ||
            getEditorContent() !== originalContent.content ||
            noteType.value !== originalContent.type ||
            notePrivate.checked !== originalContent.private;
@@ -1488,8 +1508,8 @@ function triggerAutoSave() {
 async function performAutoSave() {
     if (!hasUnsavedChanges) return;
 
-    const title = noteTitle.value.trim();
-    if (!title) return;
+    const title = getFullNoteTitle();
+    if (!noteTitle.value.trim()) return;
 
     // Double-check if content actually changed
     if (!isContentChanged()) {
@@ -1510,7 +1530,7 @@ async function performAutoSave() {
 
         let response;
         if (currentNote) {
-            response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
+            response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(noteData)
@@ -1530,7 +1550,7 @@ async function performAutoSave() {
             }
             // Update original content after successful save
             originalContent = {
-                title: noteTitle.value,
+                title: getFullNoteTitle(),
                 content: getEditorContent(),
                 type: noteType.value,
                 private: notePrivate.checked
@@ -1634,7 +1654,7 @@ function prettyJson() {
 
 async function deleteNoteById(id) {
     try {
-        const response = await fetch(`${basePath}/api/notes/${id}`, {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
             method: 'DELETE'
         });
 
@@ -1839,8 +1859,26 @@ function initDragAndDrop() {
     // Track drag enter/leave for the editor
     let dragCounter = 0;
 
+    // Check if drag contains external files (not internal page elements)
+    function isExternalFileDrag(e) {
+        const types = e.dataTransfer.types;
+        // Must have Files type
+        if (!types || !types.includes('Files')) {
+            return false;
+        }
+        // If it has text/html or text/uri-list, it's likely an internal drag (image from page)
+        if (types.includes('text/html') || types.includes('text/uri-list')) {
+            return false;
+        }
+        return true;
+    }
+
     editorElement.addEventListener('dragenter', (e) => {
         preventDefaults(e);
+        // Only show overlay for external file drops
+        if (!isExternalFileDrag(e)) {
+            return;
+        }
         dragCounter++;
         if (dragCounter === 1) {
             showDropOverlay(editorElement, dropOverlay);
@@ -1849,6 +1887,10 @@ function initDragAndDrop() {
 
     editorElement.addEventListener('dragleave', (e) => {
         preventDefaults(e);
+        // Only track external file drags
+        if (!isExternalFileDrag(e)) {
+            return;
+        }
         dragCounter--;
         if (dragCounter === 0) {
             hideDropOverlay(dropOverlay);
@@ -1861,8 +1903,14 @@ function initDragAndDrop() {
 
     editorElement.addEventListener('drop', async (e) => {
         preventDefaults(e);
+        // Reset counter and hide overlay
         dragCounter = 0;
         hideDropOverlay(dropOverlay);
+
+        // Only process external file drops
+        if (!isExternalFileDrag(e)) {
+            return;
+        }
 
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) return;
@@ -2175,7 +2223,7 @@ async function loadNote(id) {
             headers['X-Note-Password'] = currentPassword;
         }
 
-        const response = await fetch(`${basePath}/api/notes/${id}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers });
         const note = await response.json();
 
         if (note.locked) {
@@ -2206,7 +2254,7 @@ async function editNote(id) {
             headers['X-Note-Password'] = currentPassword;
         }
 
-        const response = await fetch(`${basePath}/api/notes/${id}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers });
         const note = await response.json();
 
         if (note.locked) {
@@ -2277,12 +2325,12 @@ async function verifyPassword() {
 }
 
 async function saveNote() {
-    const title = noteTitle.value.trim();
+    const title = getFullNoteTitle();
     const content = getEditorContent();
     const type = noteType.value;
     const isPrivate = notePrivate.checked;
 
-    if (!title) {
+    if (!noteTitle.value.trim()) {
         alert(i18n.t('msg.enterTitle'));
         return;
     }
@@ -2317,7 +2365,7 @@ async function saveNote() {
     try {
         let response;
         if (currentNote && currentNote.id) {
-            response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
+            response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}`, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify(data)
@@ -2335,7 +2383,7 @@ async function saveNote() {
             currentNote = savedNote;
             // Update original content after successful save
             originalContent = {
-                title: noteTitle.value,
+                title: getFullNoteTitle(),
                 content: getEditorContent(),
                 type: noteType.value,
                 private: notePrivate.checked
@@ -2363,7 +2411,7 @@ async function deleteNote() {
     }
 
     try {
-        const response = await fetch(`${basePath}/api/notes/${currentNote.id}`, {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}`, {
             method: 'DELETE',
             headers
         });
@@ -2391,7 +2439,7 @@ async function showHistory() {
     }
 
     try {
-        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/history`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/history`, { headers });
         const data = await response.json();
 
         if (!response.ok) {
@@ -2437,7 +2485,7 @@ async function showVersion(hash) {
     }
 
     try {
-        const response = await fetch(`${basePath}/api/notes/${currentNote.id}/version/${hash}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/version/${hash}`, { headers });
         const data = await response.json();
 
         currentVersionHash = hash;
@@ -2467,29 +2515,13 @@ function buildNoteTree(notesList) {
     // Check if search term is a date filter
     const isDateFilter = searchTerm.match(/^\d{4}-\d{2}-\d{2}$/);
 
-    // Filter notes first
-    const filteredNotes = notesList.filter(note => {
-        // Check title match
-        if (note.title.toLowerCase().includes(searchTerm)) {
-            return true;
-        }
-        // Check date match (YYYY-MM-DD format)
-        if (isDateFilter) {
-            const noteDate = note.created || note.modified;
-            if (noteDate) {
-                const noteDateKey = noteDate.substring(0, 10); // Get YYYY-MM-DD part
-                return noteDateKey === searchTerm;
-            }
-        }
-        return false;
-    });
-
-    // When filtering by date, skip adding API folders - let note paths create the structure
-    // Only add folders from API when not doing date filtering
+    // Add folders from API first (so empty folders are also displayed)
+    // Skip when filtering by date
     if (!isDateFilter) {
         folders.forEach(folder => {
-            if (searchTerm && !folder.name.toLowerCase().includes(searchTerm)) {
-                return; // Skip if doesn't match search
+            // Skip if searching and folder doesn't match
+            if (searchTerm && !folder.path.toLowerCase().includes(searchTerm)) {
+                return;
             }
 
             const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
@@ -2500,9 +2532,10 @@ function buildNoteTree(notesList) {
                     current[part] = {
                         _children: {},
                         _notes: [],
-                        _isRealFolder: true
+                        _isFolder: true
                     };
                 }
+                current[part]._isFolder = true;
                 if (index < parts.length - 1) {
                     current = current[part]._children;
                 }
@@ -2510,8 +2543,29 @@ function buildNoteTree(notesList) {
         });
     }
 
+    // Filter notes
+    const filteredNotes = notesList.filter(note => {
+        // Check title match
+        if (note.title.toLowerCase().includes(searchTerm)) {
+            return true;
+        }
+        // Check date match (YYYY-MM-DD format)
+        if (isDateFilter) {
+            const noteDate = note.created || note.modified;
+            if (noteDate) {
+                // Use same logic as buildNotesMapByDate for consistency
+                const date = new Date(noteDate);
+                const noteDateKey = formatDateKey(date);
+                return noteDateKey === searchTerm;
+            }
+        }
+        return false;
+    });
+
+    // Build tree structure from note IDs (which include folder paths)
     filteredNotes.forEach(note => {
-        const parts = note.title.split('/').map(p => p.trim()).filter(p => p);
+        // Use note.id for path structure (e.g., "folder/subfolder/note-name")
+        const parts = note.id.split('/').map(p => p.trim()).filter(p => p);
         let current = tree;
 
         parts.forEach((part, index) => {
@@ -2523,7 +2577,7 @@ function buildNoteTree(notesList) {
             }
 
             if (index === parts.length - 1) {
-                // This is a note
+                // This is a note - use title for display, id for identification
                 current[part]._notes.push(note);
             } else {
                 // This is a folder
@@ -2544,22 +2598,22 @@ function renderNoteTree() {
 function renderTreeLevel(tree, container, level, path) {
     const entries = Object.entries(tree).sort((a, b) => {
         // Folders first, then notes
-        const aHasChildren = Object.keys(a[1]._children).length > 0;
-        const bHasChildren = Object.keys(b[1]._children).length > 0;
-        if (aHasChildren && !bHasChildren) return -1;
-        if (!aHasChildren && bHasChildren) return 1;
+        const aIsFolder = a[1]._isFolder || Object.keys(a[1]._children).length > 0;
+        const bIsFolder = b[1]._isFolder || Object.keys(b[1]._children).length > 0;
+        if (aIsFolder && !bIsFolder) return -1;
+        if (!aIsFolder && bIsFolder) return 1;
         return a[0].localeCompare(b[0]);
     });
 
     entries.forEach(([name, data]) => {
         const hasChildren = Object.keys(data._children).length > 0;
         const hasNotes = data._notes.length > 0;
-        const isRealFolder = data._isRealFolder === true;
+        const isFolder = data._isFolder === true;
         const currentPath = path ? `${path}/${name}` : name;
         const isExpanded = expandedFolders[currentPath] !== false;
 
-        // Show as folder if: has children, has multiple notes, or is a real folder from API
-        if (hasChildren || (hasNotes && data._notes.length > 1) || isRealFolder) {
+        // Show as folder if: is a real folder, has children, or has multiple notes
+        if (isFolder || hasChildren || (hasNotes && data._notes.length > 1)) {
             // Render as folder
             const folder = document.createElement('li');
             folder.className = 'tree-folder';
@@ -2694,13 +2748,10 @@ function createNewNote() {
     currentPassword = null;
     isViewMode = false; // New notes are created in edit mode
 
-    // If there's a search term that looks like a path, use it as prefix
-    const searchTerm = searchInput.value.trim();
-    if (searchTerm.includes('/')) {
-        noteTitle.value = searchTerm.endsWith('/') ? searchTerm : searchTerm + '/';
-    } else {
-        noteTitle.value = '';
-    }
+    // Clear folder path and title
+    currentNoteFolderPath = '';
+    noteFolderPath.textContent = '';
+    noteTitle.value = '';
 
     setEditorContent('');
     noteType.value = 'markdown';
@@ -2725,10 +2776,37 @@ function createNewNote() {
     noteTitle.focus();
 }
 
+// Helper functions for folder path and title parsing
+function parseNoteTitle(fullTitle) {
+    const lastSlash = fullTitle.lastIndexOf('/');
+    if (lastSlash === -1) {
+        return { folderPath: '', title: fullTitle };
+    }
+    return {
+        folderPath: fullTitle.substring(0, lastSlash),
+        title: fullTitle.substring(lastSlash + 1)
+    };
+}
+
+function getFullNoteTitle() {
+    const title = noteTitle.value.trim();
+    if (currentNoteFolderPath) {
+        return currentNoteFolderPath + '/' + title;
+    }
+    return title;
+}
+
+function setNoteTitleAndPath(fullTitle) {
+    const { folderPath, title } = parseNoteTitle(fullTitle || '');
+    currentNoteFolderPath = folderPath;
+    noteFolderPath.textContent = folderPath;
+    noteTitle.value = title;
+}
+
 // Show note in preview-only mode (view mode)
 function showPreviewOnly(note) {
     isViewMode = true;
-    noteTitle.value = note.title || '';
+    setNoteTitleAndPath(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
@@ -2764,7 +2842,7 @@ function showEditMode() {
 
 function showEditor(note) {
     isViewMode = false;
-    noteTitle.value = note.title || '';
+    setNoteTitleAndPath(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
@@ -2774,7 +2852,7 @@ function showEditor(note) {
 
     // Track original content
     originalContent = {
-        title: note.title || '',
+        title: getFullNoteTitle(),
         content: note.content || '',
         type: note.type || 'markdown',
         private: note.private || false
@@ -3803,6 +3881,8 @@ let miniCalSelectedDate = null;
 function initMiniCalendar() {
     const miniCalPrev = document.getElementById('miniCalPrev');
     const miniCalNext = document.getElementById('miniCalNext');
+    const miniCalToggle = document.getElementById('miniCalToggle');
+    const miniCalendar = document.getElementById('miniCalendar');
 
     if (miniCalPrev) {
         miniCalPrev.addEventListener('click', () => {
@@ -3815,6 +3895,21 @@ function initMiniCalendar() {
         miniCalNext.addEventListener('click', () => {
             miniCalCurrentDate.setMonth(miniCalCurrentDate.getMonth() + 1);
             renderMiniCalendar();
+        });
+    }
+
+    // Toggle button for collapse/expand
+    if (miniCalToggle && miniCalendar) {
+        // Restore collapsed state from localStorage
+        const isCollapsed = localStorage.getItem('miniCalendarCollapsed') === 'true';
+        if (isCollapsed) {
+            miniCalendar.classList.add('collapsed');
+        }
+
+        miniCalToggle.addEventListener('click', () => {
+            miniCalendar.classList.toggle('collapsed');
+            const collapsed = miniCalendar.classList.contains('collapsed');
+            localStorage.setItem('miniCalendarCollapsed', collapsed);
         });
     }
 
@@ -3908,6 +4003,8 @@ function createNoteForMiniCalDate(dateKey) {
     currentNote = null;
     currentPassword = null;
     isViewMode = false;
+    currentNoteFolderPath = '';
+    noteFolderPath.textContent = '';
     noteTitle.value = `${dateKey} `;
     setEditorContent('');
     noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';
@@ -4002,6 +4099,8 @@ function createNoteForDate(date) {
     currentNote = null;
     currentPassword = null;
     isViewMode = false; // New notes are created in edit mode
+    currentNoteFolderPath = '';
+    noteFolderPath.textContent = '';
     noteTitle.value = `${dateStr} `;
     setEditorContent('');
     noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';

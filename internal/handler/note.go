@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/user/gitnotepad/internal/config"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
@@ -44,6 +47,15 @@ func (h *NoteHandler) getUserStoragePath(c *gin.Context) string {
 	return userPath
 }
 
+// decodeNoteID base64-decodes the note ID from path parameter
+func decodeNoteID(id string) string {
+	decoded, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return id // Return original if decode fails (for backwards compatibility)
+	}
+	return string(decoded)
+}
+
 // getUserRepo returns a git repository for the user's storage path
 func (h *NoteHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 	storagePath := h.getUserStoragePath(c)
@@ -70,46 +82,66 @@ type NoteListItem struct {
 func (h *NoteHandler) List(c *gin.Context) {
 	storagePath := h.getUserStoragePath(c)
 
-	entries, err := os.ReadDir(storagePath)
-	if err != nil {
-		// Return empty list if directory doesn't exist yet
-		c.JSON(http.StatusOK, []NoteListItem{})
-		return
-	}
-
 	var notes []NoteListItem
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
 
-		name := entry.Name()
-		ext := filepath.Ext(name)
-		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
-			continue
-		}
-
-		filePath := filepath.Join(storagePath, name)
-		note, err := model.ParseNoteFromFile(filePath)
+	// Walk through all directories recursively
+	err := filepath.WalkDir(storagePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			continue
+			return nil // Skip errors
 		}
+
+		// Skip directories
+		if d.IsDir() {
+			name := d.Name()
+			// Skip hidden directories and special directories
+			if strings.HasPrefix(name, ".") || name == "files" || name == "images" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Check file extension
+		ext := filepath.Ext(path)
+		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+			return nil
+		}
+
+		note, err := model.ParseNoteFromFile(path)
+		if err != nil {
+			return nil
+		}
+
+		// Calculate relative path from storagePath for the ID
+		relPath, err := filepath.Rel(storagePath, path)
+		if err != nil {
+			return nil
+		}
+
+		// Remove extension to get ID
+		id := strings.TrimSuffix(relPath, ext)
 
 		notes = append(notes, NoteListItem{
-			ID:       note.ID,
+			ID:       id,
 			Title:    note.Title,
 			Type:     note.Type,
 			Private:  note.Private,
 			Created:  note.Created,
 			Modified: note.Modified,
 		})
+
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusOK, []NoteListItem{})
+		return
 	}
 
 	c.JSON(http.StatusOK, notes)
 }
 
 func (h *NoteHandler) Get(c *gin.Context) {
-	id := c.Param("id")
+	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
 
 	// Try both extensions
@@ -177,22 +209,45 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		req.Type = h.config.Editor.DefaultType
 	}
 
-	// Generate ID from title
-	id := generateID(req.Title)
 	storagePath := h.getUserStoragePath(c)
 
-	// Check if note already exists
-	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		if _, err := os.Stat(filepath.Join(storagePath, id+ext)); err == nil {
-			// Add timestamp to make unique
-			id = fmt.Sprintf("%s-%d", id, time.Now().Unix())
-			break
+	// Parse folder path from title (e.g., "folder/subfolder/note title")
+	var folderPath string
+	if lastSlash := strings.LastIndex(req.Title, "/"); lastSlash != -1 {
+		folderPath = req.Title[:lastSlash]
+
+		// Validate folder path (prevent path traversal)
+		if strings.Contains(folderPath, "..") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
+			return
 		}
+
+		// Create folder if it doesn't exist
+		fullFolderPath := filepath.Join(storagePath, folderPath)
+		if err := os.MkdirAll(fullFolderPath, 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+			return
+		}
+	}
+
+	// Generate unique UUID for the note
+	id := generateID()
+
+	// Build the target directory (either storagePath or storagePath/folderPath)
+	targetDir := storagePath
+	if folderPath != "" {
+		targetDir = filepath.Join(storagePath, folderPath)
+	}
+
+	// Build the full ID with folder path for consistency
+	fullID := id
+	if folderPath != "" {
+		fullID = folderPath + "/" + id
 	}
 
 	now := time.Now()
 	note := &model.Note{
-		ID:          id,
+		ID:          fullID,
 		Title:       req.Title,
 		Content:     req.Content,
 		Type:        req.Type,
@@ -215,7 +270,9 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		return
 	}
 
-	filePath := filepath.Join(storagePath, note.GetFilename())
+	// Create file in the target directory
+	filePath := filepath.Join(targetDir, id+note.GetExtension())
+	fmt.Printf("[Create] Creating file at: %s\n", filePath)
 	if err := os.WriteFile(filePath, content, 0644); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -242,7 +299,7 @@ type UpdateNoteRequest struct {
 }
 
 func (h *NoteHandler) Update(c *gin.Context) {
-	id := c.Param("id")
+	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
 
 	// Find existing note
@@ -338,7 +395,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 }
 
 func (h *NoteHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
 
 	// Find existing note
@@ -391,39 +448,57 @@ type Folder struct {
 	Modified time.Time `json:"modified"`
 }
 
-// ListFolders returns all folders in the user's storage
+// ListFolders returns all folders in the user's storage (recursively)
 func (h *NoteHandler) ListFolders(c *gin.Context) {
 	storagePath := h.getUserStoragePath(c)
 
 	var folders []Folder
-	entries, err := os.ReadDir(storagePath)
-	if err != nil {
-		c.JSON(http.StatusOK, []Folder{})
-		return
-	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
+	err := filepath.WalkDir(storagePath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
 		}
 
-		name := entry.Name()
+		// Only process directories
+		if !d.IsDir() {
+			return nil
+		}
+
+		// Skip the root storage path itself
+		if path == storagePath {
+			return nil
+		}
+
+		name := d.Name()
 		// Skip hidden directories and special directories
 		if strings.HasPrefix(name, ".") || name == "files" || name == "images" {
-			continue
+			return filepath.SkipDir
 		}
 
-		info, err := entry.Info()
+		info, err := d.Info()
 		if err != nil {
-			continue
+			return nil
+		}
+
+		// Calculate relative path from storagePath
+		relPath, err := filepath.Rel(storagePath, path)
+		if err != nil {
+			return nil
 		}
 
 		folders = append(folders, Folder{
 			Name:     name,
-			Path:     name,
+			Path:     relPath,
 			Created:  info.ModTime(),
 			Modified: info.ModTime(),
 		})
+
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusOK, []Folder{})
+		return
 	}
 
 	c.JSON(http.StatusOK, folders)
@@ -566,20 +641,6 @@ func (h *NoteHandler) DeleteFolder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Folder deleted"})
 }
 
-func generateID(title string) string {
-	// Simple slug generation
-	id := strings.ToLower(title)
-	id = strings.ReplaceAll(id, " ", "-")
-	// Remove special characters
-	var result strings.Builder
-	for _, r := range id {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r >= 0xAC00 {
-			result.WriteRune(r)
-		}
-	}
-	id = result.String()
-	if id == "" {
-		id = fmt.Sprintf("note-%d", time.Now().Unix())
-	}
-	return id
+func generateID() string {
+	return uuid.New().String()
 }

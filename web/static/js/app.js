@@ -3879,10 +3879,45 @@ function renderMiniCalendar() {
         if (dayOfWeek === 0) classes += ' sunday';
         if (dayOfWeek === 6) classes += ' saturday';
 
-        html += `<div class="${classes}" data-date="${dateKey}" onclick="selectMiniCalDate('${dateKey}')">${dayNumber}</div>`;
+        html += `<div class="${classes}" data-date="${dateKey}" onclick="selectMiniCalDate('${dateKey}')" ondblclick="createNoteForMiniCalDate('${dateKey}')">${dayNumber}</div>`;
     }
 
     miniCalGrid.innerHTML = html;
+}
+
+function createNoteForMiniCalDate(dateKey) {
+    // Create new note with the date as title prefix
+    currentNote = null;
+    currentPassword = null;
+    isViewMode = false;
+    noteTitle.value = `${dateKey} `;
+    setEditorContent('');
+    noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';
+    notePrivate.checked = false;
+    previewContent.innerHTML = '';
+
+    // Clear attachments
+    currentAttachments = [];
+    renderAttachments();
+
+    // Reset original content
+    originalContent = {
+        title: '',
+        content: '',
+        type: noteType.value,
+        private: false
+    };
+    hasUnsavedChanges = false;
+    updateSaveStatus('');
+
+    // Show editor
+    showEditorPane();
+
+    // Focus on title and position cursor at end
+    setTimeout(() => {
+        noteTitle.focus();
+        noteTitle.setSelectionRange(noteTitle.value.length, noteTitle.value.length);
+    }, 100);
 }
 
 function selectMiniCalDate(dateKey) {

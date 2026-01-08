@@ -2467,38 +2467,14 @@ function buildNoteTree(notesList) {
     // Check if search term is a date filter
     const isDateFilter = searchTerm.match(/^\d{4}-\d{2}-\d{2}$/);
 
-    // First, add actual folders from API
-    folders.forEach(folder => {
-        // Don't filter folders when searching by date
-        if (searchTerm && !isDateFilter && !folder.name.toLowerCase().includes(searchTerm)) {
-            return; // Skip if doesn't match search
-        }
-
-        const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
-        let current = tree;
-
-        parts.forEach((part, index) => {
-            if (!current[part]) {
-                current[part] = {
-                    _children: {},
-                    _notes: [],
-                    _isRealFolder: true
-                };
-            }
-            if (index < parts.length - 1) {
-                current = current[part]._children;
-            }
-        });
-    });
-
-    // Filter notes
+    // Filter notes first
     const filteredNotes = notesList.filter(note => {
         // Check title match
         if (note.title.toLowerCase().includes(searchTerm)) {
             return true;
         }
         // Check date match (YYYY-MM-DD format)
-        if (searchTerm.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (isDateFilter) {
             const noteDate = note.created || note.modified;
             if (noteDate) {
                 const noteDateKey = noteDate.substring(0, 10); // Get YYYY-MM-DD part
@@ -2507,6 +2483,32 @@ function buildNoteTree(notesList) {
         }
         return false;
     });
+
+    // When filtering by date, skip adding API folders - let note paths create the structure
+    // Only add folders from API when not doing date filtering
+    if (!isDateFilter) {
+        folders.forEach(folder => {
+            if (searchTerm && !folder.name.toLowerCase().includes(searchTerm)) {
+                return; // Skip if doesn't match search
+            }
+
+            const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
+            let current = tree;
+
+            parts.forEach((part, index) => {
+                if (!current[part]) {
+                    current[part] = {
+                        _children: {},
+                        _notes: [],
+                        _isRealFolder: true
+                    };
+                }
+                if (index < parts.length - 1) {
+                    current = current[part]._children;
+                }
+            });
+        });
+    }
 
     filteredNotes.forEach(note => {
         const parts = note.title.split('/').map(p => p.trim()).filter(p => p);

@@ -72,7 +72,7 @@ func (s *Server) setupRoutes() {
 	sessionRepo := repository.NewSessionRepository(s.db.DB)
 
 	// Create middleware
-	authMiddleware := middleware.NewAuthMiddleware(userRepo, sessionRepo)
+	authMiddleware := middleware.NewAuthMiddleware(userRepo, sessionRepo, s.config.Server.BasePath)
 
 	// Create handlers
 	noteHandler := handler.NewNoteHandler(s.repo, s.config)

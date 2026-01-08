@@ -16,12 +16,14 @@ const (
 type AuthMiddleware struct {
 	userRepo    *repository.UserRepository
 	sessionRepo *repository.SessionRepository
+	basePath    string
 }
 
-func NewAuthMiddleware(userRepo *repository.UserRepository, sessionRepo *repository.SessionRepository) *AuthMiddleware {
+func NewAuthMiddleware(userRepo *repository.UserRepository, sessionRepo *repository.SessionRepository, basePath string) *AuthMiddleware {
 	return &AuthMiddleware{
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
+		basePath:    basePath,
 	}
 }
 
@@ -36,7 +38,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, m.basePath+"/login")
 			c.Abort()
 			return
 		}
@@ -50,7 +52,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, m.basePath+"/login")
 			c.Abort()
 			return
 		}
@@ -63,7 +65,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, m.basePath+"/login")
 			c.Abort()
 			return
 		}

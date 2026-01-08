@@ -5,6 +5,7 @@ const basePath = window.BASE_PATH || '';
 let currentNote = null;
 let currentPassword = null;
 let notes = [];
+let folders = []; // Actual folders from API
 let expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '{}');
 let draggedNoteId = null;
 let currentAttachments = []; // Track attachments for current note
@@ -2147,14 +2148,24 @@ function loadAttachmentsFromNote(note) {
 // API Functions
 async function loadNotes() {
     try {
-        const response = await fetch(basePath + '/api/notes');
-        notes = await response.json();
+        // Fetch notes and folders in parallel
+        const [notesResponse, foldersResponse] = await Promise.all([
+            fetch(basePath + '/api/notes'),
+            fetch(basePath + '/api/folders')
+        ]);
+
+        notes = await notesResponse.json();
         if (!notes) notes = [];
+
+        folders = await foldersResponse.json();
+        if (!folders) folders = [];
+
         renderNoteTree();
         updateCalendarIfVisible();
     } catch (error) {
         console.error('Failed to load notes:', error);
         notes = [];
+        folders = [];
         renderNoteTree();
         updateCalendarIfVisible();
     }
@@ -2421,6 +2432,29 @@ function buildNoteTree(notesList) {
     const tree = {};
     const searchTerm = searchInput.value.toLowerCase();
 
+    // First, add actual folders from API
+    folders.forEach(folder => {
+        if (searchTerm && !folder.name.toLowerCase().includes(searchTerm)) {
+            return; // Skip if doesn't match search
+        }
+
+        const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
+        let current = tree;
+
+        parts.forEach((part, index) => {
+            if (!current[part]) {
+                current[part] = {
+                    _children: {},
+                    _notes: [],
+                    _isRealFolder: true
+                };
+            }
+            if (index < parts.length - 1) {
+                current = current[part]._children;
+            }
+        });
+    });
+
     // Filter notes
     const filteredNotes = notesList.filter(note =>
         note.title.toLowerCase().includes(searchTerm)
@@ -2470,10 +2504,12 @@ function renderTreeLevel(tree, container, level, path) {
     entries.forEach(([name, data]) => {
         const hasChildren = Object.keys(data._children).length > 0;
         const hasNotes = data._notes.length > 0;
+        const isRealFolder = data._isRealFolder === true;
         const currentPath = path ? `${path}/${name}` : name;
         const isExpanded = expandedFolders[currentPath] !== false;
 
-        if (hasChildren || (hasNotes && data._notes.length > 1)) {
+        // Show as folder if: has children, has multiple notes, or is a real folder from API
+        if (hasChildren || (hasNotes && data._notes.length > 1) || isRealFolder) {
             // Render as folder
             const folder = document.createElement('li');
             folder.className = 'tree-folder';

@@ -2464,9 +2464,13 @@ function buildNoteTree(notesList) {
     const tree = {};
     const searchTerm = searchInput.value.toLowerCase();
 
+    // Check if search term is a date filter
+    const isDateFilter = searchTerm.match(/^\d{4}-\d{2}-\d{2}$/);
+
     // First, add actual folders from API
     folders.forEach(folder => {
-        if (searchTerm && !folder.name.toLowerCase().includes(searchTerm)) {
+        // Don't filter folders when searching by date
+        if (searchTerm && !isDateFilter && !folder.name.toLowerCase().includes(searchTerm)) {
             return; // Skip if doesn't match search
         }
 
@@ -2488,9 +2492,21 @@ function buildNoteTree(notesList) {
     });
 
     // Filter notes
-    const filteredNotes = notesList.filter(note =>
-        note.title.toLowerCase().includes(searchTerm)
-    );
+    const filteredNotes = notesList.filter(note => {
+        // Check title match
+        if (note.title.toLowerCase().includes(searchTerm)) {
+            return true;
+        }
+        // Check date match (YYYY-MM-DD format)
+        if (searchTerm.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const noteDate = note.created || note.modified;
+            if (noteDate) {
+                const noteDateKey = noteDate.substring(0, 10); // Get YYYY-MM-DD part
+                return noteDateKey === searchTerm;
+            }
+        }
+        return false;
+    });
 
     filteredNotes.forEach(note => {
         const parts = note.title.split('/').map(p => p.trim()).filter(p => p);

@@ -82,7 +82,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 	}
 
 	// Return URL for the file (with base path and username)
-	fileURL := fmt.Sprintf("%s/files/%s/%s", h.basePath, username, filename)
+	fileURL := fmt.Sprintf("%s/u/%s/files/%s", h.basePath, username, filename)
 	c.JSON(http.StatusOK, gin.H{
 		"url":          fileURL,
 		"filename":     filename,

@@ -224,10 +224,10 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Public image/file serving (always accessible)
-	// New user-specific routes
-	base.GET("/files/:username/:filename", fileHandler.Serve)
-	base.GET("/images/:username/:filename", imageHandler.Serve)
-	// Legacy routes for backwards compatibility
+	// User-specific routes: /u/{username}/files/{filename}
+	base.GET("/u/:username/files/:filename", fileHandler.Serve)
+	base.GET("/u/:username/images/:filename", imageHandler.Serve)
+	// Legacy routes for backwards compatibility: /files/{filename}
 	base.GET("/files/:filename", fileHandler.ServeLegacy)
 	base.GET("/images/:filename", imageHandler.ServeLegacy)
 }

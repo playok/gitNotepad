@@ -174,8 +174,12 @@ const i18n = {
             'msg.folderCreated': 'Folder created',
             'msg.folderDeleted': 'Folder deleted',
 
+            // Buttons
+            'btn.edit': 'Edit',
+
             // Context Menu
             'context.open': 'Open',
+            'context.edit': 'Edit',
             'context.rename': 'Rename',
             'context.duplicate': 'Duplicate',
             'context.move': 'Move to...',
@@ -378,8 +382,12 @@ const i18n = {
             'msg.folderCreated': '폴더가 생성되었습니다',
             'msg.folderDeleted': '폴더가 삭제되었습니다',
 
+            // Buttons
+            'btn.edit': '편집',
+
             // Context Menu
             'context.open': '열기',
+            'context.edit': '편집',
             'context.rename': '이름 변경',
             'context.duplicate': '복제',
             'context.move': '이동...',

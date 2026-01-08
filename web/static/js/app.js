@@ -9,6 +9,7 @@ let folders = []; // Actual folders from API
 let expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '{}');
 let draggedNoteId = null;
 let currentAttachments = []; // Track attachments for current note
+let isViewMode = true; // View mode by default (preview only)
 
 // CodeMirror Editor
 let cmEditor = null;
@@ -930,8 +931,11 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="open">
             <span class="context-icon">&#128196;</span> <span data-i18n="context.open">Open</span>
         </div>
+        <div class="context-menu-item" data-action="edit">
+            <span class="context-icon">&#9998;</span> <span data-i18n="context.edit">Edit</span>
+        </div>
         <div class="context-menu-item" data-action="rename">
-            <span class="context-icon">&#9998;</span> <span data-i18n="context.rename">Rename</span>
+            <span class="context-icon">&#128393;</span> <span data-i18n="context.rename">Rename</span>
         </div>
         <div class="context-menu-item" data-action="duplicate">
             <span class="context-icon">&#128203;</span> <span data-i18n="context.duplicate">Duplicate</span>
@@ -1054,6 +1058,10 @@ async function handleContextMenuAction(e) {
             loadNote(contextTarget);
             break;
 
+        case 'edit':
+            editNote(contextTarget);
+            break;
+
         case 'rename':
             const newTitle = prompt('Enter new title:', note.title);
             if (newTitle && newTitle !== note.title) {
@@ -1169,6 +1177,7 @@ async function handleFolderContextMenuAction(e) {
             // Create new note with folder path prefix
             currentNote = null;
             currentPassword = null;
+            isViewMode = false; // New notes are created in edit mode
             noteTitle.value = currentFolderPath + '/';
             setEditorContent('');
             noteType.value = 'markdown';
@@ -1184,6 +1193,9 @@ async function handleFolderContextMenuAction(e) {
                 localStorage.setItem('viewMode', 'list');
                 updateViewMode();
             }
+
+            showEditorPane();
+            noteTitle.focus();
             break;
 
         case 'new-subfolder':
@@ -2194,6 +2206,37 @@ async function loadNote(id) {
         }
 
         currentNote = note;
+        showPreviewOnly(note);
+        updateNoteListSelection(id);
+    } catch (error) {
+        console.error('Failed to load note:', error);
+    }
+}
+
+// Edit note - loads note in edit mode instead of preview mode
+async function editNote(id) {
+    try {
+        const headers = {};
+        if (currentPassword) {
+            headers['X-Note-Password'] = currentPassword;
+        }
+
+        const response = await fetch(`${basePath}/api/notes/${id}`, { headers });
+        const note = await response.json();
+
+        if (note.locked) {
+            pendingNoteId = id;
+            passwordModal.style.display = 'flex';
+            passwordInput.focus();
+            return;
+        }
+
+        if (response.status === 401) {
+            alert('Invalid password');
+            return;
+        }
+
+        currentNote = note;
         showEditor(note);
         updateNoteListSelection(id);
     } catch (error) {
@@ -2202,14 +2245,18 @@ async function loadNote(id) {
 }
 
 function updateNoteListSelection(noteId) {
-    // Remove active class from all items
+    // Remove active and editing class from all items
     document.querySelectorAll('.note-list-item.active').forEach(item => {
         item.classList.remove('active');
+        item.classList.remove('editing');
     });
     // Add active class to selected item
     const selectedItem = document.querySelector(`.note-list-item[data-note-id="${noteId}"]`);
     if (selectedItem) {
         selectedItem.classList.add('active');
+        if (!isViewMode) {
+            selectedItem.classList.add('editing');
+        }
     }
 }
 
@@ -2575,12 +2622,16 @@ function renderNoteItem(note, container, level, isChild) {
 
     if (currentNote && currentNote.id === note.id) {
         li.classList.add('active');
+        if (!isViewMode) {
+            li.classList.add('editing');
+        }
     }
 
     const displayName = isChild ? note.title.split('/').pop() : note.title;
     const lockIcon = note.private ? '<span class="lock-icon">&#128274;</span>' : '';
     const typeIcon = note.type === 'markdown' ? '&#128196;' : (note.type === 'asciidoc' ? '&#128221;' : '&#128195;');
     const typeLabel = note.type === 'markdown' ? 'MD' : (note.type === 'asciidoc' ? 'ADOC' : 'TXT');
+    const editBtnTitle = (typeof i18n !== 'undefined') ? i18n.t('btn.edit') : 'Edit';
 
     li.style.paddingLeft = `${12 + level * 16}px`;
     li.innerHTML = `
@@ -2590,12 +2641,24 @@ function renderNoteItem(note, container, level, isChild) {
             <div class="note-title">${escapeHtml(displayName)} ${lockIcon}</div>
             <div class="note-meta"><span class="note-type-badge">${typeLabel}</span> ${formatDate(note.modified)}</div>
         </div>
+        <button class="note-edit-btn" title="${editBtnTitle}" data-note-id="${note.id}">&#9998;</button>
     `;
 
+    // Click on note item to view (preview only)
     li.addEventListener('click', (e) => {
+        // Don't trigger if clicking on edit button
+        if (e.target.closest('.note-edit-btn')) return;
         e.stopPropagation();
         currentPassword = null;
         loadNote(note.id);
+    });
+
+    // Click on edit button to switch to edit mode
+    const editBtn = li.querySelector('.note-edit-btn');
+    editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentPassword = null;
+        editNote(note.id);
     });
 
     // Right-click context menu
@@ -2626,6 +2689,7 @@ function filterNotes() {
 function createNewNote() {
     currentNote = null;
     currentPassword = null;
+    isViewMode = false; // New notes are created in edit mode
 
     // If there's a search term that looks like a path, use it as prefix
     const searchTerm = searchInput.value.trim();
@@ -2658,7 +2722,45 @@ function createNewNote() {
     noteTitle.focus();
 }
 
+// Show note in preview-only mode (view mode)
+function showPreviewOnly(note) {
+    isViewMode = true;
+    noteTitle.value = note.title || '';
+    setEditorContent(note.content || '');
+    noteType.value = note.type || 'markdown';
+    notePrivate.checked = note.private || false;
+
+    // Load attachments from note
+    loadAttachmentsFromNote(note);
+
+    // Track original content
+    originalContent = {
+        title: note.title || '',
+        content: note.content || '',
+        type: note.type || 'markdown',
+        private: note.private || false
+    };
+
+    hasUnsavedChanges = false;
+    updateSaveStatus('');
+    updatePreview();
+    showPreviewPane();
+}
+
+// Switch to edit mode for current note
+function showEditMode() {
+    if (!currentNote) return;
+    isViewMode = false;
+    showEditorPane();
+    if (cmEditor) {
+        setTimeout(() => cmEditor.refresh(), 0);
+        cmEditor.focus();
+    }
+    updateNoteListSelection(currentNote.id);
+}
+
 function showEditor(note) {
+    isViewMode = false;
     noteTitle.value = note.title || '';
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
@@ -2684,12 +2786,43 @@ function showEditor(note) {
 function showEditorPane() {
     emptyState.style.display = 'none';
     editor.style.display = 'flex';
+
+    const editorBody = document.querySelector('.editor-body');
+    const editorPane = document.querySelector('.editor-pane');
+
+    editorBody.classList.remove('view-mode');
+
+    // Show editor pane (may have been hidden in view mode)
+    editorPane.style.display = 'flex';
+
     togglePreview();
 
     // Refresh CodeMirror after editor becomes visible to fix gutter width
     if (cmEditor) {
         setTimeout(() => cmEditor.refresh(), 0);
     }
+}
+
+// Show preview only (view mode - hide editor pane)
+function showPreviewPane() {
+    emptyState.style.display = 'none';
+    editor.style.display = 'flex';
+
+    const splitter = document.getElementById('editorSplitter');
+    const editorBody = document.querySelector('.editor-body');
+    const editorPane = document.querySelector('.editor-pane');
+
+    // Add view-mode class to hide editor pane
+    editorBody.classList.add('view-mode');
+    editorBody.classList.remove('txt-mode');
+
+    // Hide editor pane and splitter
+    editorPane.style.display = 'none';
+    if (splitter) splitter.style.display = 'none';
+
+    // Show preview pane at full width
+    previewPane.style.display = 'flex';
+    previewPane.style.flex = '1 1 100%';
 }
 
 function hideEditor() {
@@ -3964,6 +4097,7 @@ function createNoteForDate(date) {
     // Reset all fields (same as createNewNote)
     currentNote = null;
     currentPassword = null;
+    isViewMode = false; // New notes are created in edit mode
     noteTitle.value = `${dateStr} `;
     setEditorContent('');
     noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';
@@ -3984,18 +4118,13 @@ function createNoteForDate(date) {
     hasUnsavedChanges = false;
     updateSaveStatus('');
 
-    // Show editor
-    emptyState.style.display = 'none';
-    editor.style.display = 'flex';
-    togglePreview();
+    // Show editor pane (edit mode)
+    showEditorPane();
 
     // Focus on title and position cursor at end
     setTimeout(() => {
         noteTitle.focus();
         noteTitle.setSelectionRange(noteTitle.value.length, noteTitle.value.length);
-        if (cmEditor) {
-            cmEditor.refresh();
-        }
     }, 100);
 }
 

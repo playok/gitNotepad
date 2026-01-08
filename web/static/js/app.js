@@ -1181,9 +1181,7 @@ async function handleFolderContextMenuAction(e) {
             noteTitle.value = currentFolderPath + '/';
             setEditorContent('');
             noteType.value = 'markdown';
-            privateCheckbox.checked = false;
-            passwordSection.style.display = 'none';
-            notePassword.value = '';
+            notePrivate.checked = false;
             currentAttachments = [];
             renderAttachments();
 

@@ -917,47 +917,99 @@ function initMarked() {
 }
 
 // Context Menu
+let sidebarContextMenu = null;
+let folderContextMenu = null;
+let currentFolderPath = '';
+
 function initContextMenu() {
-    // Create context menu element
+    // Create note context menu element
     contextMenu = document.createElement('div');
     contextMenu.className = 'context-menu';
     contextMenu.innerHTML = `
         <div class="context-menu-item" data-action="open">
-            <span class="context-icon">&#128196;</span> Open
+            <span class="context-icon">&#128196;</span> <span data-i18n="context.open">Open</span>
         </div>
         <div class="context-menu-item" data-action="rename">
-            <span class="context-icon">&#9998;</span> Rename
+            <span class="context-icon">&#9998;</span> <span data-i18n="context.rename">Rename</span>
         </div>
         <div class="context-menu-item" data-action="duplicate">
-            <span class="context-icon">&#128203;</span> Duplicate
+            <span class="context-icon">&#128203;</span> <span data-i18n="context.duplicate">Duplicate</span>
         </div>
         <div class="context-menu-item" data-action="move">
-            <span class="context-icon">&#128193;</span> Move to...
+            <span class="context-icon">&#128193;</span> <span data-i18n="context.move">Move to...</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="history">
-            <span class="context-icon">&#128337;</span> History
+            <span class="context-icon">&#128337;</span> <span data-i18n="context.history">History</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete">
-            <span class="context-icon">&#128465;</span> Delete
+            <span class="context-icon">&#128465;</span> <span data-i18n="context.delete">Delete</span>
         </div>
     `;
     contextMenu.style.display = 'none';
     document.body.appendChild(contextMenu);
 
-    // Context menu item click handler
-    contextMenu.addEventListener('click', handleContextMenuAction);
+    // Create sidebar context menu (for empty area)
+    sidebarContextMenu = document.createElement('div');
+    sidebarContextMenu.className = 'context-menu';
+    sidebarContextMenu.innerHTML = `
+        <div class="context-menu-item" data-action="new-note">
+            <span class="context-icon">&#128196;</span> <span data-i18n="context.newNote">New Note</span>
+        </div>
+        <div class="context-menu-item" data-action="new-folder">
+            <span class="context-icon">&#128193;</span> <span data-i18n="context.newFolder">New Folder</span>
+        </div>
+    `;
+    sidebarContextMenu.style.display = 'none';
+    document.body.appendChild(sidebarContextMenu);
 
-    // Hide context menu on outside click
-    document.addEventListener('click', () => {
-        contextMenu.style.display = 'none';
+    // Create folder context menu
+    folderContextMenu = document.createElement('div');
+    folderContextMenu.className = 'context-menu';
+    folderContextMenu.innerHTML = `
+        <div class="context-menu-item" data-action="new-note-in-folder">
+            <span class="context-icon">&#128196;</span> <span data-i18n="context.newNoteInFolder">New Note Here</span>
+        </div>
+        <div class="context-menu-item" data-action="new-subfolder">
+            <span class="context-icon">&#128193;</span> <span data-i18n="context.newSubfolder">New Subfolder</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item context-menu-danger" data-action="delete-folder">
+            <span class="context-icon">&#128465;</span> <span data-i18n="context.deleteFolder">Delete Folder</span>
+        </div>
+    `;
+    folderContextMenu.style.display = 'none';
+    document.body.appendChild(folderContextMenu);
+
+    // Context menu item click handlers
+    contextMenu.addEventListener('click', handleContextMenuAction);
+    sidebarContextMenu.addEventListener('click', handleSidebarContextMenuAction);
+    folderContextMenu.addEventListener('click', handleFolderContextMenuAction);
+
+    // Sidebar right-click handler
+    noteList.addEventListener('contextmenu', (e) => {
+        // Only show sidebar context menu if not clicking on a note item
+        if (!e.target.closest('.note-list-item') && !e.target.closest('.tree-folder-header')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showSidebarContextMenu(e);
+        }
     });
 
-    // Hide context menu on escape
+    // Hide all context menus on outside click
+    document.addEventListener('click', () => {
+        contextMenu.style.display = 'none';
+        sidebarContextMenu.style.display = 'none';
+        folderContextMenu.style.display = 'none';
+    });
+
+    // Hide all context menus on escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             contextMenu.style.display = 'none';
+            sidebarContextMenu.style.display = 'none';
+            folderContextMenu.style.display = 'none';
         }
     });
 }
@@ -1030,6 +1082,176 @@ async function handleContextMenuAction(e) {
             }
             break;
     }
+}
+
+function showSidebarContextMenu(e) {
+    e.preventDefault();
+    currentFolderPath = '';
+
+    const x = e.clientX;
+    const y = e.clientY;
+
+    sidebarContextMenu.style.display = 'block';
+    sidebarContextMenu.style.left = `${x}px`;
+    sidebarContextMenu.style.top = `${y}px`;
+
+    // Adjust if menu goes off screen
+    const rect = sidebarContextMenu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+        sidebarContextMenu.style.left = `${x - rect.width}px`;
+    }
+    if (rect.bottom > window.innerHeight) {
+        sidebarContextMenu.style.top = `${y - rect.height}px`;
+    }
+
+    // Update i18n
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
+}
+
+function showFolderContextMenu(e, folderPath) {
+    e.preventDefault();
+    e.stopPropagation();
+    currentFolderPath = folderPath;
+
+    const x = e.clientX;
+    const y = e.clientY;
+
+    folderContextMenu.style.display = 'block';
+    folderContextMenu.style.left = `${x}px`;
+    folderContextMenu.style.top = `${y}px`;
+
+    // Adjust if menu goes off screen
+    const rect = folderContextMenu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+        folderContextMenu.style.left = `${x - rect.width}px`;
+    }
+    if (rect.bottom > window.innerHeight) {
+        folderContextMenu.style.top = `${y - rect.height}px`;
+    }
+
+    // Update i18n
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
+}
+
+async function handleSidebarContextMenuAction(e) {
+    const action = e.target.closest('.context-menu-item')?.dataset.action;
+    if (!action) return;
+
+    sidebarContextMenu.style.display = 'none';
+
+    switch (action) {
+        case 'new-note':
+            createNewNote();
+            break;
+
+        case 'new-folder':
+            const folderName = prompt(i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:');
+            if (folderName) {
+                await createFolder(folderName, '');
+            }
+            break;
+    }
+}
+
+async function handleFolderContextMenuAction(e) {
+    const action = e.target.closest('.context-menu-item')?.dataset.action;
+    if (!action) return;
+
+    folderContextMenu.style.display = 'none';
+
+    switch (action) {
+        case 'new-note-in-folder':
+            // Create new note with folder path prefix
+            currentNote = null;
+            currentPassword = null;
+            noteTitle.value = currentFolderPath + '/';
+            setEditorContent('');
+            noteType.value = 'markdown';
+            privateCheckbox.checked = false;
+            passwordSection.style.display = 'none';
+            notePassword.value = '';
+            currentAttachments = [];
+            renderAttachments();
+
+            // Switch to list view if in calendar mode
+            if (currentViewMode === 'calendar') {
+                currentViewMode = 'list';
+                localStorage.setItem('viewMode', 'list');
+                updateViewMode();
+            }
+            break;
+
+        case 'new-subfolder':
+            const subfolderName = prompt(i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:');
+            if (subfolderName) {
+                await createFolder(subfolderName, currentFolderPath);
+            }
+            break;
+
+        case 'delete-folder':
+            const confirmMsg = i18n ? i18n.t('confirm.deleteFolder') : 'Delete this folder? (Must be empty)';
+            if (confirm(confirmMsg)) {
+                await deleteFolder(currentFolderPath);
+            }
+            break;
+    }
+}
+
+async function createFolder(name, parentPath) {
+    try {
+        const response = await fetch(`${basePath}/api/folders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, path: parentPath })
+        });
+
+        if (response.ok) {
+            await loadNotes();
+            const msg = i18n ? i18n.t('msg.folderCreated') : 'Folder created';
+            showToast(msg);
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to create folder');
+        }
+    } catch (error) {
+        console.error('Failed to create folder:', error);
+    }
+}
+
+async function deleteFolder(path) {
+    try {
+        const response = await fetch(`${basePath}/api/folders/${path}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            await loadNotes();
+            const msg = i18n ? i18n.t('msg.folderDeleted') : 'Folder deleted';
+            showToast(msg);
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to delete folder');
+        }
+    } catch (error) {
+        console.error('Failed to delete folder:', error);
+    }
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
 }
 
 async function renameNote(id, newTitle) {
@@ -2271,6 +2493,11 @@ function renderTreeLevel(tree, container, level, path) {
                 expandedFolders[currentPath] = newExpanded;
                 localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
                 renderNoteTree();
+            });
+
+            // Right-click context menu for folder
+            folderHeader.addEventListener('contextmenu', (e) => {
+                showFolderContextMenu(e, currentPath);
             });
 
             // Drag and drop - folder as drop target

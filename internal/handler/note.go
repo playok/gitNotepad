@@ -383,6 +383,189 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Note deleted"})
 }
 
+// Folder represents a directory in the note storage
+type Folder struct {
+	Name     string    `json:"name"`
+	Path     string    `json:"path"`
+	Created  time.Time `json:"created"`
+	Modified time.Time `json:"modified"`
+}
+
+// ListFolders returns all folders in the user's storage
+func (h *NoteHandler) ListFolders(c *gin.Context) {
+	storagePath := h.getUserStoragePath(c)
+
+	var folders []Folder
+	entries, err := os.ReadDir(storagePath)
+	if err != nil {
+		c.JSON(http.StatusOK, []Folder{})
+		return
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		// Skip hidden directories and special directories
+		if strings.HasPrefix(name, ".") || name == "files" || name == "images" {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		folders = append(folders, Folder{
+			Name:     name,
+			Path:     name,
+			Created:  info.ModTime(),
+			Modified: info.ModTime(),
+		})
+	}
+
+	c.JSON(http.StatusOK, folders)
+}
+
+type CreateFolderRequest struct {
+	Name string `json:"name" binding:"required"`
+	Path string `json:"path"` // Parent path (empty for root)
+}
+
+// CreateFolder creates a new folder in the user's storage
+func (h *NoteHandler) CreateFolder(c *gin.Context) {
+	var req CreateFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Sanitize folder name
+	folderName := strings.TrimSpace(req.Name)
+	if folderName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Folder name is required"})
+		return
+	}
+
+	// Prevent path traversal
+	if strings.Contains(folderName, "..") || strings.Contains(folderName, "/") || strings.Contains(folderName, "\\") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder name"})
+		return
+	}
+
+	storagePath := h.getUserStoragePath(c)
+
+	// Build full path
+	var folderPath string
+	if req.Path != "" {
+		// Validate parent path
+		parentPath := filepath.Join(storagePath, req.Path)
+		if _, err := os.Stat(parentPath); os.IsNotExist(err) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Parent folder does not exist"})
+			return
+		}
+		folderPath = filepath.Join(storagePath, req.Path, folderName)
+	} else {
+		folderPath = filepath.Join(storagePath, folderName)
+	}
+
+	// Check if folder already exists
+	if _, err := os.Stat(folderPath); err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Folder already exists"})
+		return
+	}
+
+	// Create folder
+	if err := os.MkdirAll(folderPath, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+		return
+	}
+
+	// Create .gitkeep file to track empty folder
+	gitkeepPath := filepath.Join(folderPath, ".gitkeep")
+	if err := os.WriteFile(gitkeepPath, []byte(""), 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+		return
+	}
+
+	// Git commit
+	if userRepo, err := h.getUserRepo(c); err == nil {
+		if err := userRepo.AddAndCommit(gitkeepPath, fmt.Sprintf("Create folder: %s", folderName)); err != nil {
+			fmt.Printf("Git commit error: %v\n", err)
+		}
+	}
+
+	relativePath := folderName
+	if req.Path != "" {
+		relativePath = req.Path + "/" + folderName
+	}
+
+	c.JSON(http.StatusCreated, Folder{
+		Name:     folderName,
+		Path:     relativePath,
+		Created:  time.Now(),
+		Modified: time.Now(),
+	})
+}
+
+// DeleteFolder deletes a folder from the user's storage
+func (h *NoteHandler) DeleteFolder(c *gin.Context) {
+	folderPath := c.Param("path")
+
+	// Prevent path traversal
+	if strings.Contains(folderPath, "..") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
+		return
+	}
+
+	storagePath := h.getUserStoragePath(c)
+	fullPath := filepath.Join(storagePath, folderPath)
+
+	// Check if folder exists
+	info, err := os.Stat(fullPath)
+	if os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found"})
+		return
+	}
+
+	if !info.IsDir() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Not a folder"})
+		return
+	}
+
+	// Check if folder is empty (except .gitkeep)
+	entries, err := os.ReadDir(fullPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read folder"})
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.Name() != ".gitkeep" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Folder is not empty"})
+			return
+		}
+	}
+
+	// Remove folder
+	if err := os.RemoveAll(fullPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder"})
+		return
+	}
+
+	// Git commit
+	if userRepo, err := h.getUserRepo(c); err == nil {
+		gitkeepPath := filepath.Join(fullPath, ".gitkeep")
+		if err := userRepo.RemoveAndCommit(gitkeepPath, fmt.Sprintf("Delete folder: %s", folderPath)); err != nil {
+			fmt.Printf("Git commit error: %v\n", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder deleted"})
+}
+
 func generateID(title string) string {
 	// Simple slug generation
 	id := strings.ToLower(title)

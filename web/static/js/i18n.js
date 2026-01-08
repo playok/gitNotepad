@@ -171,6 +171,27 @@ const i18n = {
             'msg.userCreated': 'User created successfully',
             'msg.userDeleted': 'User deleted successfully',
             'msg.passwordChanged': 'Password changed successfully',
+            'msg.folderCreated': 'Folder created',
+            'msg.folderDeleted': 'Folder deleted',
+
+            // Context Menu
+            'context.open': 'Open',
+            'context.rename': 'Rename',
+            'context.duplicate': 'Duplicate',
+            'context.move': 'Move to...',
+            'context.history': 'History',
+            'context.delete': 'Delete',
+            'context.newNote': 'New Note',
+            'context.newFolder': 'New Folder',
+            'context.newNoteInFolder': 'New Note Here',
+            'context.newSubfolder': 'New Subfolder',
+            'context.deleteFolder': 'Delete Folder',
+
+            // Prompts
+            'prompt.enterFolderName': 'Enter folder name:',
+
+            // Confirm
+            'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
 
             // Help
             'help.title': 'Keyboard Shortcuts',
@@ -354,6 +375,27 @@ const i18n = {
             'msg.userCreated': '사용자가 생성되었습니다',
             'msg.userDeleted': '사용자가 삭제되었습니다',
             'msg.passwordChanged': '비밀번호가 변경되었습니다',
+            'msg.folderCreated': '폴더가 생성되었습니다',
+            'msg.folderDeleted': '폴더가 삭제되었습니다',
+
+            // Context Menu
+            'context.open': '열기',
+            'context.rename': '이름 변경',
+            'context.duplicate': '복제',
+            'context.move': '이동...',
+            'context.history': '히스토리',
+            'context.delete': '삭제',
+            'context.newNote': '새 노트',
+            'context.newFolder': '새 폴더',
+            'context.newNoteInFolder': '여기에 새 노트',
+            'context.newSubfolder': '하위 폴더',
+            'context.deleteFolder': '폴더 삭제',
+
+            // Prompts
+            'prompt.enterFolderName': '폴더 이름을 입력하세요:',
+
+            // Confirm
+            'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',
 
             // Help
             'help.title': '키보드 단축키',

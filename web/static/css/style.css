@@ -1590,6 +1590,33 @@ body {
     margin: 0.25rem -0.25rem;
 }
 
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+[data-theme="dark"] .toast {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 /* Improved Table Styles for Markdown */
 .preview-pane table {
     width: 100%;

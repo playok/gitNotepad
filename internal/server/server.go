@@ -148,6 +148,11 @@ func (s *Server) setupRoutes() {
 			api.PUT("/notes/:id", noteHandler.Update)
 			api.DELETE("/notes/:id", noteHandler.Delete)
 
+			// Folders
+			api.GET("/folders", noteHandler.ListFolders)
+			api.POST("/folders", noteHandler.CreateFolder)
+			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
+
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)
 			api.GET("/notes/:id/version/:commit", gitHandler.Version)
@@ -196,6 +201,11 @@ func (s *Server) setupRoutes() {
 			api.POST("/notes", noteHandler.Create)
 			api.PUT("/notes/:id", noteHandler.Update)
 			api.DELETE("/notes/:id", noteHandler.Delete)
+
+			// Folders
+			api.GET("/folders", noteHandler.ListFolders)
+			api.POST("/folders", noteHandler.CreateFolder)
+			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
 
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)

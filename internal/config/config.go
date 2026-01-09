@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -23,6 +24,7 @@ type ServerConfig struct {
 type StorageConfig struct {
 	Path        string `yaml:"path"`
 	AutoInitGit bool   `yaml:"auto_init_git"`
+	Encoding    string `yaml:"encoding"` // "utf-8" (default) or "euc-kr"
 }
 
 type EditorConfig struct {
@@ -71,8 +73,20 @@ func Load(path string) (*Config, error) {
 	if cfg.Auth.SessionTimeout == 0 {
 		cfg.Auth.SessionTimeout = 168 // 7 days
 	}
+	if cfg.Storage.Encoding == "" {
+		cfg.Storage.Encoding = getDefaultEncoding()
+	}
 
 	return &cfg, nil
+}
+
+// getDefaultEncoding returns the default encoding based on LANG environment variable
+func getDefaultEncoding() string {
+	lang := strings.ToLower(os.Getenv("LANG"))
+	if strings.Contains(lang, "euckr") || strings.Contains(lang, "euc-kr") {
+		return "euc-kr"
+	}
+	return "utf-8"
 }
 
 func Default() *Config {
@@ -84,6 +98,7 @@ func Default() *Config {
 		Storage: StorageConfig{
 			Path:        "./data",
 			AutoInitGit: true,
+			Encoding:    getDefaultEncoding(),
 		},
 		Editor: EditorConfig{
 			DefaultType: "markdown",

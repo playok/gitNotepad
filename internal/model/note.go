@@ -100,13 +100,16 @@ func (n *Note) ToFileContent() ([]byte, error) {
 }
 
 func ParseNoteFromFile(path string) (*Note, error) {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	return ParseNoteFromBytes(data, path)
+}
 
-	scanner := bufio.NewScanner(file)
+// ParseNoteFromBytes parses a note from byte data (useful for encoding conversion)
+func ParseNoteFromBytes(data []byte, path string) (*Note, error) {
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	var lines []string
 	inFrontMatter := false
 	frontMatterDone := false

@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
@@ -30,6 +31,38 @@ func NewNoteHandler(repo *git.Repository, cfg *config.Config) *NoteHandler {
 		config:   cfg,
 		basePath: cfg.Storage.Path,
 	}
+}
+
+// getEncoding returns the configured file encoding
+func (h *NoteHandler) getEncoding() string {
+	return h.config.Storage.Encoding
+}
+
+// parseNoteWithEncoding reads a file and parses it with encoding conversion
+func (h *NoteHandler) parseNoteWithEncoding(filePath string) (*model.Note, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert from file encoding to UTF-8
+	utf8Data, err := encoding.ToUTF8(data, h.getEncoding())
+	if err != nil {
+		return nil, err
+	}
+
+	return model.ParseNoteFromBytes(utf8Data, filePath)
+}
+
+// writeFileWithEncoding writes content to file with encoding conversion
+func (h *NoteHandler) writeFileWithEncoding(filePath string, content []byte) error {
+	// Convert from UTF-8 to file encoding
+	encodedData, err := encoding.FromUTF8(content, h.getEncoding())
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, encodedData, 0644)
 }
 
 // getUserStoragePath returns the user-specific storage directory
@@ -106,7 +139,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
-		note, err := model.ParseNoteFromFile(path)
+		note, err := h.parseNoteWithEncoding(path)
 		if err != nil {
 			return nil
 		}
@@ -153,7 +186,7 @@ func (h *NoteHandler) Get(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.parseNoteWithEncoding(filePath)
 		if err == nil {
 			break
 		}
@@ -274,7 +307,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 
 	// Create file in the target directory (use absolute path for git)
 	filePath, _ := filepath.Abs(filepath.Join(targetDir, id+note.GetExtension()))
-	if err := os.WriteFile(filePath, content, 0644); err != nil {
+	if err := h.writeFileWithEncoding(filePath, content); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -310,7 +343,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.parseNoteWithEncoding(filePath)
 		if err == nil {
 			break
 		}
@@ -400,7 +433,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := os.WriteFile(newFilePath, content, 0644); err != nil {
+	if err := h.writeFileWithEncoding(newFilePath, content); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -426,7 +459,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.parseNoteWithEncoding(filePath)
 		if err == nil {
 			break
 		}

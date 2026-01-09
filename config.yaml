@@ -6,6 +6,7 @@ server:
 storage:
   path: "./data"
   auto_init_git: true
+  encoding: "utf-8"  # "utf-8" (default) or "euc-kr" (auto-detect from LANG env if empty)
 
 editor:
   default_type: "markdown"

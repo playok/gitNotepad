@@ -528,6 +528,9 @@ func (h *NoteHandler) ListFolders(c *gin.Context) {
 			return nil
 		}
 
+		// Normalize path separators to forward slashes for cross-platform compatibility
+		relPath = filepath.ToSlash(relPath)
+
 		folders = append(folders, Folder{
 			Name:     name,
 			Path:     relPath,

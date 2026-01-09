@@ -23,7 +23,8 @@ type Server struct {
 	db     *database.DB
 }
 
-func New(cfg *config.Config) (*Server, error) {
+// NewWithAdminPassword creates a new server with an optional admin password for first-time seeding
+func NewWithAdminPassword(cfg *config.Config, adminPassword string) (*Server, error) {
 	repo, err := git.NewRepository(cfg.Storage.Path)
 	if err != nil {
 		return nil, err
@@ -45,12 +46,22 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	// Seed admin user if configured
-	if cfg.Auth.Enabled && cfg.Auth.AdminUsername != "" {
-		if err := db.SeedAdminUser(cfg.Auth.AdminUsername, cfg.Auth.AdminPassword); err != nil {
+	// Seed admin user if configured and password provided
+	if cfg.Auth.Enabled && cfg.Auth.AdminUsername != "" && adminPassword != "" {
+		if err := db.SeedAdminUser(cfg.Auth.AdminUsername, adminPassword); err != nil {
 			return nil, fmt.Errorf("failed to seed admin user: %w", err)
 		}
 	}
+
+	return newServer(cfg, repo, db)
+}
+
+// New creates a new server (for backward compatibility, admin must already exist in DB)
+func New(cfg *config.Config) (*Server, error) {
+	return NewWithAdminPassword(cfg, "")
+}
+
+func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Server, error) {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()

@@ -1,9 +1,15 @@
 package config
 
 import (
+	"bufio"
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
+	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 )
 
@@ -37,10 +43,10 @@ type EditorConfig struct {
 }
 
 type AuthConfig struct {
-	Enabled        bool   `yaml:"enabled"`
-	SessionTimeout int    `yaml:"session_timeout"` // hours
-	AdminUsername  string `yaml:"admin_username"`
-	AdminPassword  string `yaml:"admin_password"`
+	Enabled           bool   `yaml:"enabled"`
+	SessionTimeout    int    `yaml:"session_timeout"` // hours
+	AdminUsername     string `yaml:"admin_username"`
+	AdminPasswordHash string `yaml:"admin_password_hash"` // SHA-512 hash
 }
 
 type DatabaseConfig struct {
@@ -108,10 +114,10 @@ func Default() *Config {
 			AutoSave:    false,
 		},
 		Auth: AuthConfig{
-			Enabled:        true,
-			SessionTimeout: 168, // 7 days in hours
-			AdminUsername:  "admin",
-			AdminPassword:  "admin123",
+			Enabled:           true,
+			SessionTimeout:    168, // 7 days in hours
+			AdminUsername:     "admin",
+			AdminPasswordHash: "", // Will be set on first run
 		},
 		Database: DatabaseConfig{
 			Path: "./data/gitnotepad.db",
@@ -120,4 +126,87 @@ func Default() *Config {
 			Encoding: getDefaultEncoding(),
 		},
 	}
+}
+
+// HashPassword creates a SHA-512 hash of the password
+func HashPassword(password string) string {
+	hash := sha512.Sum512([]byte(password))
+	return hex.EncodeToString(hash[:])
+}
+
+// VerifyPassword checks if the password matches the hash
+func VerifyPassword(password, hash string) bool {
+	return HashPassword(password) == hash
+}
+
+// NeedsAdminPassword returns true if admin password hash is not set
+func (c *Config) NeedsAdminPassword() bool {
+	return c.Auth.Enabled && c.Auth.AdminPasswordHash == ""
+}
+
+// PromptAdminPassword prompts for admin password in the terminal
+func PromptAdminPassword() (string, error) {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println()
+	fmt.Println("╔════════════════════════════════════════════════════════════╗")
+	fmt.Println("║              Initial Admin Password Setup                  ║")
+	fmt.Println("╚════════════════════════════════════════════════════════════╝")
+	fmt.Println()
+
+	for {
+		fmt.Print("Enter admin password: ")
+		password, err := term.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			// Fallback for non-terminal environments
+			passwordStr, err := reader.ReadString('\n')
+			if err != nil {
+				return "", fmt.Errorf("failed to read password: %w", err)
+			}
+			password = []byte(strings.TrimSpace(passwordStr))
+		}
+		fmt.Println()
+
+		if len(password) < 4 {
+			fmt.Println("Password must be at least 4 characters. Please try again.")
+			continue
+		}
+
+		fmt.Print("Confirm admin password: ")
+		confirm, err := term.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			confirmStr, err := reader.ReadString('\n')
+			if err != nil {
+				return "", fmt.Errorf("failed to read password: %w", err)
+			}
+			confirm = []byte(strings.TrimSpace(confirmStr))
+		}
+		fmt.Println()
+
+		if string(password) != string(confirm) {
+			fmt.Println("Passwords do not match. Please try again.")
+			continue
+		}
+
+		fmt.Println("Admin password set successfully!")
+		fmt.Println()
+		return string(password), nil
+	}
+}
+
+// Save saves the config to a file
+func (c *Config) Save(path string) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	// Add comments to the YAML
+	content := "# Git Notepad Configuration\n\n" + string(data)
+
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
 }

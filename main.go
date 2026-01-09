@@ -74,7 +74,24 @@ func main() {
 	fmt.Printf("Default editor type: %s\n", cfg.Editor.DefaultType)
 	fmt.Println()
 
-	srv, err := server.New(cfg)
+	// Prompt for admin password on first run
+	var adminPassword string
+	if cfg.NeedsAdminPassword() {
+		var err error
+		adminPassword, err = config.PromptAdminPassword()
+		if err != nil {
+			log.Fatalf("Failed to get admin password: %v", err)
+		}
+		cfg.Auth.AdminPasswordHash = config.HashPassword(adminPassword)
+
+		// Save the updated config
+		if err := cfg.Save(*configPath); err != nil {
+			log.Fatalf("Failed to save config: %v", err)
+		}
+		fmt.Printf("Config saved to %s\n\n", *configPath)
+	}
+
+	srv, err := server.NewWithAdminPassword(cfg, adminPassword)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}

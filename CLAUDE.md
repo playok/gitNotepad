@@ -137,7 +137,7 @@ auth:
   enabled: true
   session_timeout: 168  # 7일
   admin_username: "admin"
-  admin_password: "admin123"
+  admin_password_hash: ""  # SHA-512 해시 (최초 실행 시 설정)
 database:
   path: "./data/gitnotepad.db"
 ```
@@ -147,6 +147,7 @@ database:
 - Markdown/AsciiDoc/텍스트 노트 편집 (CodeMirror 5)
 - Git 기반 버전 관리 (자동 커밋)
 - 다중 사용자 인증 (SQLite)
+- **관리자 비밀번호**: 최초 실행 시 터미널에서 입력, SHA-512 해시로 config.yaml에 저장
 - 비밀번호 보호 (bcrypt)
 - 단축 URL 생성 (만료일 설정 가능)
 - 이미지/파일 첨부

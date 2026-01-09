@@ -18,7 +18,7 @@ auth:
   enabled: true
   session_timeout: 168  # 7 days in hours
   admin_username: "admin"
-  admin_password: "admin123"  # Change this on first login!
+  admin_password_hash: ""  # SHA-512 hash, set on first run
 
 database:
   path: "./data/gitnotepad.db"

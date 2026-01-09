@@ -14,12 +14,18 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `yaml:"server"`
-	Storage  StorageConfig  `yaml:"storage"`
-	Editor   EditorConfig   `yaml:"editor"`
-	Auth     AuthConfig     `yaml:"auth"`
-	Database DatabaseConfig `yaml:"database"`
-	Logging  LoggingConfig  `yaml:"logging"`
+	Server     ServerConfig     `yaml:"server"`
+	Storage    StorageConfig    `yaml:"storage"`
+	Editor     EditorConfig     `yaml:"editor"`
+	Auth       AuthConfig       `yaml:"auth"`
+	Database   DatabaseConfig   `yaml:"database"`
+	Logging    LoggingConfig    `yaml:"logging"`
+	Encryption EncryptionConfig `yaml:"encryption"`
+}
+
+type EncryptionConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Salt    string `yaml:"salt"` // Base64 encoded salt for PBKDF2
 }
 
 type ServerConfig struct {
@@ -124,6 +130,10 @@ func Default() *Config {
 		},
 		Logging: LoggingConfig{
 			Encoding: getDefaultEncoding(),
+		},
+		Encryption: EncryptionConfig{
+			Enabled: false,
+			Salt:    "", // Will be generated on first run if encryption enabled
 		},
 	}
 }

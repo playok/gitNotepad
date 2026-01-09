@@ -4,13 +4,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/model"
 	"github.com/user/gitnotepad/internal/repository"
 )
 
 const (
-	SessionCookieName = "gitnotepad_session"
-	UserContextKey    = "user"
+	SessionCookieName    = "gitnotepad_session"
+	UserContextKey       = "user"
+	EncryptionKeyContext = "encryption_key"
 )
 
 type AuthMiddleware struct {
@@ -71,6 +73,12 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		}
 
 		c.Set(UserContextKey, user)
+
+		// Set encryption key in context if available
+		if key, ok := encryption.GetKeyStore().Get(cookie); ok {
+			c.Set(EncryptionKeyContext, key)
+		}
+
 		c.Next()
 	}
 }
@@ -102,6 +110,15 @@ func GetCurrentUser(c *gin.Context) *model.User {
 		return nil
 	}
 	return user.(*model.User)
+}
+
+// GetEncryptionKey retrieves the encryption key from context
+func GetEncryptionKey(c *gin.Context) []byte {
+	key, exists := c.Get(EncryptionKeyContext)
+	if !exists {
+		return nil
+	}
+	return key.([]byte)
 }
 
 // isAPIRequest checks if the request is an API request

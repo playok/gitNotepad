@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
@@ -18,13 +20,15 @@ type AuthHandler struct {
 	repo        *git.Repository
 	userRepo    *repository.UserRepository
 	sessionRepo *repository.SessionRepository
+	config      *config.Config
 }
 
-func NewAuthHandler(repo *git.Repository, userRepo *repository.UserRepository, sessionRepo *repository.SessionRepository) *AuthHandler {
+func NewAuthHandler(repo *git.Repository, userRepo *repository.UserRepository, sessionRepo *repository.SessionRepository, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		repo:        repo,
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
+		config:      cfg,
 	}
 }
 
@@ -55,6 +59,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Derive and store encryption key if encryption is enabled
+	if h.config.Encryption.Enabled && h.config.Encryption.Salt != "" {
+		key, err := encryption.DeriveKey(req.Password, h.config.Encryption.Salt)
+		if err == nil {
+			encryption.GetKeyStore().Store(session.Token, key)
+		}
+	}
+
 	// Set cookie
 	c.SetCookie(
 		middleware.SessionCookieName,
@@ -80,6 +92,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	cookie, err := c.Cookie(middleware.SessionCookieName)
 	if err == nil {
+		// Remove encryption key from store
+		encryption.GetKeyStore().Delete(cookie)
+		// Delete session from database
 		h.sessionRepo.Delete(cookie)
 	}
 

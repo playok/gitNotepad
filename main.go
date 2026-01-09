@@ -8,6 +8,7 @@ import (
 
 	"github.com/user/gitnotepad/internal/config"
 	"github.com/user/gitnotepad/internal/encoding"
+	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/server"
 )
 
@@ -74,6 +75,18 @@ func main() {
 	fmt.Printf("Default editor type: %s\n", cfg.Editor.DefaultType)
 	fmt.Println()
 
+	// Generate encryption salt if encryption is enabled but salt is empty
+	configChanged := false
+	if cfg.Encryption.Enabled && cfg.Encryption.Salt == "" {
+		salt, err := encryption.GenerateSalt()
+		if err != nil {
+			log.Fatalf("Failed to generate encryption salt: %v", err)
+		}
+		cfg.Encryption.Salt = salt
+		configChanged = true
+		fmt.Println("Encryption salt generated.")
+	}
+
 	// Prompt for admin password on first run
 	var adminPassword string
 	if cfg.NeedsAdminPassword() {
@@ -83,8 +96,11 @@ func main() {
 			log.Fatalf("Failed to get admin password: %v", err)
 		}
 		cfg.Auth.AdminPasswordHash = config.HashPassword(adminPassword)
+		configChanged = true
+	}
 
-		// Save the updated config
+	// Save config if changed
+	if configChanged {
 		if err := cfg.Save(*configPath); err != nil {
 			log.Fatalf("Failed to save config: %v", err)
 		}

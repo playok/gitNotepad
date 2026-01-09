@@ -22,3 +22,7 @@ auth:
 
 database:
   path: "./data/gitnotepad.db"
+
+encryption:
+  enabled: false  # Enable to encrypt note files with AES-256
+  salt: ""  # Auto-generated on first run when encryption is enabled

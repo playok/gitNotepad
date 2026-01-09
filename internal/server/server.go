@@ -90,7 +90,7 @@ func (s *Server) setupRoutes() {
 	// Create handlers
 	noteHandler := handler.NewNoteHandler(s.repo, s.config)
 	gitHandler := handler.NewGitHandler(s.repo)
-	authHandler := handler.NewAuthHandler(s.repo, userRepo, sessionRepo)
+	authHandler := handler.NewAuthHandler(s.repo, userRepo, sessionRepo, s.config)
 	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config.Server.BasePath)
 	imageHandler := handler.NewImageHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	fileHandler := handler.NewFileHandler(s.config.Storage.Path, s.config.Server.BasePath)

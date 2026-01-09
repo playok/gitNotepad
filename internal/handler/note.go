@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
@@ -45,6 +46,48 @@ func (h *NoteHandler) getUserStoragePath(c *gin.Context) string {
 	os.MkdirAll(userPath, 0755)
 
 	return userPath
+}
+
+// loadNoteFromFile loads a note from file, decrypting if necessary
+func (h *NoteHandler) loadNoteFromFile(path string, encryptionKey []byte) (*model.Note, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if file is encrypted
+	content := string(data)
+	if encryption.IsEncrypted(content) {
+		if encryptionKey == nil {
+			return nil, fmt.Errorf("file is encrypted but no key available")
+		}
+		decrypted, err := encryption.Decrypt(content, encryptionKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt file: %w", err)
+		}
+		data = decrypted
+	}
+
+	return model.ParseNoteFromBytes(data, path)
+}
+
+// saveNoteToFile saves a note to file, encrypting if enabled
+func (h *NoteHandler) saveNoteToFile(note *model.Note, path string, encryptionKey []byte) error {
+	content, err := note.ToFileContent()
+	if err != nil {
+		return err
+	}
+
+	// Encrypt if encryption is enabled and key is available
+	if h.config.Encryption.Enabled && encryptionKey != nil {
+		encrypted, err := encryption.Encrypt(content, encryptionKey)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt file: %w", err)
+		}
+		content = []byte(encrypted)
+	}
+
+	return os.WriteFile(path, content, 0644)
 }
 
 // decodeNoteID base64-decodes the note ID from path parameter
@@ -82,6 +125,7 @@ type NoteListItem struct {
 
 func (h *NoteHandler) List(c *gin.Context) {
 	storagePath := h.getUserStoragePath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
 
 	var notes []NoteListItem
 
@@ -107,7 +151,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
-		note, err := model.ParseNoteFromFile(path)
+		note, err := h.loadNoteFromFile(path, encryptionKey)
 		if err != nil {
 			return nil
 		}
@@ -147,6 +191,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 func (h *NoteHandler) Get(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Try both extensions
 	var filePath string
@@ -155,7 +200,7 @@ func (h *NoteHandler) Get(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
 		}
@@ -217,6 +262,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	}
 
 	storagePath := h.getUserStoragePath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Parse folder path from title (e.g., "folder/subfolder/note title")
 	var folderPath string
@@ -271,15 +317,9 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		}
 	}
 
-	content, err := note.ToFileContent()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	// Create file in the target directory (use absolute path for git)
 	filePath, _ := filepath.Abs(filepath.Join(targetDir, id+note.GetExtension()))
-	if err := os.WriteFile(filePath, content, 0644); err != nil {
+	if err := h.saveNoteToFile(note, filePath, encryptionKey); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -308,6 +348,7 @@ type UpdateNoteRequest struct {
 func (h *NoteHandler) Update(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note
 	var filePath string
@@ -316,7 +357,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
 		}
@@ -372,12 +413,6 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	content, err := note.ToFileContent()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	// Extract folder path from title (e.g., "folder/subfolder/notename" -> "folder/subfolder")
 	var newFolderPath string
 	// Normalize title path separators (handle both / and \)
@@ -411,7 +446,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := os.WriteFile(newFilePath, content, 0644); err != nil {
+	if err := h.saveNoteToFile(note, newFilePath, encryptionKey); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -439,6 +474,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 func (h *NoteHandler) Delete(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
 	storagePath := h.getUserStoragePath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note
 	var filePath string
@@ -447,7 +483,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
-		note, err = model.ParseNoteFromFile(filePath)
+		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
 		}

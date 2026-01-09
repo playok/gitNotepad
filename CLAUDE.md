@@ -152,6 +152,9 @@ database:
 - 크로스 플랫폼 빌드 (CGO 불필요)
 - 키보드 단축키 (Ctrl+S 저장, Ctrl+B 사이드바, F1 도움말)
 - **캘린더 뷰**: 월간 캘린더에서 날짜별 노트 관리, 드래그 앤 드롭으로 날짜 이동
+- **폴더 관리**: 드래그 앤 드롭으로 노트를 폴더로 이동, 폴더 내 새 노트 생성
+- **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
+- **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
 
 ## 핵심 모듈
 
@@ -159,14 +162,20 @@ database:
 - **git/repository.go**: go-git 래퍼, 커밋/히스토리/파일 조회
   - EOF 에러 처리 (빈 커밋 방지)
   - staged 변경사항 체크 (Added, Modified, Deleted만 커밋)
+  - Windows 경로 호환성: `filepath.ToSlash()` 적용 (go-git은 forward slash 필요)
 - **handler/note.go**: 노트 CRUD API, 비밀번호 검증
+  - 폴더 경로 처리: 타이틀에서 폴더 경로 추출, 파일 이동
+  - 절대 경로 사용: `filepath.Abs()` 적용으로 Git 경로 일관성 보장
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
 - **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
   - 캘린더 뷰: initCalendarView(), renderCalendar(), buildNotesMapByDate()
-  - 드래그 앤 드롭: handleCalendarDragStart/End/Drop()
+  - 드래그 앤 드롭: handleCalendarDragStart/End/Drop(), 폴더 드래그 앤 드롭
+  - 자동 저장: `autoSaveEnabled` 플래그, `isSaving` 중복 저장 방지
+- **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
+  - Settings 다이얼로그 번역 키 포함
 
 ## 빌드 및 배포
 
@@ -180,6 +189,31 @@ database:
 - `X-Note-Password` 헤더로 비밀번호 전달
 - UUID 기반 파일명으로 충돌 방지
 - 경로 탐색 공격 방지
+
+## UI/UX
+
+### Settings 다이얼로그
+- 컴팩트 디자인 (560px, iOS 스타일 그룹 설정)
+- 탭 구성: General, Data, About
+- 토글 스위치: 36x20px (iOS 스타일)
+- i18n 적용 (`data-i18n` 속성)
+
+### 에디터 툴바
+- 자동 저장 토글 체크박스
+- localStorage에 설정 저장
+
+## 폴더 관리
+
+### 기능
+- 드래그 앤 드롭으로 노트를 폴더로 이동
+- 폴더 내에서 새 노트 생성
+- 트리 구조로 폴더/노트 표시
+
+### 구현 세부사항
+- **파일 이동**: Update 핸들러에서 타이틀의 폴더 경로 추출 후 파일 이동
+- **경로 정규화**: Windows/Unix 경로 호환성 (`filepath.ToSlash()`)
+- **중복 저장 방지**: `isSaving` 플래그로 자동 저장과 수동 저장 충돌 방지
+- **트리 렌더링**: `renderTreeLevel()`에서 `isChild` 플래그로 들여쓰기 표시
 
 ## 캘린더 뷰
 

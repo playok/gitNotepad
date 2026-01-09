@@ -139,6 +139,10 @@
                             <input type="checkbox" id="notePrivate">
                             <span class="private-icon">&#128274;</span>
                         </label>
+                        <label class="autosave-toggle" title="Auto-save">
+                            <input type="checkbox" id="autoSaveEnabled">
+                            <span class="autosave-icon">&#128260;</span>
+                        </label>
                         <button id="historyBtn" class="btn-icon" title="History">&#128337;</button>
                         <button id="saveBtn" class="btn-icon" title="Save">&#128190;</button>
                         <button id="deleteBtn" class="btn-icon btn-icon-danger" title="Delete">&#128465;</button>
@@ -271,66 +275,66 @@
             <div id="settingsModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large settings-modal">
                     <div class="settings-header">
-                        <h3>Settings</h3>
+                        <h3 data-i18n="settings.title">Settings</h3>
                         <button id="settingsClose" class="modal-close-btn">&times;</button>
                     </div>
                     <div class="settings-body">
                         <div class="settings-tabs">
                             <button class="settings-tab active" data-tab="general">
-                                <span>&#9881;</span> General
+                                <span>&#9881;</span> <span data-i18n="settings.general">General</span>
                             </button>
                             {{if .user}}{{if .user.IsAdmin}}
                             <button class="settings-tab" data-tab="users">
-                                <span>&#128101;</span> Users
+                                <span>&#128101;</span> <span data-i18n="settings.users">Users</span>
                             </button>
                             {{end}}{{end}}
                             <button class="settings-tab" data-tab="data">
-                                <span>&#128451;</span> Data
+                                <span>&#128451;</span> <span data-i18n="settings.data">Data</span>
                             </button>
                             <button class="settings-tab" data-tab="stats">
-                                <span>&#128202;</span> Usage
+                                <span>&#128202;</span> <span data-i18n="settings.usage">Usage</span>
                             </button>
                         </div>
                         <div class="settings-content">
                             <!-- General Tab -->
                             <div class="settings-panel active" id="settingsGeneral">
-                                <h4>General Settings</h4>
+                                <h4 data-i18n="settings.generalSettings">General Settings</h4>
                                 <div class="settings-section">
                                     <div class="settings-item">
                                         <div class="settings-item-info">
-                                            <span class="settings-item-label">Theme</span>
-                                            <span class="settings-item-desc">Choose light or dark mode</span>
+                                            <span class="settings-item-label" data-i18n="settings.theme">Theme</span>
+                                            <span class="settings-item-desc" data-i18n="settings.themeDesc">Choose light or dark mode</span>
                                         </div>
                                         <select id="settingsTheme" class="settings-select">
-                                            <option value="light">Light</option>
-                                            <option value="dark">Dark</option>
+                                            <option value="light" data-i18n="settings.light">Light</option>
+                                            <option value="dark" data-i18n="settings.dark">Dark</option>
                                         </select>
                                     </div>
                                     <div class="settings-item">
                                         <div class="settings-item-info">
-                                            <span class="settings-item-label">Default Note Type</span>
-                                            <span class="settings-item-desc">Default format for new notes</span>
+                                            <span class="settings-item-label" data-i18n="settings.defaultType">Default Note Type</span>
+                                            <span class="settings-item-desc" data-i18n="settings.defaultTypeDesc">Default format for new notes</span>
                                         </div>
                                         <select id="settingsDefaultType" class="settings-select">
-                                            <option value="markdown">Markdown</option>
-                                            <option value="asciidoc">AsciiDoc</option>
-                                            <option value="txt">Plain Text</option>
+                                            <option value="markdown" data-i18n="type.markdown">Markdown</option>
+                                            <option value="asciidoc" data-i18n="type.asciidoc">AsciiDoc</option>
+                                            <option value="txt" data-i18n="type.text">Plain Text</option>
                                         </select>
                                     </div>
                                     <div class="settings-item">
                                         <div class="settings-item-info">
-                                            <span class="settings-item-label">Auto Save</span>
-                                            <span class="settings-item-desc">Automatically save changes</span>
+                                            <span class="settings-item-label" data-i18n="settings.autoSave">Auto Save</span>
+                                            <span class="settings-item-desc" data-i18n="settings.autoSaveDesc">Automatically save changes</span>
                                         </div>
                                         <label class="toggle-switch">
-                                            <input type="checkbox" id="settingsAutoSave" checked>
+                                            <input type="checkbox" id="settingsAutoSave">
                                             <span class="toggle-slider"></span>
                                         </label>
                                     </div>
                                     <div class="settings-item">
                                         <div class="settings-item-info">
-                                            <span class="settings-item-label">Line Numbers</span>
-                                            <span class="settings-item-desc">Show line numbers in editor</span>
+                                            <span class="settings-item-label" data-i18n="settings.lineNumbers">Line Numbers</span>
+                                            <span class="settings-item-desc" data-i18n="settings.lineNumbersDesc">Show line numbers in editor</span>
                                         </div>
                                         <label class="toggle-switch">
                                             <input type="checkbox" id="settingsLineNumbers" checked>
@@ -343,8 +347,8 @@
                             <!-- Users Tab (Admin only) -->
                             <div class="settings-panel" id="settingsUsers">
                                 <div class="settings-panel-header">
-                                    <h4>User Management</h4>
-                                    <button id="settingsAddUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+                                    <h4 data-i18n="settings.userManagement">User Management</h4>
+                                    <button id="settingsAddUserBtn" class="btn btn-primary btn-sm">+ <span data-i18n="admin.addUser">Add User</span></button>
                                 </div>
                                 <div id="settingsUsersList" class="users-list">
                                     <!-- Users will be loaded here -->
@@ -353,61 +357,61 @@
 
                             <!-- Data Tab -->
                             <div class="settings-panel" id="settingsData">
-                                <h4>Data Management</h4>
+                                <h4 data-i18n="settings.dataManagement">Data Management</h4>
                                 <div class="settings-section">
                                     <div class="data-action-card">
                                         <div class="data-action-icon">&#128229;</div>
                                         <div class="data-action-info">
-                                            <span class="data-action-title">Export Notes</span>
-                                            <span class="data-action-desc">Download all your notes as a ZIP file</span>
+                                            <span class="data-action-title" data-i18n="settings.exportNotes">Export Notes</span>
+                                            <span class="data-action-desc" data-i18n="settings.exportNotesDesc">Download all your notes as a ZIP file</span>
                                         </div>
-                                        <button id="exportNotesBtn" class="btn btn-primary">Export</button>
+                                        <button id="exportNotesBtn" class="btn btn-primary" data-i18n="stats.export">Export</button>
                                     </div>
                                     <div class="data-action-card">
                                         <div class="data-action-icon">&#128228;</div>
                                         <div class="data-action-info">
-                                            <span class="data-action-title">Import Notes</span>
-                                            <span class="data-action-desc">Import notes from a ZIP file</span>
+                                            <span class="data-action-title" data-i18n="settings.importNotes">Import Notes</span>
+                                            <span class="data-action-desc" data-i18n="settings.importNotesDesc">Import notes from a ZIP file</span>
                                         </div>
                                         <div class="import-controls">
                                             <input type="file" id="importFileInput" accept=".zip" style="display: none;">
-                                            <button id="importNotesBtn" class="btn btn-secondary">Import</button>
+                                            <button id="importNotesBtn" class="btn btn-secondary" data-i18n="stats.import">Import</button>
                                         </div>
                                     </div>
                                     <div class="data-action-card danger">
                                         <div class="data-action-icon">&#128465;</div>
                                         <div class="data-action-info">
-                                            <span class="data-action-title">Delete All Notes</span>
-                                            <span class="data-action-desc">Permanently delete all your notes</span>
+                                            <span class="data-action-title" data-i18n="settings.deleteAllNotes">Delete All Notes</span>
+                                            <span class="data-action-desc" data-i18n="settings.deleteAllNotesDesc">Permanently delete all your notes</span>
                                         </div>
-                                        <button id="deleteAllNotesBtn" class="btn btn-danger">Delete All</button>
+                                        <button id="deleteAllNotesBtn" class="btn btn-danger" data-i18n="stats.deleteAll">Delete All</button>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Stats Tab -->
                             <div class="settings-panel" id="settingsStats">
-                                <h4>Usage Statistics</h4>
+                                <h4 data-i18n="settings.usageStatistics">Usage Statistics</h4>
                                 <div class="stats-grid" id="statsGrid">
                                     <div class="stat-card">
                                         <span class="stat-icon">&#128196;</span>
                                         <span class="stat-value" id="statTotalNotes">-</span>
-                                        <span class="stat-label">Total Notes</span>
+                                        <span class="stat-label" data-i18n="stats.totalNotes">Total Notes</span>
                                     </div>
                                     <div class="stat-card">
                                         <span class="stat-icon">&#128206;</span>
                                         <span class="stat-value" id="statTotalAttachments">-</span>
-                                        <span class="stat-label">Attachments</span>
+                                        <span class="stat-label" data-i18n="stats.totalAttachments">Attachments</span>
                                     </div>
                                     <div class="stat-card">
                                         <span class="stat-icon">&#128274;</span>
                                         <span class="stat-value" id="statPrivateNotes">-</span>
-                                        <span class="stat-label">Private Notes</span>
+                                        <span class="stat-label" data-i18n="stats.privateNotes">Private Notes</span>
                                     </div>
                                     <div class="stat-card">
                                         <span class="stat-icon">&#128190;</span>
                                         <span class="stat-value" id="statStorageUsed">-</span>
-                                        <span class="stat-label">Storage Used</span>
+                                        <span class="stat-label" data-i18n="stats.storageUsed">Storage Used</span>
                                     </div>
                                 </div>
                                 <div class="stats-details">

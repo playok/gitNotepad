@@ -25,6 +25,8 @@ let cmEditorReady = false;
 // Auto-save
 let autoSaveTimer = null;
 let hasUnsavedChanges = false;
+let isSaving = false; // Prevent duplicate saves
+let autoSaveEnabled = localStorage.getItem('autoSaveEnabled') === 'true'; // Default: disabled
 const AUTO_SAVE_DELAY = 2000; // 2 seconds
 
 // Original content tracking (to prevent unnecessary saves)
@@ -1273,18 +1275,20 @@ function showToast(message) {
 }
 
 async function renameNote(id, newTitle) {
-    const note = notes.find(n => n.id === id);
-    if (!note) return;
-
     try {
+        // First, get the full note to preserve content
+        const getResponse = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`);
+        if (!getResponse.ok) return;
+        const fullNote = await getResponse.json();
+
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 title: newTitle,
-                content: note.content || '',
-                type: note.type,
-                private: note.private
+                content: fullNote.content,
+                type: fullNote.type,
+                private: fullNote.private
             })
         });
 
@@ -1496,6 +1500,9 @@ function triggerAutoSave() {
     hasUnsavedChanges = true;
     updateSaveStatus('unsaved');
 
+    // Only auto-save if enabled
+    if (!autoSaveEnabled) return;
+
     if (autoSaveTimer) {
         clearTimeout(autoSaveTimer);
     }
@@ -1506,6 +1513,8 @@ function triggerAutoSave() {
 }
 
 async function performAutoSave() {
+    // Prevent duplicate saves
+    if (isSaving) return;
     if (!hasUnsavedChanges) return;
 
     const title = getFullNoteTitle();
@@ -1518,6 +1527,7 @@ async function performAutoSave() {
         return;
     }
 
+    isSaving = true;
     updateSaveStatus('saving');
 
     try {
@@ -1564,6 +1574,8 @@ async function performAutoSave() {
     } catch (error) {
         console.error('Auto-save failed:', error);
         updateSaveStatus('error');
+    } finally {
+        isSaving = false;
     }
 }
 
@@ -1706,6 +1718,21 @@ function setupEventListeners() {
 
     // Private toggle
     notePrivate.addEventListener('change', handlePrivateToggle);
+
+    // Auto-save toggle
+    const autoSaveCheckbox = document.getElementById('autoSaveEnabled');
+    if (autoSaveCheckbox) {
+        autoSaveCheckbox.checked = autoSaveEnabled;
+        autoSaveCheckbox.addEventListener('change', (e) => {
+            autoSaveEnabled = e.target.checked;
+            localStorage.setItem('autoSaveEnabled', autoSaveEnabled);
+            // Sync with settings checkbox
+            const settingsAutoSave = document.getElementById('settingsAutoSave');
+            if (settingsAutoSave) {
+                settingsAutoSave.checked = autoSaveEnabled;
+            }
+        });
+    }
 
     // Password modal
     passwordSubmit.addEventListener('click', verifyPassword);
@@ -2325,6 +2352,9 @@ async function verifyPassword() {
 }
 
 async function saveNote() {
+    // Prevent duplicate saves
+    if (isSaving) return;
+
     const title = getFullNoteTitle();
     const content = getEditorContent();
     const type = noteType.value;
@@ -2341,6 +2371,14 @@ async function saveNote() {
         setTimeout(() => updateSaveStatus(''), 1000);
         return;
     }
+
+    // Clear any pending auto-save
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+    }
+
+    isSaving = true;
 
     const headers = {
         'Content-Type': 'application/json'
@@ -2397,6 +2435,8 @@ async function saveNote() {
         }
     } catch (error) {
         console.error('Failed to save note:', error);
+    } finally {
+        isSaving = false;
     }
 }
 
@@ -2666,7 +2706,9 @@ function renderTreeLevel(tree, container, level, path) {
             container.appendChild(folder);
         } else if (hasNotes) {
             // Render single note directly
-            renderNoteItem(data._notes[0], container, level, false);
+            // If we're inside a folder (path is not empty), it's a child note
+            const isChildNote = path !== '';
+            renderNoteItem(data._notes[0], container, level, isChildNote);
         }
     });
 }
@@ -3531,7 +3573,13 @@ function initGeneralSettings() {
 
     if (autoSaveToggle) {
         autoSaveToggle.addEventListener('change', () => {
-            localStorage.setItem('autoSaveEnabled', autoSaveToggle.checked);
+            autoSaveEnabled = autoSaveToggle.checked;
+            localStorage.setItem('autoSaveEnabled', autoSaveEnabled);
+            // Sync with editor checkbox
+            const editorAutoSave = document.getElementById('autoSaveEnabled');
+            if (editorAutoSave) {
+                editorAutoSave.checked = autoSaveEnabled;
+            }
         });
     }
 
@@ -3564,8 +3612,7 @@ function loadGeneralSettings() {
     }
 
     if (autoSaveToggle) {
-        const autoSaveEnabled = localStorage.getItem('autoSaveEnabled');
-        autoSaveToggle.checked = autoSaveEnabled !== 'false'; // Default to true
+        autoSaveToggle.checked = autoSaveEnabled; // Use global variable (default: false)
     }
 
     if (lineNumbersToggle) {

@@ -108,6 +108,8 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	if err != nil {
 		relPath = filepath.Base(filePath)
 	}
+	// Convert to forward slashes for git (git uses forward slashes on all platforms)
+	relPath = filepath.ToSlash(relPath)
 
 	// Add file to staging
 	if _, err := w.Add(relPath); err != nil {
@@ -170,6 +172,8 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 	if err != nil {
 		relPath = filepath.Base(filePath)
 	}
+	// Convert to forward slashes for git
+	relPath = filepath.ToSlash(relPath)
 
 	if _, err := w.Remove(relPath); err != nil {
 		return fmt.Errorf("failed to remove file: %w", err)
@@ -226,6 +230,8 @@ func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
 	if err != nil {
 		relPath = filepath.Base(filePath)
 	}
+	// Convert to forward slashes for git
+	relPath = filepath.ToSlash(relPath)
 
 	iter, err := r.repo.Log(&git.LogOptions{
 		FileName: &relPath,
@@ -274,6 +280,8 @@ func (r *Repository) GetFileAtCommit(filePath, commitHash string) ([]byte, error
 	if err != nil {
 		relPath = filepath.Base(filePath)
 	}
+	// Convert to forward slashes for git
+	relPath = filepath.ToSlash(relPath)
 
 	file, err := tree.File(relPath)
 	if err != nil {

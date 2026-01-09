@@ -116,6 +116,8 @@ func (h *NoteHandler) List(c *gin.Context) {
 		if err != nil {
 			return nil
 		}
+		// Convert to forward slashes for consistency across platforms
+		relPath = filepath.ToSlash(relPath)
 
 		// Remove extension to get ID
 		id := strings.TrimSuffix(relPath, ext)
@@ -150,7 +152,7 @@ func (h *NoteHandler) Get(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath = filepath.Join(storagePath, id+ext)
+		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break
@@ -270,9 +272,8 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Create file in the target directory
-	filePath := filepath.Join(targetDir, id+note.GetExtension())
-	fmt.Printf("[Create] Creating file at: %s\n", filePath)
+	// Create file in the target directory (use absolute path for git)
+	filePath, _ := filepath.Abs(filepath.Join(targetDir, id+note.GetExtension()))
 	if err := os.WriteFile(filePath, content, 0644); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -308,7 +309,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath = filepath.Join(storagePath, id+ext)
+		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break
@@ -366,8 +367,28 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Handle type change (extension change)
-	newFilePath := filepath.Join(storagePath, note.GetFilename())
+	// Extract folder path from title (e.g., "folder/subfolder/notename" -> "folder/subfolder")
+	var newFolderPath string
+	// Normalize title path separators (handle both / and \)
+	normalizedTitle := strings.ReplaceAll(note.Title, "\\", "/")
+	if lastSlash := strings.LastIndex(normalizedTitle, "/"); lastSlash != -1 {
+		newFolderPath = normalizedTitle[:lastSlash]
+	}
+
+	// Determine target folder
+	targetFolder := storagePath
+	if newFolderPath != "" {
+		targetFolder = filepath.Join(storagePath, filepath.FromSlash(newFolderPath))
+		// Create folder if it doesn't exist
+		if err := os.MkdirAll(targetFolder, 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+			return
+		}
+	}
+
+	// Build new file path with folder (use base ID without old folder path)
+	baseID := filepath.Base(note.ID)
+	newFilePath, _ := filepath.Abs(filepath.Join(targetFolder, baseID+note.GetExtension()))
 
 	// Git operations with user repo
 	userRepo, repoErr := h.getUserRepo(c)
@@ -404,7 +425,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath = filepath.Join(storagePath, id+ext)
+		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break

@@ -242,6 +242,7 @@ const i18n = {
             'context.move': 'Move to...',
             'context.changeIcon': 'Change Icon',
             'context.history': 'History',
+            'context.decrypt': 'Remove Encryption',
             'context.delete': 'Delete',
             'context.newNote': 'New Note',
             'context.newFolder': 'New Folder',
@@ -258,6 +259,10 @@ const i18n = {
 
             // Confirm
             'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
+            'confirm.decryptNote': 'Remove encryption from this note? The file will be stored in plain text.',
+
+            // Toast
+            'toast.noteDecrypted': 'Note decrypted successfully',
 
             // Help
             'help.title': 'Keyboard Shortcuts',
@@ -520,6 +525,7 @@ const i18n = {
             'context.move': '이동...',
             'context.changeIcon': '아이콘 변경',
             'context.history': '히스토리',
+            'context.decrypt': '암호화 해제',
             'context.delete': '삭제',
             'context.newNote': '새 노트',
             'context.newFolder': '새 폴더',
@@ -536,6 +542,10 @@ const i18n = {
 
             // Confirm
             'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',
+            'confirm.decryptNote': '이 노트의 암호화를 해제하시겠습니까? 파일이 평문으로 저장됩니다.',
+
+            // Toast
+            'toast.noteDecrypted': '노트 암호화가 해제되었습니다',
 
             // Help
             'help.title': '키보드 단축키',

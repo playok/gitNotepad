@@ -161,6 +161,7 @@ func (s *Server) setupRoutes() {
 			api.POST("/notes", noteHandler.Create)
 			api.PUT("/notes/:id", noteHandler.Update)
 			api.DELETE("/notes/:id", noteHandler.Delete)
+			api.POST("/notes/:id/decrypt", noteHandler.DecryptNote)
 
 			// Folders
 			api.GET("/folders", noteHandler.ListFolders)
@@ -225,6 +226,7 @@ func (s *Server) setupRoutes() {
 			api.POST("/notes", noteHandler.Create)
 			api.PUT("/notes/:id", noteHandler.Update)
 			api.DELETE("/notes/:id", noteHandler.Delete)
+			api.POST("/notes/:id/decrypt", noteHandler.DecryptNote)
 
 			// Folders
 			api.GET("/folders", noteHandler.ListFolders)

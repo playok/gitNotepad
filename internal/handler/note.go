@@ -114,13 +114,14 @@ func (h *NoteHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 }
 
 type NoteListItem struct {
-	ID       string    `json:"id"`
-	Title    string    `json:"title"`
-	Type     string    `json:"type"`
-	Icon     string    `json:"icon,omitempty"`
-	Private  bool      `json:"private"`
-	Created  time.Time `json:"created"`
-	Modified time.Time `json:"modified"`
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	Type      string    `json:"type"`
+	Icon      string    `json:"icon,omitempty"`
+	Private   bool      `json:"private"`
+	Encrypted bool      `json:"encrypted"`
+	Created   time.Time `json:"created"`
+	Modified  time.Time `json:"modified"`
 }
 
 func (h *NoteHandler) List(c *gin.Context) {
@@ -151,6 +152,13 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
+		// Check if file is encrypted before loading
+		rawContent, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		isEncrypted := encryption.IsEncrypted(string(rawContent))
+
 		note, err := h.loadNoteFromFile(path, encryptionKey)
 		if err != nil {
 			return nil
@@ -168,13 +176,14 @@ func (h *NoteHandler) List(c *gin.Context) {
 		id := strings.TrimSuffix(relPath, ext)
 
 		notes = append(notes, NoteListItem{
-			ID:       id,
-			Title:    note.Title,
-			Type:     note.Type,
-			Icon:     note.Icon,
-			Private:  note.Private,
-			Created:  note.Created,
-			Modified: note.Modified,
+			ID:        id,
+			Title:     note.Title,
+			Type:      note.Type,
+			Icon:      note.Icon,
+			Private:   note.Private,
+			Encrypted: isEncrypted,
+			Created:   note.Created,
+			Modified:  note.Modified,
 		})
 
 		return nil
@@ -516,6 +525,59 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Note deleted"})
+}
+
+// DecryptNote removes encryption from a note file
+func (h *NoteHandler) DecryptNote(c *gin.Context) {
+	id := c.Param("id")
+	storagePath := h.getUserStoragePath(c)
+
+	// Get encryption key from context
+	encryptionKey := middleware.GetEncryptionKey(c)
+
+	var filePath string
+	var note *model.Note
+	var err error
+
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
+		note, err = h.loadNoteFromFile(filePath, encryptionKey)
+		if err == nil {
+			break
+		}
+	}
+
+	if note == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		return
+	}
+
+	// Check if file is encrypted
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !encryption.IsEncrypted(string(content)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Note is not encrypted"})
+		return
+	}
+
+	// Save without encryption (pass nil key)
+	if err := h.saveNoteToFile(note, filePath, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Git commit
+	if userRepo, err := h.getUserRepo(c); err == nil {
+		if err := userRepo.AddAndCommit(filePath, fmt.Sprintf("Decrypt note: %s", note.Title)); err != nil {
+			fmt.Printf("Git commit error: %v\n", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Note decrypted successfully"})
 }
 
 // Folder represents a directory in the note storage

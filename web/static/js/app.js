@@ -979,6 +979,9 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="history">
             <span class="context-icon">&#128337;</span> <span data-i18n="context.history">History</span>
         </div>
+        <div class="context-menu-item" data-action="decrypt" id="context-decrypt-item" style="display: none;">
+            <span class="context-icon">&#128275;</span> <span data-i18n="context.decrypt">Remove Encryption</span>
+        </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete">
             <span class="context-icon">&#128465;</span> <span data-i18n="context.delete">Delete</span>
@@ -1061,6 +1064,12 @@ function showContextMenu(e, noteId) {
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
+    // Show/hide decrypt menu item based on encryption status
+    const decryptItem = document.getElementById('context-decrypt-item');
+    if (decryptItem) {
+        decryptItem.style.display = note.encrypted ? 'flex' : 'none';
+    }
+
     // Position context menu
     const x = e.clientX;
     const y = e.clientY;
@@ -1129,6 +1138,32 @@ async function handleContextMenuAction(e) {
                 await deleteNoteById(contextTarget);
             }
             break;
+
+        case 'decrypt':
+            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${note.title}"?`)) {
+                await decryptNote(contextTarget);
+            }
+            break;
+    }
+}
+
+async function decryptNote(noteId) {
+    try {
+        const response = await fetch(`${basePath}/api/notes/${encodeURIComponent(btoa(noteId))}/decrypt`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            showToast(i18n.t('toast.noteDecrypted') || 'Note decrypted successfully');
+            await loadNotes();
+        } else {
+            const data = await response.json();
+            showToast(data.error || 'Failed to decrypt note', 'error');
+        }
+    } catch (error) {
+        console.error('Error decrypting note:', error);
+        showToast('Error decrypting note', 'error');
     }
 }
 

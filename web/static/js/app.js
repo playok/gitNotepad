@@ -815,22 +815,45 @@ function initTheme() {
     }
 }
 
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+// Available themes
+const themes = ['light', 'dark', 'dark-high-contrast', 'dark-cyan'];
 
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const currentIndex = themes.indexOf(currentTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const newTheme = themes[nextIndex];
+
+    setTheme(newTheme);
+}
+
+function setTheme(theme) {
+    if (!themes.includes(theme)) {
+        theme = 'light';
+    }
+
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    // Update Settings dialog select if it exists
+    const themeSelect = document.getElementById('settingsTheme');
+    if (themeSelect && themeSelect.value !== theme) {
+        themeSelect.value = theme;
+    }
 
     // Recreate CodeMirror editor with new theme
     reinitCodeMirror();
 }
 
+function isDarkTheme() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    return theme && theme !== 'light';
+}
+
 function reinitCodeMirror() {
     if (!cmEditor) return;
 
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    cmEditor.setOption('theme', isDark ? 'dracula' : 'default');
+    cmEditor.setOption('theme', isDarkTheme() ? 'dracula' : 'default');
 }
 
 function updateLineNumbers(enabled) {
@@ -3576,9 +3599,7 @@ function initGeneralSettings() {
 
     if (themeSelect) {
         themeSelect.addEventListener('change', () => {
-            const theme = themeSelect.value;
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
+            setTheme(themeSelect.value);
         });
     }
 

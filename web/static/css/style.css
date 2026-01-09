@@ -92,6 +92,88 @@
     --header-gradient: linear-gradient(135deg, hsl(217.2 91.2% 49.8%) 0%, hsl(262.1 83.3% 57.8%) 100%);
 }
 
+/* Dark High Contrast Theme - Enhanced visibility */
+[data-theme="dark-high-contrast"] {
+    --bg-primary: hsl(0 0% 0%);
+    --bg-secondary: hsl(0 0% 7%);
+    --bg-tertiary: hsl(0 0% 13%);
+    --bg-hover: hsl(0 0% 20%);
+    --bg-code: hsl(0 0% 3%);
+    --bg-muted: hsl(0 0% 15%);
+
+    --text-primary: hsl(0 0% 100%);
+    --text-secondary: hsl(0 0% 85%);
+    --text-muted: hsl(0 0% 70%);
+
+    --accent: hsl(210 100% 75%);
+    --accent-light: hsl(210 100% 85%);
+    --accent-dark: hsl(210 100% 65%);
+    --accent-bg: hsl(210 100% 75% / 0.2);
+    --accent-foreground: hsl(0 0% 0%);
+
+    --border: hsl(0 0% 25%);
+    --border-light: hsl(0 0% 35%);
+    --input-border: hsl(0 0% 30%);
+    --ring: hsl(210 100% 70%);
+
+    --success: hsl(120 100% 60%);
+    --success-bg: hsl(120 100% 60% / 0.2);
+    --warning: hsl(50 100% 60%);
+    --warning-bg: hsl(50 100% 60% / 0.2);
+    --danger: hsl(0 100% 65%);
+    --danger-bg: hsl(0 100% 65% / 0.2);
+    --danger-foreground: hsl(0 0% 100%);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.6), 0 1px 2px -1px rgb(0 0 0 / 0.6);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.6), 0 2px 4px -2px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.7);
+
+    --header-gradient: linear-gradient(135deg, hsl(210 100% 65%) 0%, hsl(280 100% 70%) 100%);
+}
+
+/* Dark Cyan Theme - Cyan accent for better visibility */
+[data-theme="dark-cyan"] {
+    --bg-primary: hsl(200 50% 4%);
+    --bg-secondary: hsl(200 40% 10%);
+    --bg-tertiary: hsl(200 30% 15%);
+    --bg-hover: hsl(200 25% 20%);
+    --bg-code: hsl(200 50% 2%);
+    --bg-muted: hsl(200 30% 16%);
+
+    --text-primary: hsl(180 30% 98%);
+    --text-secondary: hsl(180 20% 70%);
+    --text-muted: hsl(180 15% 55%);
+
+    --accent: hsl(180 100% 50%);
+    --accent-light: hsl(180 100% 65%);
+    --accent-dark: hsl(180 100% 40%);
+    --accent-bg: hsl(180 100% 50% / 0.15);
+    --accent-foreground: hsl(200 50% 5%);
+
+    --border: hsl(200 30% 18%);
+    --border-light: hsl(200 25% 25%);
+    --input-border: hsl(200 30% 20%);
+    --ring: hsl(180 100% 45%);
+
+    --success: hsl(160 100% 45%);
+    --success-bg: hsl(160 100% 45% / 0.15);
+    --warning: hsl(45 100% 55%);
+    --warning-bg: hsl(45 100% 55% / 0.15);
+    --danger: hsl(0 85% 55%);
+    --danger-bg: hsl(0 85% 55% / 0.15);
+    --danger-foreground: hsl(0 0% 98%);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6);
+
+    --header-gradient: linear-gradient(135deg, hsl(180 100% 40%) 0%, hsl(200 100% 50%) 100%);
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     background-color: var(--bg-secondary);

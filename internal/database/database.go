@@ -59,6 +59,17 @@ func (db *DB) Migrate() error {
 		`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`,
 		`CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`,
+		// Folder icons table
+		`CREATE TABLE IF NOT EXISTS folder_icons (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			folder_path TEXT NOT NULL,
+			icon TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			UNIQUE(user_id, folder_path)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_folder_icons_user ON folder_icons(user_id)`,
 	}
 
 	for _, migration := range migrations {

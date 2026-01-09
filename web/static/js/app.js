@@ -14,6 +14,7 @@ let currentNoteFolderPath = ''; // Folder path for current note
 let notes = [];
 let folders = []; // Actual folders from API
 let expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '{}');
+let folderIcons = {}; // { folderPath: emoji } - loaded from API
 let draggedNoteId = null;
 let currentAttachments = []; // Track attachments for current note
 let isViewMode = true; // View mode by default (preview only)
@@ -188,9 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initFileUpload();
     initMiniCalendar();
     initLocaleSelector();
-    loadNotes().then(() => {
-        handleHashNavigation();
-        renderMiniCalendar();
+    // Load folder icons then notes
+    loadFolderIcons().then(() => {
+        loadNotes().then(() => {
+            handleHashNavigation();
+            renderMiniCalendar();
+        });
     });
     setupEventListeners();
 
@@ -405,72 +409,69 @@ function createHelpModal() {
     modal.innerHTML = `
         <div class="modal-content modal-help">
             <div class="help-header">
-                <h3>Keyboard Shortcuts</h3>
+                <h3>${i18n.t('help.title')}</h3>
                 <button class="help-close-btn" onclick="toggleHelpModal()">&times;</button>
             </div>
             <div class="help-content">
                 <div class="help-section">
-                    <h4>General</h4>
+                    <h4>${i18n.t('help.general')}</h4>
                     <div class="shortcut-list">
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>N</kbd></span>
-                            <span class="shortcut-desc">New note</span>
+                            <span class="shortcut-desc">${i18n.t('help.newNote')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>S</kbd></span>
-                            <span class="shortcut-desc">Save note</span>
+                            <span class="shortcut-desc">${i18n.t('help.save')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>F</kbd></span>
-                            <span class="shortcut-desc">Search notes</span>
+                            <span class="shortcut-desc">${i18n.t('help.search')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span>
-                            <span class="shortcut-desc">Format JSON</span>
+                            <span class="shortcut-desc">${i18n.t('help.formatJson')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>F1</kbd> or <kbd>Ctrl</kbd> + <kbd>/</kbd></span>
-                            <span class="shortcut-desc">Show this help</span>
+                            <span class="shortcut-desc">${i18n.t('help.help')}</span>
                         </div>
                     </div>
                 </div>
                 <div class="help-section">
-                    <h4>View</h4>
+                    <h4>${i18n.t('help.view')}</h4>
                     <div class="shortcut-list">
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>B</kbd></span>
-                            <span class="shortcut-desc">Toggle sidebar</span>
+                            <span class="shortcut-desc">${i18n.t('help.toggleSidebar')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>E</kbd></span>
-                            <span class="shortcut-desc">Editor fullscreen</span>
+                            <span class="shortcut-desc">${i18n.t('help.editorFullscreen')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>P</kbd></span>
-                            <span class="shortcut-desc">Preview fullscreen</span>
+                            <span class="shortcut-desc">${i18n.t('help.previewFullscreen')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys"><kbd>Esc</kbd></span>
-                            <span class="shortcut-desc">Close modal / Exit fullscreen</span>
+                            <span class="shortcut-desc">${i18n.t('help.closeModal')}</span>
                         </div>
                     </div>
                 </div>
                 <div class="help-section">
-                    <h4>Editor</h4>
+                    <h4>${i18n.t('help.editor')}</h4>
                     <div class="shortcut-list">
                         <div class="shortcut-item">
                             <span class="shortcut-keys">Drag & Drop</span>
-                            <span class="shortcut-desc">Move note to folder</span>
+                            <span class="shortcut-desc">${i18n.t('help.dragDrop')}</span>
                         </div>
                         <div class="shortcut-item">
                             <span class="shortcut-keys">Right-click</span>
-                            <span class="shortcut-desc">Context menu</span>
+                            <span class="shortcut-desc">${i18n.t('help.contextMenu')}</span>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="help-footer">
-                <span class="help-tip">Auto-save is enabled (2s delay)</span>
             </div>
         </div>
     `;
@@ -971,6 +972,9 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="move">
             <span class="context-icon">&#128193;</span> <span data-i18n="context.move">Move to...</span>
         </div>
+        <div class="context-menu-item" data-action="change-icon">
+            <span class="context-icon">&#127912;</span> <span data-i18n="context.changeIcon">Change Icon</span>
+        </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="history">
             <span class="context-icon">&#128337;</span> <span data-i18n="context.history">History</span>
@@ -1006,6 +1010,9 @@ function initContextMenu() {
         </div>
         <div class="context-menu-item" data-action="new-subfolder">
             <span class="context-icon">&#128193;</span> <span data-i18n="context.newSubfolder">New Subfolder</span>
+        </div>
+        <div class="context-menu-item" data-action="change-folder-icon">
+            <span class="context-icon">&#127912;</span> <span data-i18n="context.changeIcon">Change Icon</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete-folder">
@@ -1106,6 +1113,10 @@ async function handleContextMenuAction(e) {
             if (newPath && newPath !== note.title) {
                 await renameNote(contextTarget, newPath);
             }
+            break;
+
+        case 'change-icon':
+            showIconPicker('note', contextTarget);
             break;
 
         case 'history':
@@ -1234,6 +1245,10 @@ async function handleFolderContextMenuAction(e) {
             if (subfolderName) {
                 await createFolder(subfolderName, currentFolderPath);
             }
+            break;
+
+        case 'change-folder-icon':
+            showIconPicker('folder', currentFolderPath);
             break;
 
         case 'delete-folder':
@@ -2784,9 +2799,10 @@ function renderTreeLevel(tree, container, level, path) {
             const folderHeader = document.createElement('div');
             folderHeader.className = `tree-folder-header ${isExpanded ? 'expanded' : ''}`;
             folderHeader.style.paddingLeft = `${12 + level * 16}px`;
+            const folderIcon = getCustomIcon('folder', currentPath) || '📁';
             folderHeader.innerHTML = `
                 <span class="tree-toggle">${isExpanded ? '&#9660;' : '&#9654;'}</span>
-                <span class="tree-folder-icon">&#128193;</span>
+                <span class="tree-folder-icon">${folderIcon}</span>
                 <span class="tree-folder-name">${escapeHtml(name)}</span>
                 <span class="tree-count">${countNotesInTree(data)}</span>
             `;
@@ -2851,14 +2867,15 @@ function renderNoteItem(note, container, level, isChild) {
 
     const displayName = isChild ? note.title.split('/').pop() : note.title;
     const lockIcon = note.private ? '<span class="lock-icon">&#128274;</span>' : '';
-    const typeIcon = note.type === 'markdown' ? '&#128196;' : (note.type === 'asciidoc' ? '&#128221;' : '&#128195;');
+    const defaultTypeIcon = note.type === 'markdown' ? '📄' : (note.type === 'asciidoc' ? '📝' : '📃');
+    const noteIcon = getCustomIcon('note', note.id) || defaultTypeIcon;
     const typeLabel = note.type === 'markdown' ? 'MD' : (note.type === 'asciidoc' ? 'ADOC' : 'TXT');
     const editBtnTitle = (typeof i18n !== 'undefined') ? i18n.t('btn.edit') : 'Edit';
 
     li.style.paddingLeft = `${12 + level * 16}px`;
     li.innerHTML = `
         <span class="drag-handle">&#8942;&#8942;</span>
-        <span class="tree-note-icon">${typeIcon}</span>
+        <span class="tree-note-icon">${noteIcon}</span>
         <div class="note-info">
             <div class="note-title">${escapeHtml(displayName)} ${lockIcon}</div>
             <div class="note-meta"><span class="note-type-badge">${typeLabel}</span> ${formatDate(note.modified)}</div>
@@ -4600,4 +4617,199 @@ function initLocaleSelector() {
 
     // Initialize display
     updateLocaleDisplay();
+}
+
+// ============================================
+// Icon Picker
+// ============================================
+
+const AVAILABLE_ICONS = [
+    // Documents & Files
+    '📄', '📝', '📋', '📑', '📰', '📓', '📔', '📒', '📕', '📗', '📘', '📙',
+    // Folders
+    '📁', '📂', '🗂️', '🗃️', '🗄️',
+    // Objects
+    '💼', '🎒', '🧳', '📦', '🗑️',
+    // Tech
+    '💻', '🖥️', '⌨️', '🖱️', '💾', '💿', '📀', '🔧', '⚙️', '🔩',
+    // Communication
+    '📧', '✉️', '📨', '📩', '📤', '📥', '📫', '📬',
+    // Nature
+    '🌳', '🌲', '🌴', '🌵', '🌿', '🍀', '🌸', '🌺', '🌻', '🌹',
+    // Weather
+    '☀️', '🌙', '⭐', '🌟', '⚡', '🔥', '💧', '❄️', '🌈',
+    // Symbols
+    '❤️', '💛', '💚', '💙', '💜', '🖤', '🤍', '🧡',
+    '⭕', '❌', '✅', '❎', '⚠️', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣',
+    // Activities
+    '🎮', '🎯', '🎨', '🎭', '🎪', '🎬', '🎵', '🎶', '🎤', '🎧',
+    // Food
+    '🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🍕', '🍔', '☕',
+    // Animals
+    '🐶', '🐱', '🐼', '🐨', '🦊', '🦁', '🐯', '🦄', '🐝', '🦋',
+    // Misc
+    '💡', '🔑', '🔒', '🔓', '🏠', '🏢', '🚀', '✨', '💎', '🎁'
+];
+
+let iconPickerModal = null;
+let iconPickerTarget = null; // { type: 'note'|'folder', id: noteId|folderPath }
+
+function createIconPickerModal() {
+    if (iconPickerModal) return;
+
+    iconPickerModal = document.createElement('div');
+    iconPickerModal.id = 'iconPickerModal';
+    iconPickerModal.className = 'modal';
+    iconPickerModal.style.display = 'none';
+
+    const iconsHtml = AVAILABLE_ICONS.map(icon =>
+        `<button class="icon-picker-item" data-icon="${icon}">${icon}</button>`
+    ).join('');
+
+    iconPickerModal.innerHTML = `
+        <div class="modal-content icon-picker-modal">
+            <div class="icon-picker-header">
+                <h3>${i18n.t('iconPicker.title')}</h3>
+                <button class="modal-close-btn" id="iconPickerClose">&times;</button>
+            </div>
+            <div class="icon-picker-grid">
+                ${iconsHtml}
+            </div>
+            <div class="icon-picker-footer">
+                <button class="btn btn-secondary" id="iconPickerReset">${i18n.t('iconPicker.reset')}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(iconPickerModal);
+
+    // Close button
+    document.getElementById('iconPickerClose').addEventListener('click', () => {
+        iconPickerModal.style.display = 'none';
+    });
+
+    // Backdrop click
+    iconPickerModal.addEventListener('click', (e) => {
+        if (e.target === iconPickerModal) {
+            iconPickerModal.style.display = 'none';
+        }
+    });
+
+    // Icon selection
+    iconPickerModal.querySelectorAll('.icon-picker-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (iconPickerTarget) {
+                setCustomIcon(iconPickerTarget.type, iconPickerTarget.id, btn.dataset.icon);
+            }
+            iconPickerModal.style.display = 'none';
+        });
+    });
+
+    // Reset button
+    document.getElementById('iconPickerReset').addEventListener('click', () => {
+        if (iconPickerTarget) {
+            removeCustomIcon(iconPickerTarget.type, iconPickerTarget.id);
+        }
+        iconPickerModal.style.display = 'none';
+    });
+}
+
+function showIconPicker(type, id) {
+    if (!iconPickerModal) {
+        createIconPickerModal();
+    }
+    iconPickerTarget = { type, id };
+    iconPickerModal.style.display = 'flex';
+}
+
+async function loadFolderIcons() {
+    try {
+        const response = await fetch(basePath + '/api/folder-icons');
+        if (response.ok) {
+            folderIcons = await response.json();
+        }
+    } catch (err) {
+        console.error('Failed to load folder icons:', err);
+    }
+}
+
+async function setCustomIcon(type, id, icon) {
+    if (type === 'folder') {
+        // Save folder icon via API
+        try {
+            const response = await fetch(basePath + '/api/folder-icons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder_path: id, icon: icon })
+            });
+            if (response.ok) {
+                folderIcons[id] = icon;
+                renderNoteTree();
+            }
+        } catch (err) {
+            console.error('Failed to save folder icon:', err);
+        }
+    } else {
+        // Save note icon via note update API
+        const note = notes.find(n => n.id === id);
+        if (note) {
+            try {
+                const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ icon: icon })
+                });
+                if (response.ok) {
+                    note.icon = icon;
+                    renderNoteTree();
+                }
+            } catch (err) {
+                console.error('Failed to save note icon:', err);
+            }
+        }
+    }
+}
+
+async function removeCustomIcon(type, id) {
+    if (type === 'folder') {
+        // Delete folder icon via API
+        try {
+            const response = await fetch(basePath + '/api/folder-icons?folder_path=' + encodeURIComponent(id), {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                delete folderIcons[id];
+                renderNoteTree();
+            }
+        } catch (err) {
+            console.error('Failed to delete folder icon:', err);
+        }
+    } else {
+        // Remove note icon via note update API
+        const note = notes.find(n => n.id === id);
+        if (note) {
+            try {
+                const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ icon: '' })
+                });
+                if (response.ok) {
+                    note.icon = '';
+                    renderNoteTree();
+                }
+            } catch (err) {
+                console.error('Failed to remove note icon:', err);
+            }
+        }
+    }
+}
+
+function getCustomIcon(type, id) {
+    if (type === 'folder') {
+        return folderIcons[id] || null;
+    } else {
+        const note = notes.find(n => n.id === id);
+        return note?.icon || null;
+    }
 }

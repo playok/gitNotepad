@@ -85,6 +85,7 @@ func (s *Server) setupRoutes() {
 	fileHandler := handler.NewFileHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	adminHandler := handler.NewAdminHandler(userRepo)
 	statsHandler := handler.NewStatsHandler(s.config)
+	folderIconHandler := handler.NewFolderIconHandler(s.db)
 
 	// Load embedded templates
 	tmpl := template.Must(template.New("").ParseFS(web.Templates, "templates/*.html"))
@@ -155,6 +156,11 @@ func (s *Server) setupRoutes() {
 			api.POST("/folders", noteHandler.CreateFolder)
 			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
 
+			// Folder icons
+			api.GET("/folder-icons", folderIconHandler.List)
+			api.POST("/folder-icons", folderIconHandler.Set)
+			api.DELETE("/folder-icons", folderIconHandler.Delete)
+
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)
 			api.GET("/notes/:id/version/:commit", gitHandler.Version)
@@ -213,6 +219,11 @@ func (s *Server) setupRoutes() {
 			api.GET("/folders", noteHandler.ListFolders)
 			api.POST("/folders", noteHandler.CreateFolder)
 			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
+
+			// Folder icons
+			api.GET("/folder-icons", folderIconHandler.List)
+			api.POST("/folder-icons", folderIconHandler.Set)
+			api.DELETE("/folder-icons", folderIconHandler.Delete)
 
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)

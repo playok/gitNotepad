@@ -240,6 +240,7 @@ const i18n = {
             'context.rename': 'Rename',
             'context.duplicate': 'Duplicate',
             'context.move': 'Move to...',
+            'context.changeIcon': 'Change Icon',
             'context.history': 'History',
             'context.delete': 'Delete',
             'context.newNote': 'New Note',
@@ -247,6 +248,10 @@ const i18n = {
             'context.newNoteInFolder': 'New Note Here',
             'context.newSubfolder': 'New Subfolder',
             'context.deleteFolder': 'Delete Folder',
+
+            // Icon Picker
+            'iconPicker.title': 'Select Icon',
+            'iconPicker.reset': 'Reset to Default',
 
             // Prompts
             'prompt.enterFolderName': 'Enter folder name:',
@@ -256,16 +261,20 @@ const i18n = {
 
             // Help
             'help.title': 'Keyboard Shortcuts',
-            'help.global': 'Global',
+            'help.general': 'General',
+            'help.view': 'View',
             'help.editor': 'Editor',
             'help.newNote': 'New note',
-            'help.save': 'Save',
-            'help.search': 'Search',
+            'help.save': 'Save note',
+            'help.search': 'Search notes',
+            'help.formatJson': 'Format JSON',
+            'help.help': 'Show this help',
             'help.toggleSidebar': 'Toggle sidebar',
-            'help.help': 'Show help',
             'help.editorFullscreen': 'Editor fullscreen',
             'help.previewFullscreen': 'Preview fullscreen',
-            'help.formatJson': 'Format JSON',
+            'help.closeModal': 'Close modal / Exit fullscreen',
+            'help.dragDrop': 'Move note to folder',
+            'help.contextMenu': 'Context menu',
 
             // Attachment
             'attachment.removeConfirm': 'Remove this attachment?',
@@ -509,6 +518,7 @@ const i18n = {
             'context.rename': '이름 변경',
             'context.duplicate': '복제',
             'context.move': '이동...',
+            'context.changeIcon': '아이콘 변경',
             'context.history': '히스토리',
             'context.delete': '삭제',
             'context.newNote': '새 노트',
@@ -516,6 +526,10 @@ const i18n = {
             'context.newNoteInFolder': '여기에 새 노트',
             'context.newSubfolder': '하위 폴더',
             'context.deleteFolder': '폴더 삭제',
+
+            // Icon Picker
+            'iconPicker.title': '아이콘 선택',
+            'iconPicker.reset': '기본값으로 초기화',
 
             // Prompts
             'prompt.enterFolderName': '폴더 이름을 입력하세요:',
@@ -525,16 +539,20 @@ const i18n = {
 
             // Help
             'help.title': '키보드 단축키',
-            'help.global': '전역',
+            'help.general': '일반',
+            'help.view': '보기',
             'help.editor': '편집기',
             'help.newNote': '새 노트',
-            'help.save': '저장',
-            'help.search': '검색',
+            'help.save': '노트 저장',
+            'help.search': '노트 검색',
+            'help.formatJson': 'JSON 정리',
+            'help.help': '도움말 표시',
             'help.toggleSidebar': '사이드바 토글',
-            'help.help': '도움말',
             'help.editorFullscreen': '편집기 전체화면',
             'help.previewFullscreen': '미리보기 전체화면',
-            'help.formatJson': 'JSON 정리',
+            'help.closeModal': '모달 닫기 / 전체화면 종료',
+            'help.dragDrop': '노트를 폴더로 이동',
+            'help.contextMenu': '컨텍스트 메뉴',
 
             // Attachment
             'attachment.removeConfirm': '이 첨부 파일을 삭제하시겠습니까?',

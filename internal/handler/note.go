@@ -74,6 +74,7 @@ type NoteListItem struct {
 	ID       string    `json:"id"`
 	Title    string    `json:"title"`
 	Type     string    `json:"type"`
+	Icon     string    `json:"icon,omitempty"`
 	Private  bool      `json:"private"`
 	Created  time.Time `json:"created"`
 	Modified time.Time `json:"modified"`
@@ -126,6 +127,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 			ID:       id,
 			Title:    note.Title,
 			Type:     note.Type,
+			Icon:     note.Icon,
 			Private:  note.Private,
 			Created:  note.Created,
 			Modified: note.Modified,
@@ -163,6 +165,9 @@ func (h *NoteHandler) Get(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
 		return
 	}
+
+	// Set the correct ID with folder path (the decoded id from URL parameter)
+	note.ID = id
 
 	// Check if private and needs password
 	if note.Private {
@@ -293,6 +298,7 @@ type UpdateNoteRequest struct {
 	Title       string             `json:"title"`
 	Content     string             `json:"content"`
 	Type        string             `json:"type"`
+	Icon        *string            `json:"icon,omitempty"`
 	Private     bool               `json:"private"`
 	Password    *string            `json:"password"`
 	Attachments []model.Attachment `json:"attachments"`
@@ -347,6 +353,11 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	note.Private = req.Private
 	note.Attachments = req.Attachments
 	note.Modified = time.Now()
+
+	// Update icon if provided
+	if req.Icon != nil {
+		note.Icon = *req.Icon
+	}
 
 	// Update created date if provided (for calendar drag & drop)
 	if req.Created != nil {
@@ -410,6 +421,16 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		if err := userRepo.AddAndCommit(newFilePath, fmt.Sprintf("Update note: %s", note.Title)); err != nil {
 			fmt.Printf("Git commit error: %v\n", err)
 		}
+	}
+
+	// Calculate relative path from storagePath for the ID (consistent with List handler)
+	absStoragePath, _ := filepath.Abs(storagePath)
+	relPath, err := filepath.Rel(absStoragePath, newFilePath)
+	if err == nil {
+		// Convert to forward slashes for consistency across platforms
+		relPath = filepath.ToSlash(relPath)
+		// Remove extension to get ID
+		note.ID = strings.TrimSuffix(relPath, note.GetExtension())
 	}
 
 	c.JSON(http.StatusOK, note)

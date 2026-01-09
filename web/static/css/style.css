@@ -4392,3 +4392,74 @@ code.hljs[data-line-count^="1000"] .line-number {
 .locale-name {
     flex: 1;
 }
+
+/* ============================================
+   Icon Picker Modal
+   ============================================ */
+
+.icon-picker-modal {
+    width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.icon-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.icon-picker-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 0.5rem;
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.icon-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.icon-picker-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+    transform: scale(1.1);
+}
+
+.icon-picker-item:active {
+    transform: scale(0.95);
+}
+
+.icon-picker-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+}
+
+.icon-picker-footer .btn {
+    min-width: 150px;
+}

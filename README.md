@@ -10,6 +10,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **Git 버전 관리**: 모든 변경사항 자동 커밋
 - **사용자 인증**: SQLite 기반 다중 사용자 지원
 - **비밀번호 보호**: 개별 노트 암호화
+- **파일 암호화**: AES-256-GCM 암호화로 저장 파일 보호 (선택적)
 - **파일 첨부**: 이미지 및 파일 업로드
 - **다크/라이트 테마**: 시스템 테마 연동
 - **오프라인 지원**: 모든 라이브러리 로컬 포함
@@ -92,14 +93,24 @@ gitnotepad -config my.yaml  # 설정 파일 지정
 
 ## 초기 설정
 
-### 기본 관리자 계정
+### 관리자 비밀번호 설정
 
-첫 실행 시 기본 관리자 계정이 생성됩니다:
+첫 실행 시 터미널에서 관리자 비밀번호를 입력받습니다:
 
-- **사용자명**: `admin`
-- **비밀번호**: `admin123`
+```
+╔════════════════════════════════════════════════════════════╗
+║              Initial Admin Password Setup                  ║
+╚════════════════════════════════════════════════════════════╝
 
-> ⚠️ **보안 주의**: 첫 로그인 후 반드시 비밀번호를 변경하세요!
+Enter admin password:
+Confirm admin password:
+Admin password set successfully!
+```
+
+- **사용자명**: `admin` (config.yaml에서 변경 가능)
+- **비밀번호**: 터미널에서 직접 입력 (SHA-512 해시로 config.yaml에 저장)
+
+> 비밀번호는 평문으로 저장되지 않으며, SHA-512 해시가 config.yaml에 저장됩니다.
 
 ### 사용자 관리
 
@@ -222,10 +233,14 @@ auth:
   enabled: true                # 인증 활성화
   session_timeout: 168         # 세션 만료 (시간)
   admin_username: "admin"      # 초기 관리자 ID
-  admin_password: "admin123"   # 초기 관리자 비밀번호
+  admin_password_hash: ""      # SHA-512 해시 (첫 실행 시 자동 설정)
 
 database:
   path: "./data/gitnotepad.db" # SQLite DB 경로
+
+encryption:
+  enabled: false               # 파일 암호화 활성화
+  salt: ""                     # 암호화 salt (첫 실행 시 자동 생성)
 ```
 
 ### 환경별 설정
@@ -244,7 +259,8 @@ server:
   host: "127.0.0.1"  # localhost만 허용
 auth:
   enabled: true
-  admin_password: "강력한비밀번호"
+encryption:
+  enabled: true      # 파일 암호화 활성화
 ```
 
 ### Nginx 리버스 프록시
@@ -337,6 +353,7 @@ gitNotepad/
 ├── internal/
 │   ├── config/             # 설정 로드
 │   ├── database/           # SQLite 초기화
+│   ├── encryption/         # AES-256 암호화
 │   ├── git/                # Git 연동
 │   ├── handler/            # HTTP 핸들러
 │   ├── middleware/         # 인증 미들웨어
@@ -411,6 +428,41 @@ gitNotepad/
 | POST | `/api/admin/users` | 사용자 생성 |
 | DELETE | `/api/admin/users/:id` | 사용자 삭제 |
 | PUT | `/api/admin/users/:id/password` | 비밀번호 변경 |
+
+## 파일 암호화
+
+### 개요
+
+노트 파일을 AES-256-GCM으로 암호화하여 저장합니다. 사용자 비밀번호에서 PBKDF2 키를 파생하여 암호화합니다.
+
+### 활성화
+
+`config.yaml`에서 암호화를 활성화합니다:
+
+```yaml
+encryption:
+  enabled: true
+  salt: ""  # 첫 실행 시 자동 생성
+```
+
+### 동작 방식
+
+1. **키 파생**: 사용자 로그인 시 비밀번호와 salt로 PBKDF2 키 생성 (100,000 iterations, SHA-256)
+2. **암호화**: 노트 저장 시 AES-256-GCM으로 암호화
+3. **저장 형식**: `ENC:base64_encoded_ciphertext` 형태로 파일에 저장
+4. **복호화**: 노트 로드 시 세션 키로 복호화
+
+### 특징
+
+- **세션 기반 키**: 암호화 키는 로그인 세션 동안만 메모리에 유지
+- **하위 호환성**: 기존 암호화되지 않은 파일도 정상 읽기 가능
+- **자동 salt 생성**: 첫 실행 시 보안 난수로 salt 자동 생성
+
+### 주의사항
+
+- 암호화 활성화 후에는 비밀번호 분실 시 데이터 복구 불가
+- salt가 변경되면 기존 암호화된 파일 복호화 불가
+- 여러 사용자가 같은 암호화된 노트에 접근하려면 같은 비밀번호 필요
 
 ## 문제 해결
 

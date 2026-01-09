@@ -20,6 +20,9 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 ├── internal/
 │   ├── config/config.go    # 설정 로딩 (base_path 포함)
 │   ├── database/database.go # SQLite 초기화 (modernc.org/sqlite)
+│   ├── encryption/         # AES-256 파일 암호화
+│   │   ├── encryption.go   # AES-256-GCM 암호화/복호화, PBKDF2 키 파생
+│   │   └── keystore.go     # 세션 기반 암호화 키 저장소
 │   ├── model/note.go       # 노트 모델 및 파일 I/O
 │   ├── git/repository.go   # Git 작업 래퍼
 │   ├── handler/            # HTTP 핸들러
@@ -140,6 +143,9 @@ auth:
   admin_password_hash: ""  # SHA-512 해시 (최초 실행 시 설정)
 database:
   path: "./data/gitnotepad.db"
+encryption:
+  enabled: false  # AES-256 파일 암호화 활성화
+  salt: ""        # PBKDF2 salt (최초 실행 시 자동 생성)
 ```
 
 ## 주요 기능
@@ -148,6 +154,7 @@ database:
 - Git 기반 버전 관리 (자동 커밋)
 - 다중 사용자 인증 (SQLite)
 - **관리자 비밀번호**: 최초 실행 시 터미널에서 입력, SHA-512 해시로 config.yaml에 저장
+- **파일 암호화**: AES-256-GCM으로 노트 파일 암호화 (선택적), PBKDF2 키 파생
 - 비밀번호 보호 (bcrypt)
 - 단축 URL 생성 (만료일 설정 가능)
 - 이미지/파일 첨부
@@ -175,6 +182,14 @@ database:
   - `Log()`, `Logln()`, `Logf()`: EUC-KR 인코딩 지원 로깅 함수
   - `Init()`: config 또는 LANG 환경변수에서 인코딩 초기화
   - 파일 저장은 항상 UTF-8, 콘솔 출력만 EUC-KR 변환 지원
+- **encryption/encryption.go**: AES-256-GCM 암호화 모듈
+  - `DeriveKey()`: PBKDF2 키 파생 (100,000 iterations)
+  - `Encrypt()` / `Decrypt()`: AES-256-GCM 암호화/복호화
+  - `IsEncrypted()`: 암호화 여부 체크 (`ENC:` prefix)
+  - `GenerateSalt()`: 보안 난수 salt 생성
+- **encryption/keystore.go**: 세션 기반 암호화 키 저장소
+  - 로그인 시 키 저장, 로그아웃 시 삭제
+  - 스레드 안전 (sync.RWMutex)
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
@@ -198,6 +213,11 @@ database:
 - `X-Note-Password` 헤더로 비밀번호 전달
 - UUID 기반 파일명으로 충돌 방지
 - 경로 탐색 공격 방지
+- **파일 암호화** (선택적):
+  - AES-256-GCM 인증 암호화
+  - PBKDF2 키 파생 (100,000 iterations, SHA-256)
+  - 세션 기반 키 저장 (메모리에만 유지)
+  - 암호화된 파일 형식: `ENC:base64_encoded_ciphertext`
 
 ## UI/UX
 

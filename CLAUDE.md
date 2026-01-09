@@ -128,7 +128,8 @@ server:
 storage:
   path: "./data"
   auto_init_git: true
-  encoding: "utf-8"    # "utf-8" (기본) 또는 "euc-kr" (LANG 환경변수에서 자동 감지)
+logging:
+  encoding: ""         # "utf-8" (기본) 또는 "euc-kr" 콘솔 출력용 (LANG 환경변수에서 자동 감지)
 editor:
   default_type: "markdown"
   auto_save: false
@@ -157,7 +158,7 @@ database:
 - **폴더 관리**: 드래그 앤 드롭으로 노트를 폴더로 이동, 폴더 내 새 노트 생성
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
 - **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
-- **파일 인코딩**: UTF-8 (기본) 및 EUC-KR 지원, LANG 환경변수 자동 감지
+- **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 
 ## 핵심 모듈
 
@@ -169,11 +170,10 @@ database:
 - **handler/note.go**: 노트 CRUD API, 비밀번호 검증
   - 폴더 경로 처리: 타이틀에서 폴더 경로 추출, 파일 이동
   - 절대 경로 사용: `filepath.Abs()` 적용으로 Git 경로 일관성 보장
-  - 파일 인코딩 변환: `parseNoteWithEncoding()`, `writeFileWithEncoding()`
-- **encoding/encoding.go**: 파일 인코딩 변환 유틸리티
-  - `ToUTF8()`: 파일 인코딩 → UTF-8 변환
-  - `FromUTF8()`: UTF-8 → 파일 인코딩 변환
-  - LANG 환경변수에 "euckr" 포함 시 EUC-KR 자동 감지
+- **encoding/encoding.go**: 콘솔 로깅 인코딩 유틸리티
+  - `Log()`, `Logln()`, `Logf()`: EUC-KR 인코딩 지원 로깅 함수
+  - `Init()`: config 또는 LANG 환경변수에서 인코딩 초기화
+  - 파일 저장은 항상 UTF-8, 콘솔 출력만 EUC-KR 변환 지원
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기

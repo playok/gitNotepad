@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/server"
 )
 
@@ -63,6 +64,9 @@ func main() {
 			log.Fatalf("Failed to load config: %v", err)
 		}
 	}
+
+	// Initialize logging encoding (for EUC-KR console output support)
+	encoding.Init(cfg.Logging.Encoding)
 
 	fmt.Println("Git Notepad")
 	fmt.Println("===========")

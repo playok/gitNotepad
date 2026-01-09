@@ -13,6 +13,7 @@ type Config struct {
 	Editor   EditorConfig   `yaml:"editor"`
 	Auth     AuthConfig     `yaml:"auth"`
 	Database DatabaseConfig `yaml:"database"`
+	Logging  LoggingConfig  `yaml:"logging"`
 }
 
 type ServerConfig struct {
@@ -24,7 +25,10 @@ type ServerConfig struct {
 type StorageConfig struct {
 	Path        string `yaml:"path"`
 	AutoInitGit bool   `yaml:"auto_init_git"`
-	Encoding    string `yaml:"encoding"` // "utf-8" (default) or "euc-kr"
+}
+
+type LoggingConfig struct {
+	Encoding string `yaml:"encoding"` // "utf-8" (default) or "euc-kr" for console output
 }
 
 type EditorConfig struct {
@@ -73,8 +77,8 @@ func Load(path string) (*Config, error) {
 	if cfg.Auth.SessionTimeout == 0 {
 		cfg.Auth.SessionTimeout = 168 // 7 days
 	}
-	if cfg.Storage.Encoding == "" {
-		cfg.Storage.Encoding = getDefaultEncoding()
+	if cfg.Logging.Encoding == "" {
+		cfg.Logging.Encoding = getDefaultEncoding()
 	}
 
 	return &cfg, nil
@@ -98,7 +102,6 @@ func Default() *Config {
 		Storage: StorageConfig{
 			Path:        "./data",
 			AutoInitGit: true,
-			Encoding:    getDefaultEncoding(),
 		},
 		Editor: EditorConfig{
 			DefaultType: "markdown",
@@ -112,6 +115,9 @@ func Default() *Config {
 		},
 		Database: DatabaseConfig{
 			Path: "./data/gitnotepad.db",
+		},
+		Logging: LoggingConfig{
+			Encoding: getDefaultEncoding(),
 		},
 	}
 }

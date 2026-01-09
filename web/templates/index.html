@@ -133,6 +133,7 @@
                             <option value="txt">TXT</option>
                         </select>
                         <button id="prettyJsonBtn" class="btn-icon" title="Format JSON (Ctrl+Shift+F)">{&nbsp;}</button>
+                        <button id="syntaxHelpBtn" class="btn-icon" title="Syntax Reference">&#128214;</button>
                         <button id="uploadBtn" class="btn-icon" title="Upload file">&#128206;</button>
                         <input type="file" id="fileInput" style="display: none;" multiple>
                         <label class="private-toggle" title="Private note">
@@ -228,6 +229,262 @@
                 </div>
             </div>
 
+            <!-- Syntax Help Modal -->
+            <div id="syntaxHelpModal" class="modal" style="display: none;">
+                <div class="modal-content modal-large syntax-help-modal">
+                    <div class="settings-header">
+                        <h3 data-i18n="syntax.title">Syntax Reference</h3>
+                        <button id="syntaxHelpClose" class="modal-close-btn">&times;</button>
+                    </div>
+                    <div class="syntax-help-body">
+                        <div class="syntax-tabs">
+                            <button class="syntax-tab active" data-syntax="markdown">Markdown</button>
+                            <button class="syntax-tab" data-syntax="asciidoc">AsciiDoc</button>
+                        </div>
+                        <div class="syntax-content">
+                            <!-- Markdown Syntax -->
+                            <div class="syntax-panel active" id="syntaxMarkdown">
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.headers">Headers</h4>
+                                    <div class="syntax-example">
+                                        <pre><code># H1
+## H2
+### H3</code></pre>
+                                        <div class="syntax-result">
+                                            <div style="font-size:1.5em;font-weight:bold;border-bottom:1px solid var(--border)">H1</div>
+                                            <div style="font-size:1.25em;font-weight:bold;border-bottom:1px solid var(--border)">H2</div>
+                                            <div style="font-size:1.1em;font-weight:bold">H3</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.emphasis">Emphasis</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>**bold**
+*italic*
+~~strike~~
+`code`</code></pre>
+                                        <div class="syntax-result">
+                                            <div><strong>bold</strong></div>
+                                            <div><em>italic</em></div>
+                                            <div><del>strike</del></div>
+                                            <div><code>code</code></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.lists">Lists</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>- Item 1
+- Item 2
+  - Nested
+
+1. First
+2. Second</code></pre>
+                                        <div class="syntax-result">
+                                            <ul style="margin:0;padding-left:1.2em"><li>Item 1</li><li>Item 2<ul><li>Nested</li></ul></li></ul>
+                                            <ol style="margin:0;padding-left:1.2em"><li>First</li><li>Second</li></ol>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.links">Links & Images</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>[Link](url)
+![Alt](img.jpg)</code></pre>
+                                        <div class="syntax-result">
+                                            <div><a href="#" style="color:var(--accent)">Link</a></div>
+                                            <div><span style="border:1px dashed var(--border);padding:2px 8px;font-size:0.75em">🖼 Alt</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.codeBlocks">Code Blocks</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>```js
+const x = 1;
+```</code></pre>
+                                        <div class="syntax-result">
+                                            <pre style="margin:0;padding:4px 8px;background:var(--bg-tertiary);border-radius:4px;font-size:0.75em"><code>const x = 1;</code></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.blockquotes">Blockquotes</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>> Quote
+>> Nested</code></pre>
+                                        <div class="syntax-result">
+                                            <blockquote style="margin:0;padding-left:8px;border-left:3px solid var(--accent);color:var(--text-secondary)">Quote<blockquote style="margin:4px 0 0;padding-left:8px;border-left:3px solid var(--border)">Nested</blockquote></blockquote>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.tables">Tables</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>| H1 | H2 |
+|----|-----|
+| A  | B   |</code></pre>
+                                        <div class="syntax-result">
+                                            <table style="border-collapse:collapse;font-size:0.75em;width:100%"><tr><th style="border:1px solid var(--border);padding:2px 6px;background:var(--bg-tertiary)">H1</th><th style="border:1px solid var(--border);padding:2px 6px;background:var(--bg-tertiary)">H2</th></tr><tr><td style="border:1px solid var(--border);padding:2px 6px">A</td><td style="border:1px solid var(--border);padding:2px 6px">B</td></tr></table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.taskList">Task List</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>- [ ] Todo
+- [x] Done</code></pre>
+                                        <div class="syntax-result">
+                                            <div><input type="checkbox" disabled> Todo</div>
+                                            <div><input type="checkbox" checked disabled> Done</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.horizontalRule">Horizontal Rule</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>---</code></pre>
+                                        <div class="syntax-result">
+                                            <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- AsciiDoc Syntax -->
+                            <div class="syntax-panel" id="syntaxAsciidoc">
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.headers">Headers</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>= Title (H1)
+== Section (H2)
+=== Sub (H3)</code></pre>
+                                        <div class="syntax-result">
+                                            <div style="font-size:1.5em;font-weight:bold;border-bottom:1px solid var(--border)">Title (H1)</div>
+                                            <div style="font-size:1.25em;font-weight:bold;border-bottom:1px solid var(--border)">Section (H2)</div>
+                                            <div style="font-size:1.1em;font-weight:bold">Sub (H3)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.emphasis">Emphasis</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>*bold*
+_italic_
+`mono`
+#mark#
+^sup^
+~sub~</code></pre>
+                                        <div class="syntax-result">
+                                            <div><strong>bold</strong></div>
+                                            <div><em>italic</em></div>
+                                            <div><code>mono</code></div>
+                                            <div><mark>mark</mark></div>
+                                            <div>X<sup>sup</sup></div>
+                                            <div>H<sub>sub</sub></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.lists">Lists</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>* Item
+** Nested
+
+. First
+.. Sub</code></pre>
+                                        <div class="syntax-result">
+                                            <ul style="margin:0;padding-left:1.2em"><li>Item<ul><li>Nested</li></ul></li></ul>
+                                            <ol style="margin:0;padding-left:1.2em"><li>First<ol><li>Sub</li></ol></li></ol>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.links">Links & Images</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>https://x.com[Link]
+image::a.jpg[Alt]</code></pre>
+                                        <div class="syntax-result">
+                                            <div><a href="#" style="color:var(--accent)">Link</a></div>
+                                            <div><span style="border:1px dashed var(--border);padding:2px 8px;font-size:0.75em">🖼 Alt</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.codeBlocks">Code Blocks</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>[source,js]
+----
+const x=1;
+----</code></pre>
+                                        <div class="syntax-result">
+                                            <pre style="margin:0;padding:4px 8px;background:var(--bg-tertiary);border-radius:4px;font-size:0.75em"><code>const x=1;</code></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.blockquotes">Blockquotes</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>[quote,Author]
+____
+Quote text
+____</code></pre>
+                                        <div class="syntax-result">
+                                            <blockquote style="margin:0;padding-left:8px;border-left:3px solid var(--accent);color:var(--text-secondary)">Quote text<footer style="font-size:0.75em;margin-top:4px">— Author</footer></blockquote>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.tables">Tables</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>|===
+|H1 |H2
+|A |B
+|===</code></pre>
+                                        <div class="syntax-result">
+                                            <table style="border-collapse:collapse;font-size:0.75em;width:100%"><tr><th style="border:1px solid var(--border);padding:2px 6px;background:var(--bg-tertiary)">H1</th><th style="border:1px solid var(--border);padding:2px 6px;background:var(--bg-tertiary)">H2</th></tr><tr><td style="border:1px solid var(--border);padding:2px 6px">A</td><td style="border:1px solid var(--border);padding:2px 6px">B</td></tr></table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.cellSpan">Cell Span</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>2+|2 cols
+.2+|2 rows
+2.3+|2x3</code></pre>
+                                        <div class="syntax-result">
+                                            <table style="border-collapse:collapse;font-size:0.7em;width:100%"><tr><td colspan="2" style="border:1px solid var(--border);padding:2px 4px;background:var(--accent-bg);text-align:center">2 cols</td></tr><tr><td rowspan="2" style="border:1px solid var(--border);padding:2px 4px;background:var(--accent-bg)">2 rows</td><td style="border:1px solid var(--border);padding:2px 4px">B</td></tr><tr><td style="border:1px solid var(--border);padding:2px 4px">C</td></tr></table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.admonitions">Admonitions</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>NOTE: Info
+TIP: Hint
+WARNING: Warn</code></pre>
+                                        <div class="syntax-result">
+                                            <div style="padding:4px 8px;background:#e3f2fd;border-left:3px solid #2196f3;margin-bottom:4px;font-size:0.75em;border-radius:2px"><strong>📘</strong> Info</div>
+                                            <div style="padding:4px 8px;background:#e8f5e9;border-left:3px solid #4caf50;margin-bottom:4px;font-size:0.75em;border-radius:2px"><strong>💡</strong> Hint</div>
+                                            <div style="padding:4px 8px;background:#fff3e0;border-left:3px solid #ff9800;font-size:0.75em;border-radius:2px"><strong>⚠️</strong> Warn</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="syntax-section">
+                                    <h4 data-i18n="syntax.horizontalRule">Horizontal Rule</h4>
+                                    <div class="syntax-example">
+                                        <pre><code>'''</code></pre>
+                                        <div class="syntax-result">
+                                            <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Admin Users Modal -->
             <div id="adminUsersModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">
@@ -288,6 +545,9 @@
                                 <span>&#128101;</span> <span data-i18n="settings.users">Users</span>
                             </button>
                             {{end}}{{end}}
+                            <button class="settings-tab" data-tab="links">
+                                <span>&#128279;</span> <span data-i18n="settings.sharedLinks">Shared Links</span>
+                            </button>
                             <button class="settings-tab" data-tab="data">
                                 <span>&#128451;</span> <span data-i18n="settings.data">Data</span>
                             </button>
@@ -354,6 +614,23 @@
                                 </div>
                                 <div id="settingsUsersList" class="users-list">
                                     <!-- Users will be loaded here -->
+                                </div>
+                            </div>
+
+                            <!-- Shared Links Tab -->
+                            <div class="settings-panel" id="settingsLinks">
+                                <div class="settings-panel-header">
+                                    <h4 data-i18n="settings.sharedLinksManagement">Shared Links Management</h4>
+                                    <button id="deleteAllSharedLinksBtn" class="btn btn-danger btn-sm" style="display: none;">
+                                        <span data-i18n="settings.deleteAll">Delete All</span>
+                                    </button>
+                                </div>
+                                <div id="sharedLinksEmpty" class="shared-links-empty">
+                                    <span class="empty-icon">&#128279;</span>
+                                    <span data-i18n="settings.noSharedLinks">No shared links yet</span>
+                                </div>
+                                <div id="sharedLinksList" class="shared-links-list">
+                                    <!-- Shared links will be loaded here -->
                                 </div>
                             </div>
 

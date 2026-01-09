@@ -164,6 +164,11 @@ func (s *Server) setupRoutes() {
 			api.GET("/notes/:id/shortlink", shortLinkHandler.Get)
 			api.DELETE("/notes/:id/shortlink", shortLinkHandler.Delete)
 
+			// Short links management
+			api.GET("/shortlinks", shortLinkHandler.List)
+			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
+			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
+
 			// Image routes
 			api.POST("/images", imageHandler.Upload)
 
@@ -220,6 +225,11 @@ func (s *Server) setupRoutes() {
 			api.POST("/notes/:id/shortlink", shortLinkHandler.Generate)
 			api.GET("/notes/:id/shortlink", shortLinkHandler.Get)
 			api.DELETE("/notes/:id/shortlink", shortLinkHandler.Delete)
+
+			// Short links management
+			api.GET("/shortlinks", shortLinkHandler.List)
+			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
+			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)

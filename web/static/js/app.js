@@ -54,6 +54,7 @@ const previewContent = document.getElementById('previewContent');
 const saveBtn = document.getElementById('saveBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const prettyJsonBtn = document.getElementById('prettyJsonBtn');
+const syntaxHelpBtn = document.getElementById('syntaxHelpBtn');
 const historyBtn = document.getElementById('historyBtn');
 const themeToggle = document.getElementById('themeToggle');
 
@@ -1727,6 +1728,11 @@ function setupEventListeners() {
     // Pretty JSON
     prettyJsonBtn.addEventListener('click', prettyJson);
 
+    // Syntax Help
+    if (syntaxHelpBtn) {
+        syntaxHelpBtn.addEventListener('click', showSyntaxHelp);
+    }
+
     // Note: Content change is now handled by CodeMirror's updateListener
 
     // Title change - trigger auto-save
@@ -2552,6 +2558,83 @@ async function showHistory() {
     } catch (error) {
         console.error('Failed to load history:', error);
     }
+}
+
+// Syntax Help Modal
+function showSyntaxHelp() {
+    const modal = document.getElementById('syntaxHelpModal');
+    if (!modal) return;
+
+    // Set active tab based on current note type
+    const currentType = noteType.value;
+    const tabs = modal.querySelectorAll('.syntax-tab');
+    const panels = modal.querySelectorAll('.syntax-panel');
+
+    tabs.forEach(tab => {
+        const syntax = tab.dataset.syntax;
+        if ((currentType === 'markdown' && syntax === 'markdown') ||
+            (currentType === 'asciidoc' && syntax === 'asciidoc')) {
+            tab.classList.add('active');
+        } else if (currentType === 'txt') {
+            // Default to markdown for txt
+            tab.classList.toggle('active', syntax === 'markdown');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    panels.forEach(panel => {
+        const id = panel.id;
+        if ((currentType === 'markdown' && id === 'syntaxMarkdown') ||
+            (currentType === 'asciidoc' && id === 'syntaxAsciidoc')) {
+            panel.classList.add('active');
+        } else if (currentType === 'txt') {
+            panel.classList.toggle('active', id === 'syntaxMarkdown');
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+
+    modal.style.display = 'flex';
+}
+
+function initSyntaxHelpModal() {
+    const modal = document.getElementById('syntaxHelpModal');
+    const closeBtn = document.getElementById('syntaxHelpClose');
+    if (!modal) return;
+
+    // Close button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Tab switching
+    const tabs = modal.querySelectorAll('.syntax-tab');
+    const panels = modal.querySelectorAll('.syntax-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const syntax = tab.dataset.syntax;
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            panels.forEach(p => p.classList.remove('active'));
+            const targetPanel = document.getElementById(`syntax${syntax.charAt(0).toUpperCase() + syntax.slice(1)}`);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+        });
+    });
 }
 
 let currentVersionHash = null;
@@ -3495,6 +3578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAddUserModal();
     initAdminModals();
     initSettingsModal();
+    initSyntaxHelpModal();
 });
 
 // ============================================
@@ -3538,6 +3622,9 @@ function initSettingsModal() {
 
     // Users management in settings (for admin)
     initSettingsUsers();
+
+    // Shared links management
+    initSharedLinksSettings();
 }
 
 function openSettingsModal() {
@@ -3583,6 +3670,8 @@ function initSettingsTabs() {
             // Load data for specific tabs
             if (tabName === 'users') {
                 loadSettingsUsersList();
+            } else if (tabName === 'links') {
+                loadSharedLinks();
             } else if (tabName === 'stats') {
                 loadUsageStats();
             }
@@ -3715,6 +3804,245 @@ async function loadSettingsUsersList() {
         console.error('Error loading users:', err);
         usersList.innerHTML = '<div class="error-message">Failed to load users</div>';
     }
+}
+
+// Shared Links Management
+function initSharedLinksSettings() {
+    const deleteAllBtn = document.getElementById('deleteAllSharedLinksBtn');
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', deleteAllSharedLinks);
+    }
+}
+
+async function loadSharedLinks() {
+    const linksList = document.getElementById('sharedLinksList');
+    const emptyState = document.getElementById('sharedLinksEmpty');
+    const deleteAllBtn = document.getElementById('deleteAllSharedLinksBtn');
+    if (!linksList) return;
+
+    linksList.innerHTML = '<div class="loading-spinner">Loading...</div>';
+    if (emptyState) emptyState.style.display = 'none';
+    if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+
+    try {
+        const response = await fetch(basePath + '/api/shortlinks');
+        if (!response.ok) throw new Error('Failed to load shared links');
+
+        const links = await response.json();
+
+        if (!links || links.length === 0) {
+            linksList.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'flex';
+            if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+            return;
+        }
+
+        // Show delete all button when there are links
+        if (deleteAllBtn) deleteAllBtn.style.display = 'inline-flex';
+
+        // Get note titles from notes list
+        const noteTitles = {};
+        notes.forEach(note => {
+            noteTitles[note.id] = note.title;
+        });
+
+        linksList.innerHTML = links.map(link => {
+            const noteTitle = noteTitles[link.note_id] || link.note_id;
+            const expiryInfo = formatExpiryInfo(link.expires_at);
+            const createdDate = formatDateYMD(new Date(link.created_at));
+            const expiryDateValue = link.expires_at ? formatDateISO(new Date(link.expires_at)) : '';
+
+            return `
+                <div class="shared-link-item" data-code="${escapeHtml(link.code)}">
+                    <div class="shared-link-info">
+                        <span class="shared-link-title">${escapeHtml(noteTitle)}</span>
+                        <span class="shared-link-url" onclick="copyToClipboard('${escapeHtml(link.short_link)}')" title="${i18n.t('settings.clickToCopy') || 'Click to copy'}">${escapeHtml(link.short_link)}</span>
+                        <div class="shared-link-meta">
+                            <span>${i18n.t('settings.created') || 'Created'}: ${createdDate}</span>
+                            <span class="shared-link-expiry ${expiryInfo.class}">
+                                ${expiryInfo.icon} ${expiryInfo.text}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="shared-link-actions">
+                        <div class="expiry-date-wrapper" onclick="this.querySelector('input').showPicker()">
+                            <span class="expiry-date-display">${expiryDateValue ? formatDateYMD(new Date(link.expires_at)) : '----/--/--'}</span>
+                            <input type="date" class="expiry-date-input" value="${expiryDateValue}"
+                                onchange="updateSharedLinkExpiryDate('${escapeHtml(link.code)}', this.value)"
+                                title="${i18n.t('settings.selectExpiryDate') || 'Select expiry date'}">
+                        </div>
+                        <button class="btn-icon-sm" title="${i18n.t('settings.neverExpires') || 'Never expires'}" onclick="updateSharedLinkExpiry('${escapeHtml(link.code)}', 0)">
+                            &#8734;
+                        </button>
+                        <button class="btn-icon-sm btn-danger" title="${i18n.t('settings.delete') || 'Delete'}" onclick="deleteSharedLink('${escapeHtml(link.code)}')">
+                            &#128465;
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Error loading shared links:', err);
+        linksList.innerHTML = '<div class="error-message">Failed to load shared links</div>';
+    }
+}
+
+function formatExpiryInfo(expiresAt) {
+    if (!expiresAt) {
+        return {
+            text: i18n.t('settings.neverExpires') || 'Never expires',
+            class: '',
+            icon: '&#9734;'
+        };
+    }
+
+    const expiry = new Date(expiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+    if (daysLeft < 0) {
+        return {
+            text: i18n.t('settings.expired') || 'Expired',
+            class: 'expired',
+            icon: '&#9888;'
+        };
+    } else if (daysLeft <= 7) {
+        return {
+            text: `${i18n.t('settings.expiresIn') || 'Expires in'} ${daysLeft} ${i18n.t('settings.days') || 'days'}`,
+            class: 'expiring-soon',
+            icon: '&#9888;'
+        };
+    } else {
+        return {
+            text: `${i18n.t('settings.expiresOn') || 'Expires'}: ${formatDateYMD(expiry)}`,
+            class: '',
+            icon: '&#128197;'
+        };
+    }
+}
+
+function formatDateYMD(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
+}
+
+function formatDateISO(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+async function updateSharedLinkExpiry(code, expiresIn) {
+    try {
+        const response = await fetch(basePath + `/api/shortlinks/${code}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expires_in: parseInt(expiresIn) })
+        });
+
+        if (!response.ok) throw new Error('Failed to update expiry');
+
+        // Reload the list
+        await loadSharedLinks();
+    } catch (err) {
+        console.error('Error updating shared link:', err);
+        alert(i18n.t('settings.updateFailed') || 'Failed to update expiry');
+    }
+}
+
+async function updateSharedLinkExpiryDate(code, dateStr) {
+    if (!dateStr) return;
+
+    // Calculate days from today to selected date
+    const selectedDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const diffTime = selectedDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 1) {
+        alert(i18n.t('settings.selectFutureDate') || 'Please select a future date');
+        return;
+    }
+
+    await updateSharedLinkExpiry(code, diffDays);
+}
+
+async function deleteSharedLink(code) {
+    if (!confirm(i18n.t('settings.deleteSharedLinkConfirm') || 'Are you sure you want to delete this shared link?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(basePath + `/api/shortlinks/${code}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Failed to delete shared link');
+
+        // Reload the list
+        await loadSharedLinks();
+    } catch (err) {
+        console.error('Error deleting shared link:', err);
+        alert(i18n.t('settings.deleteFailed') || 'Failed to delete shared link');
+    }
+}
+
+async function deleteAllSharedLinks() {
+    if (!confirm(i18n.t('settings.deleteAllSharedLinksConfirm') || 'Are you sure you want to delete ALL shared links?')) {
+        return;
+    }
+
+    const deleteAllBtn = document.getElementById('deleteAllSharedLinksBtn');
+    if (deleteAllBtn) {
+        deleteAllBtn.disabled = true;
+        deleteAllBtn.textContent = '...';
+    }
+
+    try {
+        // Get all links first
+        const response = await fetch(basePath + '/api/shortlinks');
+        if (!response.ok) throw new Error('Failed to load shared links');
+
+        const links = await response.json();
+
+        // Delete each link
+        for (const link of links) {
+            await fetch(basePath + `/api/shortlinks/${link.code}`, {
+                method: 'DELETE'
+            });
+        }
+
+        // Reload the list
+        await loadSharedLinks();
+    } catch (err) {
+        console.error('Error deleting all shared links:', err);
+        alert(i18n.t('settings.deleteFailed') || 'Failed to delete shared links');
+    } finally {
+        if (deleteAllBtn) {
+            deleteAllBtn.disabled = false;
+            deleteAllBtn.innerHTML = `<span data-i18n="settings.deleteAll">${i18n.t('settings.deleteAll') || 'Delete All'}</span>`;
+        }
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show brief feedback
+        const tooltip = document.createElement('div');
+        tooltip.className = 'copy-tooltip';
+        tooltip.textContent = i18n.t('settings.copied') || 'Copied!';
+        tooltip.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-tertiary); color: var(--text-primary); padding: 0.5rem 1rem; border-radius: var(--radius); z-index: 10000; animation: fadeOut 1s forwards;';
+        document.body.appendChild(tooltip);
+        setTimeout(() => tooltip.remove(), 1000);
+    }).catch(err => {
+        console.error('Copy failed:', err);
+    });
 }
 
 // Data Management

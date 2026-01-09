@@ -298,3 +298,106 @@ func (h *ShortLinkHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Short link deleted"})
 }
+
+// ShortLinkListItem represents a short link item in the list
+type ShortLinkListItem struct {
+	Code      string     `json:"code"`
+	NoteID    string     `json:"note_id"`
+	NoteTitle string     `json:"note_title"`
+	ShortLink string     `json:"short_link"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+}
+
+// List returns all short links for the current user
+func (h *ShortLinkHandler) List(c *gin.Context) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	items := make([]ShortLinkListItem, 0, len(h.links))
+	for code, info := range h.links {
+		items = append(items, ShortLinkListItem{
+			Code:      code,
+			NoteID:    info.NoteID,
+			NoteTitle: "", // Will be populated by frontend or separate lookup
+			ShortLink: h.basePath + "/s/" + code,
+			ExpiresAt: info.ExpiresAt,
+			CreatedAt: info.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+// UpdateRequest represents the request body for updating a short link
+type UpdateRequest struct {
+	ExpiresIn *int `json:"expires_in"` // Days until expiry (nil = no change, 0 = never expires, >0 = days)
+}
+
+// UpdateByCode updates a short link's expiry by code
+func (h *ShortLinkHandler) UpdateByCode(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code required"})
+		return
+	}
+
+	var req UpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	info, exists := h.links[code]
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Short link not found"})
+		return
+	}
+
+	// Update expiry
+	if req.ExpiresIn != nil {
+		if *req.ExpiresIn == 0 {
+			info.ExpiresAt = nil // Never expires
+		} else {
+			expiresAt := time.Now().AddDate(0, 0, *req.ExpiresIn)
+			info.ExpiresAt = &expiresAt
+		}
+	}
+
+	go h.save()
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":      code,
+		"shortLink": h.basePath + "/s/" + code,
+		"expiresAt": info.ExpiresAt,
+		"createdAt": info.CreatedAt,
+	})
+}
+
+// DeleteByCode removes a short link by code
+func (h *ShortLinkHandler) DeleteByCode(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code required"})
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	info, exists := h.links[code]
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Short link not found"})
+		return
+	}
+
+	delete(h.reverseMap, info.NoteID)
+	delete(h.links, code)
+
+	go h.save()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Short link deleted"})
+}

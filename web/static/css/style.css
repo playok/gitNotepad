@@ -2857,6 +2857,146 @@ code.hljs[data-line-count^="1000"] .line-number {
     color: var(--danger);
 }
 
+/* Shared Links List */
+.shared-links-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    gap: 0.5rem;
+}
+
+.shared-links-empty .empty-icon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.shared-links-list {
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.shared-link-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.75rem;
+    background: var(--bg-primary);
+    gap: 0.75rem;
+}
+
+.shared-link-item:first-child {
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.shared-link-item:last-child {
+    border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.shared-link-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.shared-link-title {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shared-link-url {
+    font-size: 0.6875rem;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.shared-link-url:hover {
+    text-decoration: underline;
+}
+
+.shared-link-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+.shared-link-expiry {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.shared-link-expiry.expired {
+    color: var(--danger);
+}
+
+.shared-link-expiry.expiring-soon {
+    color: var(--warning, #f59e0b);
+}
+
+.shared-link-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* Expiry Date Input */
+.expiry-date-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    cursor: pointer;
+    min-width: 6rem;
+}
+
+.expiry-date-display {
+    color: var(--text-primary);
+    font-family: inherit;
+    pointer-events: none;
+}
+
+.expiry-date-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.expiry-date-wrapper::after {
+    content: "📅";
+    margin-left: 0.375rem;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+
 /* Form Group for Modals */
 .form-group {
     display: flex;
@@ -3385,6 +3525,123 @@ code.hljs[data-line-count^="1000"] .line-number {
 
 .toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(16px);
+}
+
+/* Syntax Help Modal */
+.syntax-help-modal {
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.syntax-help-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.syntax-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.syntax-tab {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.syntax-tab:hover {
+    color: var(--text-primary);
+}
+
+.syntax-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.syntax-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.syntax-panel {
+    display: none;
+}
+
+.syntax-panel.active {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.syntax-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+}
+
+.syntax-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.syntax-example {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.syntax-example pre {
+    flex: 1;
+    margin: 0;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+}
+
+.syntax-example code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+    white-space: pre;
+}
+
+.syntax-result {
+    flex: 1;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    overflow: hidden;
+}
+
+.syntax-result code {
+    background: var(--bg-tertiary);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.6875rem;
 }
 
 /* Data Action Cards */

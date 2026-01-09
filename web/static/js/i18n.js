@@ -227,6 +227,10 @@ const i18n = {
             'help.editorFullscreen': 'Editor fullscreen',
             'help.previewFullscreen': 'Preview fullscreen',
             'help.formatJson': 'Format JSON',
+
+            // Attachment
+            'attachment.removeConfirm': 'Remove this attachment?',
+            'attachment.linkInContentWarning': '\n\nWarning: This attachment is referenced in the note content. The link will become broken.',
         },
 
         ko: {
@@ -453,6 +457,10 @@ const i18n = {
             'help.editorFullscreen': '편집기 전체화면',
             'help.previewFullscreen': '미리보기 전체화면',
             'help.formatJson': 'JSON 정리',
+
+            // Attachment
+            'attachment.removeConfirm': '이 첨부 파일을 삭제하시겠습니까?',
+            'attachment.linkInContentWarning': '\n\n경고: 이 첨부 파일이 본문에서 참조되고 있습니다. 링크가 깨질 수 있습니다.',
         }
     },
 

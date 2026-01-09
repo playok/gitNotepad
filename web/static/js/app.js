@@ -2132,7 +2132,24 @@ function insertAttachmentToContent(attachment) {
 }
 
 function removeAttachment(index) {
-    if (confirm('Remove this attachment?')) {
+    const attachment = currentAttachments[index];
+    if (!attachment) return;
+
+    // Check if attachment URL is referenced in content
+    const content = getEditorContent();
+    const urlPattern = attachment.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
+    const linkRegex = new RegExp(`!?\\[[^\\]]*\\]\\(${urlPattern}\\)`, 'g');
+    const hasLinkInContent = linkRegex.test(content);
+
+    let confirmMessage = i18n.t('attachment.removeConfirm') || 'Remove this attachment?';
+
+    if (hasLinkInContent) {
+        const warningMsg = i18n.t('attachment.linkInContentWarning') ||
+            '\n\nWarning: This attachment is referenced in the note content. The link will become broken.';
+        confirmMessage += warningMsg;
+    }
+
+    if (confirm(confirmMessage)) {
         currentAttachments.splice(index, 1);
         renderAttachments();
         triggerAutoSave();

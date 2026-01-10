@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initKeyboardShortcuts();
     initFileUpload();
     initMiniCalendar();
+    initMarkdownToolbar();
     initLocaleSelector();
     // Load folder icons then notes
     loadFolderIcons().then(() => {
@@ -1912,6 +1913,7 @@ function setupEventListeners() {
     noteType.addEventListener('change', () => {
         updatePreview();
         togglePreview();
+        updateMarkdownToolbarVisibility();
         triggerAutoSave();
     });
 
@@ -3097,6 +3099,7 @@ function createNewNote() {
     noteType.value = 'markdown';
     notePrivate.checked = false;
     previewContent.innerHTML = '';
+    updateMarkdownToolbarVisibility();
 
     // Clear attachments for new note
     currentAttachments = [];
@@ -3186,6 +3189,7 @@ function showEditor(note) {
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
+    updateMarkdownToolbarVisibility();
 
     // Load attachments from note
     loadAttachmentsFromNote(note);
@@ -3334,6 +3338,167 @@ function getAsciidoctor() {
         }
     }
     return asciidoctor;
+}
+
+// Markdown Toolbar Functions
+function initMarkdownToolbar() {
+    const toolbar = document.getElementById('markdownToolbar');
+    if (!toolbar) return;
+
+    toolbar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toolbar-btn');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        if (action) {
+            applyMarkdownFormat(action);
+        }
+    });
+
+    // Initial visibility
+    updateMarkdownToolbarVisibility();
+}
+
+function updateMarkdownToolbarVisibility() {
+    const toolbar = document.getElementById('markdownToolbar');
+    if (!toolbar) return;
+
+    const type = noteType.value;
+    if (type === 'markdown') {
+        toolbar.classList.remove('hidden');
+    } else {
+        toolbar.classList.add('hidden');
+    }
+}
+
+function applyMarkdownFormat(action) {
+    if (!cmEditor) return;
+
+    const selection = cmEditor.state.selection.main;
+    const selectedText = cmEditor.state.sliceDoc(selection.from, selection.to);
+    let replacement = '';
+    let cursorOffset = 0;
+
+    switch (action) {
+        case 'bold':
+            if (selectedText) {
+                replacement = `**${selectedText}**`;
+            } else {
+                replacement = '**bold**';
+                cursorOffset = -2;
+            }
+            break;
+        case 'italic':
+            if (selectedText) {
+                replacement = `*${selectedText}*`;
+            } else {
+                replacement = '*italic*';
+                cursorOffset = -1;
+            }
+            break;
+        case 'strikethrough':
+            if (selectedText) {
+                replacement = `~~${selectedText}~~`;
+            } else {
+                replacement = '~~strikethrough~~';
+                cursorOffset = -2;
+            }
+            break;
+        case 'code':
+            if (selectedText) {
+                replacement = `\`${selectedText}\``;
+            } else {
+                replacement = '`code`';
+                cursorOffset = -1;
+            }
+            break;
+        case 'h1':
+            replacement = selectedText ? `# ${selectedText}` : '# Heading 1';
+            break;
+        case 'h2':
+            replacement = selectedText ? `## ${selectedText}` : '## Heading 2';
+            break;
+        case 'h3':
+            replacement = selectedText ? `### ${selectedText}` : '### Heading 3';
+            break;
+        case 'link':
+            if (selectedText) {
+                replacement = `[${selectedText}](url)`;
+                cursorOffset = -1;
+            } else {
+                replacement = '[link text](url)';
+                cursorOffset = -1;
+            }
+            break;
+        case 'image':
+            if (selectedText) {
+                replacement = `![${selectedText}](url)`;
+                cursorOffset = -1;
+            } else {
+                replacement = '![alt text](url)';
+                cursorOffset = -1;
+            }
+            break;
+        case 'quote':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `> ${line}`).join('\n');
+            } else {
+                replacement = '> quote';
+            }
+            break;
+        case 'ul':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `- ${line}`).join('\n');
+            } else {
+                replacement = '- list item';
+            }
+            break;
+        case 'ol':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
+            } else {
+                replacement = '1. list item';
+            }
+            break;
+        case 'tasklist':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `- [ ] ${line}`).join('\n');
+            } else {
+                replacement = '- [ ] task item';
+            }
+            break;
+        case 'codeblock':
+            if (selectedText) {
+                replacement = `\`\`\`\n${selectedText}\n\`\`\``;
+            } else {
+                replacement = '```\ncode\n```';
+                cursorOffset = -4;
+            }
+            break;
+        case 'table':
+            replacement = '| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |';
+            break;
+        case 'hr':
+            replacement = '\n---\n';
+            break;
+        default:
+            return;
+    }
+
+    // Insert the replacement
+    cmEditor.dispatch({
+        changes: {
+            from: selection.from,
+            to: selection.to,
+            insert: replacement
+        },
+        selection: {
+            anchor: selection.from + replacement.length + cursorOffset
+        }
+    });
+
+    cmEditor.focus();
+    triggerAutoSave();
 }
 
 function updatePreview() {

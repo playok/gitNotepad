@@ -29,7 +29,8 @@ type SetFolderIconRequest struct {
 func (h *FolderIconHandler) List(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		// Return empty map for unauthenticated users instead of 401
+		c.JSON(http.StatusOK, make(map[string]string))
 		return
 	}
 

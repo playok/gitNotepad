@@ -3354,18 +3354,158 @@ function initMarkdownToolbar() {
     const toolbar = document.getElementById('markdownToolbar');
     if (!toolbar) return;
 
+    // Initialize table grid selector
+    initTableGridSelector();
+
     toolbar.addEventListener('click', (e) => {
         const btn = e.target.closest('.toolbar-btn');
         if (!btn) return;
 
         const action = btn.dataset.action;
         if (action) {
+            // Table action is handled by the grid selector
+            if (action === 'table') {
+                toggleTableGridSelector();
+                return;
+            }
             applyMarkdownFormat(action);
+        }
+    });
+
+    // Close table grid selector when clicking outside
+    document.addEventListener('click', (e) => {
+        const gridSelector = document.getElementById('tableGridSelector');
+        const tableBtn = document.getElementById('tableToolbarBtn');
+        if (gridSelector && !gridSelector.contains(e.target) && e.target !== tableBtn) {
+            gridSelector.classList.remove('visible');
         }
     });
 
     // Initial visibility
     updateMarkdownToolbarVisibility();
+}
+
+// Table Grid Selector
+const TABLE_GRID_ROWS = 8;
+const TABLE_GRID_COLS = 8;
+
+function initTableGridSelector() {
+    const container = document.getElementById('tableGridContainer');
+    if (!container) return;
+
+    // Create grid cells
+    for (let row = 0; row < TABLE_GRID_ROWS; row++) {
+        for (let col = 0; col < TABLE_GRID_COLS; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+            container.appendChild(cell);
+        }
+    }
+
+    // Handle mouse events
+    container.addEventListener('mouseover', handleGridMouseOver);
+    container.addEventListener('mouseleave', handleGridMouseLeave);
+    container.addEventListener('click', handleGridClick);
+}
+
+function toggleTableGridSelector() {
+    const gridSelector = document.getElementById('tableGridSelector');
+    if (!gridSelector) return;
+
+    gridSelector.classList.toggle('visible');
+    if (gridSelector.classList.contains('visible')) {
+        // Reset highlighting
+        updateGridHighlight(-1, -1);
+    }
+}
+
+function handleGridMouseOver(e) {
+    const cell = e.target.closest('.grid-cell');
+    if (!cell) return;
+
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    updateGridHighlight(row, col);
+}
+
+function handleGridMouseLeave() {
+    updateGridHighlight(-1, -1);
+}
+
+function updateGridHighlight(targetRow, targetCol) {
+    const container = document.getElementById('tableGridContainer');
+    const label = document.getElementById('tableGridLabel');
+    if (!container) return;
+
+    const cells = container.querySelectorAll('.grid-cell');
+    cells.forEach(cell => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        if (row <= targetRow && col <= targetCol) {
+            cell.classList.add('highlighted');
+        } else {
+            cell.classList.remove('highlighted');
+        }
+    });
+
+    // Update label
+    if (label) {
+        if (targetRow >= 0 && targetCol >= 0) {
+            label.textContent = `${targetCol + 1} x ${targetRow + 1}`;
+        } else {
+            label.textContent = '';
+        }
+    }
+}
+
+function handleGridClick(e) {
+    const cell = e.target.closest('.grid-cell');
+    if (!cell) return;
+
+    const rows = parseInt(cell.dataset.row) + 1;
+    const cols = parseInt(cell.dataset.col) + 1;
+
+    // Generate and insert table
+    insertMarkdownTable(cols, rows);
+
+    // Hide grid selector
+    const gridSelector = document.getElementById('tableGridSelector');
+    if (gridSelector) {
+        gridSelector.classList.remove('visible');
+    }
+}
+
+function insertMarkdownTable(cols, rows) {
+    if (!cmEditor) return;
+
+    // Generate header row
+    let table = '|';
+    for (let c = 0; c < cols; c++) {
+        table += ` Header ${c + 1} |`;
+    }
+    table += '\n|';
+
+    // Generate separator row
+    for (let c = 0; c < cols; c++) {
+        table += '----------|';
+    }
+    table += '\n';
+
+    // Generate data rows
+    for (let r = 0; r < rows; r++) {
+        table += '|';
+        for (let c = 0; c < cols; c++) {
+            table += ` Cell ${r + 1}-${c + 1} |`;
+        }
+        table += '\n';
+    }
+
+    // Insert table
+    cmEditor.replaceSelection(table);
+    cmEditor.focus();
+    triggerAutoSave();
 }
 
 function updateMarkdownToolbarVisibility() {
@@ -3504,9 +3644,7 @@ function applyMarkdownFormat(action) {
                 selectEnd = 8;
             }
             break;
-        case 'table':
-            replacement = '| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |';
-            break;
+        // Note: 'table' is handled by the grid selector in initMarkdownToolbar
         case 'hr':
             replacement = '\n---\n';
             break;

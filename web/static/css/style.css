@@ -1190,6 +1190,59 @@ body {
     text-decoration: line-through;
 }
 
+/* Table Grid Selector */
+.table-grid-selector {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+}
+
+.table-grid-selector.visible {
+    display: block;
+}
+
+.table-grid-selector .grid-container {
+    display: grid;
+    grid-template-columns: repeat(8, 20px);
+    grid-template-rows: repeat(8, 20px);
+    gap: 2px;
+}
+
+.table-grid-selector .grid-cell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.table-grid-selector .grid-cell.highlighted {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.table-grid-selector .grid-label {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    min-height: 16px;
+}
+
+.toolbar-btn-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
 /* Editor Body */
 .editor-body {
     flex: 1;

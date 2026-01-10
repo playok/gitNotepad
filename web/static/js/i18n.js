@@ -315,6 +315,13 @@ const i18n = {
             // Date Notes Panel
             'datePanel.empty': 'No notes for this date',
             'datePanel.newNote': 'New note for this date',
+
+            // Table Editor
+            'tableEditor.title': 'AsciiDoc Table Editor',
+            'tableEditor.instructions': 'Click and drag to select cells for merging. Double-click to edit cell content.',
+            'tableEditor.merge': 'Merge Cells',
+            'tableEditor.unmerge': 'Unmerge',
+            'tableEditor.insert': 'Insert Table',
         },
 
         ko: {
@@ -629,6 +636,13 @@ const i18n = {
             // Date Notes Panel
             'datePanel.empty': '이 날짜에 노트가 없습니다',
             'datePanel.newNote': '이 날짜에 새 노트 만들기',
+
+            // Table Editor
+            'tableEditor.title': 'AsciiDoc 테이블 편집기',
+            'tableEditor.instructions': '셀을 클릭하고 드래그하여 병합할 셀을 선택하세요. 더블클릭으로 내용을 편집합니다.',
+            'tableEditor.merge': '셀 병합',
+            'tableEditor.unmerge': '병합 해제',
+            'tableEditor.insert': '테이블 삽입',
         }
     },
 

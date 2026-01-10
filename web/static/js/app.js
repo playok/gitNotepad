@@ -3883,6 +3883,10 @@ function openTableEditor(cols, rows) {
     const modal = document.getElementById('tableEditorModal');
     if (modal) {
         modal.classList.add('visible');
+        // Apply i18n to modal
+        if (typeof i18n !== 'undefined') {
+            i18n.updateUI();
+        }
     }
 
     updateTableEditorInfo();
@@ -3960,6 +3964,7 @@ function initTableEditorEvents() {
         newTable.addEventListener('mousedown', handleTableMouseDown);
         newTable.addEventListener('mouseover', handleTableMouseOver);
         newTable.addEventListener('mouseup', handleTableMouseUp);
+        newTable.addEventListener('dblclick', handleTableDblClick);
 
         // Re-add input listeners
         newTable.querySelectorAll('input').forEach(input => {
@@ -4000,14 +4005,24 @@ function initTableEditorEvents() {
                 closeTableEditor();
             }
         };
+
+        // Handle mouseup outside table to end selection
+        modal.addEventListener('mouseup', handleTableMouseUp);
     }
 }
 
 function handleTableMouseDown(e) {
     const td = e.target.closest('td');
-    if (!td || e.target.tagName === 'INPUT') return;
+    if (!td) return;
 
+    // Prevent default to avoid input focus on single click
     e.preventDefault();
+
+    // If clicking on input that's already focused (editing mode), allow it
+    if (e.target.tagName === 'INPUT' && document.activeElement === e.target) {
+        return;
+    }
+
     tableEditor.isSelecting = true;
     tableEditor.selectionStart = {
         row: parseInt(td.dataset.row),
@@ -4052,6 +4067,18 @@ function handleTableMouseOver(e) {
 function handleTableMouseUp() {
     tableEditor.isSelecting = false;
     updateTableEditorInfo();
+}
+
+function handleTableDblClick(e) {
+    const td = e.target.closest('td');
+    if (!td) return;
+
+    // Find and focus the input in this cell
+    const input = td.querySelector('input');
+    if (input) {
+        input.focus();
+        input.select();
+    }
 }
 
 function updateCellSelection() {

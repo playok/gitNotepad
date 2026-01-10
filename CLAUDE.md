@@ -200,6 +200,12 @@ encryption:
 - **encryption/keystore.go**: 세션 기반 암호화 키 저장소
   - 로그인 시 키 저장, 로그아웃 시 삭제
   - 스레드 안전 (sync.RWMutex)
+- **middleware/auth.go**: 인증 미들웨어
+  - `RequireAuth()`: 인증 필수, 미인증 시 401 또는 로그인 리다이렉트
+  - `OptionalAuth()`: 인증 선택적, 인증 시 사용자 컨텍스트 설정, 미인증 시에도 진행
+  - `RequireAdmin()`: 관리자 권한 필수
+  - `GetCurrentUser(c)`: 컨텍스트에서 현재 사용자 조회
+  - `GetEncryptionKey(c)`: 컨텍스트에서 암호화 키 조회
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기

@@ -78,6 +78,16 @@
                 <input type="text" id="searchInput" placeholder="Search notes..." data-i18n-placeholder="sidebar.search">
                 <button id="searchClear" class="search-clear" title="Clear search">×</button>
             </div>
+            <div class="folder-actions">
+                <button id="expandAllBtn" class="folder-action-btn" title="Expand All">
+                    <span class="folder-action-icon">📂</span>
+                    <span class="folder-action-text" data-i18n="sidebar.expandAll">Expand All</span>
+                </button>
+                <button id="collapseAllBtn" class="folder-action-btn" title="Collapse All">
+                    <span class="folder-action-icon">📁</span>
+                    <span class="folder-action-text" data-i18n="sidebar.collapseAll">Collapse All</span>
+                </button>
+            </div>
             <ul id="noteList" class="note-list">
                 <!-- Notes will be loaded here -->
             </ul>

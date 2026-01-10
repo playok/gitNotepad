@@ -31,6 +31,8 @@ const i18n = {
             'sidebar.collapse': 'Toggle sidebar',
             'sidebar.listView': 'List View',
             'sidebar.calendarView': 'Calendar View',
+            'sidebar.expandAll': 'Expand All',
+            'sidebar.collapseAll': 'Collapse All',
             'sidebar.noNotes': 'No notes yet',
             'sidebar.notes': 'notes',
 
@@ -248,6 +250,10 @@ const i18n = {
             'context.newFolder': 'New Folder',
             'context.newNoteInFolder': 'New Note Here',
             'context.newSubfolder': 'New Subfolder',
+            'context.expand': 'Expand',
+            'context.expandAll': 'Expand All',
+            'context.collapse': 'Collapse',
+            'context.collapseAll': 'Collapse All',
             'context.deleteFolder': 'Delete Folder',
 
             // Icon Picker
@@ -320,6 +326,8 @@ const i18n = {
             'sidebar.collapse': '사이드바 토글',
             'sidebar.listView': '목록 보기',
             'sidebar.calendarView': '캘린더 보기',
+            'sidebar.expandAll': '모두 펼치기',
+            'sidebar.collapseAll': '모두 닫기',
             'sidebar.noNotes': '노트가 없습니다',
             'sidebar.notes': '개의 노트',
 
@@ -537,6 +545,10 @@ const i18n = {
             'context.newFolder': '새 폴더',
             'context.newNoteInFolder': '여기에 새 노트',
             'context.newSubfolder': '하위 폴더',
+            'context.expand': '펼치기',
+            'context.expandAll': '모두 펼치기',
+            'context.collapse': '닫기',
+            'context.collapseAll': '모두 닫기',
             'context.deleteFolder': '폴더 삭제',
 
             // Icon Picker

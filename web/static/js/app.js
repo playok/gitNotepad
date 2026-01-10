@@ -1028,6 +1028,19 @@ function initContextMenu() {
             <span class="context-icon">&#127912;</span> <span data-i18n="context.changeIcon">Change Icon</span>
         </div>
         <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="expand-folder">
+            <span class="context-icon">&#9654;</span> <span data-i18n="context.expand">Expand</span>
+        </div>
+        <div class="context-menu-item" data-action="expand-all">
+            <span class="context-icon">&#9660;</span> <span data-i18n="context.expandAll">Expand All</span>
+        </div>
+        <div class="context-menu-item" data-action="collapse-folder">
+            <span class="context-icon">&#9664;</span> <span data-i18n="context.collapse">Collapse</span>
+        </div>
+        <div class="context-menu-item" data-action="collapse-all">
+            <span class="context-icon">&#9650;</span> <span data-i18n="context.collapseAll">Collapse All</span>
+        </div>
+        <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete-folder">
             <span class="context-icon">&#128465;</span> <span data-i18n="context.deleteFolder">Delete Folder</span>
         </div>
@@ -1065,6 +1078,18 @@ function initContextMenu() {
             folderContextMenu.style.display = 'none';
         }
     });
+
+    // Folder action buttons (expand all / collapse all)
+    const expandAllBtn = document.getElementById('expandAllBtn');
+    const collapseAllBtn = document.getElementById('collapseAllBtn');
+
+    if (expandAllBtn) {
+        expandAllBtn.addEventListener('click', expandAllFolders);
+    }
+
+    if (collapseAllBtn) {
+        collapseAllBtn.addEventListener('click', collapseAllFolders);
+    }
 }
 
 function showContextMenu(e, noteId) {
@@ -1296,6 +1321,22 @@ async function handleFolderContextMenuAction(e) {
             showIconPicker('folder', currentFolderPath);
             break;
 
+        case 'expand-folder':
+            expandFolder(currentFolderPath);
+            break;
+
+        case 'expand-all':
+            expandFolderAll(currentFolderPath);
+            break;
+
+        case 'collapse-folder':
+            collapseFolder(currentFolderPath);
+            break;
+
+        case 'collapse-all':
+            collapseFolderAll(currentFolderPath);
+            break;
+
         case 'delete-folder':
             const confirmMsg = i18n ? i18n.t('confirm.deleteFolder') : 'Delete this folder? (Must be empty)';
             if (confirm(confirmMsg)) {
@@ -1303,6 +1344,65 @@ async function handleFolderContextMenuAction(e) {
             }
             break;
     }
+}
+
+// Folder expand/collapse functions
+function expandFolder(folderPath) {
+    expandedFolders[folderPath] = true;
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
+}
+
+function collapseFolder(folderPath) {
+    expandedFolders[folderPath] = false;
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
+}
+
+function expandFolderAll(folderPath) {
+    // Expand the target folder
+    expandedFolders[folderPath] = true;
+
+    // Expand all subfolders
+    folders.forEach(folder => {
+        if (folder.path === folderPath || folder.path.startsWith(folderPath + '/')) {
+            expandedFolders[folder.path] = true;
+        }
+    });
+
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
+}
+
+function collapseFolderAll(folderPath) {
+    // Collapse the target folder
+    expandedFolders[folderPath] = false;
+
+    // Collapse all subfolders
+    folders.forEach(folder => {
+        if (folder.path.startsWith(folderPath + '/')) {
+            expandedFolders[folder.path] = false;
+        }
+    });
+
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
+}
+
+function expandAllFolders() {
+    folders.forEach(folder => {
+        expandedFolders[folder.path] = true;
+    });
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
+}
+
+function collapseAllFolders() {
+    folders.forEach(folder => {
+        expandedFolders[folder.path] = false;
+    });
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+    renderNoteTree();
 }
 
 async function createFolder(name, parentPath) {

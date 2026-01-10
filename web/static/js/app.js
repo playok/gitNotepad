@@ -3467,8 +3467,13 @@ function handleGridClick(e) {
     const rows = parseInt(cell.dataset.row) + 1;
     const cols = parseInt(cell.dataset.col) + 1;
 
-    // Generate and insert table
-    insertMarkdownTable(cols, rows);
+    // Generate and insert table based on note type
+    const type = noteType.value;
+    if (type === 'asciidoc') {
+        insertAsciiDocTable(cols, rows);
+    } else {
+        insertMarkdownTable(cols, rows);
+    }
 
     // Hide grid selector
     const gridSelector = document.getElementById('tableGridSelector');
@@ -3513,7 +3518,8 @@ function updateMarkdownToolbarVisibility() {
     if (!toolbar) return;
 
     const type = noteType.value;
-    if (type === 'markdown') {
+    // Show toolbar for both markdown and asciidoc
+    if (type === 'markdown' || type === 'asciidoc') {
         toolbar.classList.remove('hidden');
     } else {
         toolbar.classList.add('hidden');
@@ -3522,6 +3528,14 @@ function updateMarkdownToolbarVisibility() {
 
 function applyMarkdownFormat(action) {
     if (!cmEditor) return;
+
+    const type = noteType.value;
+
+    // Use AsciiDoc formatting if note type is asciidoc
+    if (type === 'asciidoc') {
+        applyAsciiDocFormat(action);
+        return;
+    }
 
     const selectedText = cmEditor.getSelection();
     let replacement = '';
@@ -3669,6 +3683,191 @@ function applyMarkdownFormat(action) {
         );
     }
 
+    cmEditor.focus();
+    triggerAutoSave();
+}
+
+// AsciiDoc formatting function
+function applyAsciiDocFormat(action) {
+    if (!cmEditor) return;
+
+    const selectedText = cmEditor.getSelection();
+    let replacement = '';
+    let selectStart = 0;
+    let selectEnd = 0;
+
+    switch (action) {
+        case 'bold':
+            if (selectedText) {
+                replacement = `*${selectedText}*`;
+            } else {
+                replacement = '*bold*';
+                selectStart = 1;
+                selectEnd = 5;
+            }
+            break;
+        case 'italic':
+            if (selectedText) {
+                replacement = `_${selectedText}_`;
+            } else {
+                replacement = '_italic_';
+                selectStart = 1;
+                selectEnd = 7;
+            }
+            break;
+        case 'strikethrough':
+            // AsciiDoc uses [line-through]#text# for strikethrough
+            if (selectedText) {
+                replacement = `[line-through]#${selectedText}#`;
+            } else {
+                replacement = '[line-through]#strikethrough#';
+                selectStart = 15;
+                selectEnd = 28;
+            }
+            break;
+        case 'code':
+            if (selectedText) {
+                replacement = `\`${selectedText}\``;
+            } else {
+                replacement = '`code`';
+                selectStart = 1;
+                selectEnd = 5;
+            }
+            break;
+        case 'h1':
+            replacement = selectedText ? `= ${selectedText}` : '= Heading 1';
+            if (!selectedText) { selectStart = 2; selectEnd = 11; }
+            break;
+        case 'h2':
+            replacement = selectedText ? `== ${selectedText}` : '== Heading 2';
+            if (!selectedText) { selectStart = 3; selectEnd = 12; }
+            break;
+        case 'h3':
+            replacement = selectedText ? `=== ${selectedText}` : '=== Heading 3';
+            if (!selectedText) { selectStart = 4; selectEnd = 13; }
+            break;
+        case 'link':
+            if (selectedText) {
+                replacement = `link:url[${selectedText}]`;
+                selectStart = 5;
+                selectEnd = 8;
+            } else {
+                replacement = 'link:url[link text]';
+                selectStart = 5;
+                selectEnd = 8;
+            }
+            break;
+        case 'image':
+            if (selectedText) {
+                replacement = `image::url[${selectedText}]`;
+                selectStart = 7;
+                selectEnd = 10;
+            } else {
+                replacement = 'image::url[alt text]';
+                selectStart = 7;
+                selectEnd = 10;
+            }
+            break;
+        case 'quote':
+            if (selectedText) {
+                replacement = `[quote]\n____\n${selectedText}\n____`;
+            } else {
+                replacement = '[quote]\n____\nquote text\n____';
+                selectStart = 15;
+                selectEnd = 25;
+            }
+            break;
+        case 'ul':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `* ${line}`).join('\n');
+            } else {
+                replacement = '* list item';
+                selectStart = 2;
+                selectEnd = 11;
+            }
+            break;
+        case 'ol':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `. ${line}`).join('\n');
+            } else {
+                replacement = '. list item';
+                selectStart = 2;
+                selectEnd = 11;
+            }
+            break;
+        case 'tasklist':
+            if (selectedText) {
+                replacement = selectedText.split('\n').map(line => `* [ ] ${line}`).join('\n');
+            } else {
+                replacement = '* [ ] task item';
+                selectStart = 6;
+                selectEnd = 15;
+            }
+            break;
+        case 'codeblock':
+            if (selectedText) {
+                replacement = `[source]\n----\n${selectedText}\n----`;
+            } else {
+                replacement = '[source]\n----\ncode\n----';
+                selectStart = 15;
+                selectEnd = 19;
+            }
+            break;
+        case 'hr':
+            replacement = "\n'''\n";
+            break;
+        default:
+            return;
+    }
+
+    // Replace selection
+    cmEditor.replaceSelection(replacement);
+
+    // Select placeholder text if no text was selected
+    if (!selectedText && selectEnd > selectStart) {
+        const newCursor = cmEditor.getCursor();
+        const line = newCursor.line;
+        const ch = newCursor.ch - replacement.length + selectStart;
+        cmEditor.setSelection(
+            { line: line, ch: ch },
+            { line: line, ch: ch + (selectEnd - selectStart) }
+        );
+    }
+
+    cmEditor.focus();
+    triggerAutoSave();
+}
+
+// AsciiDoc table insertion
+function insertAsciiDocTable(cols, rows) {
+    if (!cmEditor) return;
+
+    // Generate AsciiDoc table
+    let table = '[cols="';
+    for (let c = 0; c < cols; c++) {
+        table += '1';
+        if (c < cols - 1) table += ',';
+    }
+    table += '"]\n|===\n';
+
+    // Generate header row
+    for (let c = 0; c < cols; c++) {
+        table += `| Header ${c + 1} `;
+    }
+    table += '\n\n';
+
+    // Generate data rows
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            table += `| Cell ${r + 1}-${c + 1} `;
+        }
+        table += '\n';
+    }
+
+    table += '|===\n';
+
+    // Insert table
+    cmEditor.replaceSelection(table);
     cmEditor.focus();
     triggerAutoSave();
 }

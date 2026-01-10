@@ -60,47 +60,48 @@ func (h *StatsHandler) GetStats(c *gin.Context) {
 		RecentActivity: []ActivityItem{},
 	}
 
-	// Count notes and calculate storage
-	entries, err := os.ReadDir(storagePath)
-	if err != nil {
-		c.JSON(http.StatusOK, stats)
-		return
-	}
-
 	type noteInfo struct {
 		title    string
 		modified time.Time
 	}
 	var recentNotes []noteInfo
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			// Check for images/files directories
-			if entry.Name() == "images" || entry.Name() == "files" {
-				subPath := filepath.Join(storagePath, entry.Name())
-				subEntries, _ := os.ReadDir(subPath)
-				stats.TotalAttachments += len(subEntries)
-
-				// Calculate storage for attachments
-				for _, subEntry := range subEntries {
-					if info, err := subEntry.Info(); err == nil {
-						stats.StorageUsed += info.Size()
-					}
-				}
-			}
-			continue
-		}
-
-		name := entry.Name()
-		ext := filepath.Ext(name)
-		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
-			continue
-		}
-
-		filePath := filepath.Join(storagePath, name)
-		note, err := model.ParseNoteFromFile(filePath)
+	// Walk through all files recursively
+	err := filepath.Walk(storagePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			continue
+			return nil // Skip files with errors
+		}
+
+		// Skip .git directory
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
+		// Handle directories
+		if info.IsDir() {
+			return nil
+		}
+
+		name := info.Name()
+		ext := filepath.Ext(name)
+
+		// Check for images/files directories (attachments)
+		relPath, _ := filepath.Rel(storagePath, path)
+		if strings.HasPrefix(relPath, "images"+string(filepath.Separator)) ||
+			strings.HasPrefix(relPath, "files"+string(filepath.Separator)) {
+			stats.TotalAttachments++
+			stats.StorageUsed += info.Size()
+			return nil
+		}
+
+		// Skip non-note files
+		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+			return nil
+		}
+
+		note, err := model.ParseNoteFromFile(path)
+		if err != nil {
+			return nil
 		}
 
 		stats.TotalNotes++
@@ -116,15 +117,20 @@ func (h *StatsHandler) GetStats(c *gin.Context) {
 		stats.TotalAttachments += len(note.Attachments)
 
 		// Add file size
-		if info, err := entry.Info(); err == nil {
-			stats.StorageUsed += info.Size()
-		}
+		stats.StorageUsed += info.Size()
 
 		// Track for recent activity
 		recentNotes = append(recentNotes, noteInfo{
 			title:    note.Title,
 			modified: note.Modified,
 		})
+
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusOK, stats)
+		return
 	}
 
 	// Sort and get recent activity (last 5)

@@ -71,9 +71,19 @@ build.cmd run
 
 **CLI 옵션:**
 ```bash
-gitnotepad --help           # 도움말
-gitnotepad --nginx          # nginx 프록시 설정 가이드 출력
-gitnotepad -config my.yaml  # 설정 파일 지정
+gitnotepad --help                      # 도움말
+gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
+gitnotepad -config my.yaml             # 설정 파일 지정
+gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
+```
+
+**비밀번호 리셋:**
+```bash
+# 특정 사용자의 비밀번호 리셋
+gitnotepad --reset-password admin
+
+# 다른 설정 파일 사용 시
+gitnotepad --reset-password admin -config /path/to/config.yaml
 ```
 
 기본 포트: `8080`

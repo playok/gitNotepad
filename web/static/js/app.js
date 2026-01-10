@@ -3838,30 +3838,411 @@ function applyAsciiDocFormat(action) {
     triggerAutoSave();
 }
 
-// AsciiDoc table insertion
+// AsciiDoc table insertion (simple version without merging)
 function insertAsciiDocTable(cols, rows) {
     if (!cmEditor) return;
 
-    // Generate AsciiDoc table
+    // Open table editor for AsciiDoc
+    openTableEditor(cols, rows);
+}
+
+// ==================== AsciiDoc Table Editor ====================
+
+const tableEditor = {
+    cols: 0,
+    rows: 0,
+    cells: [], // 2D array of cell data
+    selectedCells: [], // Array of {row, col} for selected cells
+    isSelecting: false,
+    selectionStart: null
+};
+
+function openTableEditor(cols, rows) {
+    tableEditor.cols = cols;
+    tableEditor.rows = rows;
+    tableEditor.selectedCells = [];
+    tableEditor.isSelecting = false;
+
+    // Initialize cells data (row 0 is header)
+    tableEditor.cells = [];
+    for (let r = 0; r <= rows; r++) {
+        tableEditor.cells[r] = [];
+        for (let c = 0; c < cols; c++) {
+            tableEditor.cells[r][c] = {
+                content: r === 0 ? `Header ${c + 1}` : `Cell ${r}-${c + 1}`,
+                colspan: 1,
+                rowspan: 1,
+                hidden: false,
+                mergeParent: null // {row, col} of the cell this is merged into
+            };
+        }
+    }
+
+    renderTableEditor();
+
+    const modal = document.getElementById('tableEditorModal');
+    if (modal) {
+        modal.classList.add('visible');
+    }
+
+    updateTableEditorInfo();
+    initTableEditorEvents();
+}
+
+function closeTableEditor() {
+    const modal = document.getElementById('tableEditorModal');
+    if (modal) {
+        modal.classList.remove('visible');
+    }
+    tableEditor.selectedCells = [];
+}
+
+function renderTableEditor() {
+    const table = document.getElementById('tableEditorTable');
+    if (!table) return;
+
+    table.innerHTML = '';
+
+    for (let r = 0; r <= tableEditor.rows; r++) {
+        const tr = document.createElement('tr');
+
+        for (let c = 0; c < tableEditor.cols; c++) {
+            const cellData = tableEditor.cells[r][c];
+
+            if (cellData.hidden) continue;
+
+            const td = document.createElement('td');
+            td.dataset.row = r;
+            td.dataset.col = c;
+
+            if (cellData.colspan > 1) td.colSpan = cellData.colspan;
+            if (cellData.rowspan > 1) td.rowSpan = cellData.rowspan;
+
+            if (r === 0) {
+                td.classList.add('header-cell');
+            }
+
+            if (cellData.colspan > 1 || cellData.rowspan > 1) {
+                td.classList.add('merged');
+            }
+
+            // Create editable content
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = cellData.content;
+            input.addEventListener('input', (e) => {
+                cellData.content = e.target.value;
+            });
+            input.addEventListener('click', (e) => e.stopPropagation());
+
+            td.appendChild(input);
+            tr.appendChild(td);
+        }
+
+        table.appendChild(tr);
+    }
+}
+
+function initTableEditorEvents() {
+    const table = document.getElementById('tableEditorTable');
+    const modal = document.getElementById('tableEditorModal');
+    const closeBtn = document.getElementById('tableEditorClose');
+    const cancelBtn = document.getElementById('tableEditorCancel');
+    const mergeBtn = document.getElementById('tableEditorMerge');
+    const unmergeBtn = document.getElementById('tableEditorUnmerge');
+    const insertBtn = document.getElementById('tableEditorInsert');
+
+    // Remove old listeners by cloning
+    if (table) {
+        const newTable = table.cloneNode(true);
+        table.parentNode.replaceChild(newTable, table);
+
+        newTable.addEventListener('mousedown', handleTableMouseDown);
+        newTable.addEventListener('mouseover', handleTableMouseOver);
+        newTable.addEventListener('mouseup', handleTableMouseUp);
+
+        // Re-add input listeners
+        newTable.querySelectorAll('input').forEach(input => {
+            const td = input.parentElement;
+            const row = parseInt(td.dataset.row);
+            const col = parseInt(td.dataset.col);
+            input.addEventListener('input', (e) => {
+                tableEditor.cells[row][col].content = e.target.value;
+            });
+            input.addEventListener('click', (e) => e.stopPropagation());
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.onclick = closeTableEditor;
+    }
+
+    if (cancelBtn) {
+        cancelBtn.onclick = closeTableEditor;
+    }
+
+    if (mergeBtn) {
+        mergeBtn.onclick = mergeCells;
+    }
+
+    if (unmergeBtn) {
+        unmergeBtn.onclick = unmergeCells;
+    }
+
+    if (insertBtn) {
+        insertBtn.onclick = insertTableFromEditor;
+    }
+
+    // Close on background click
+    if (modal) {
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                closeTableEditor();
+            }
+        };
+    }
+}
+
+function handleTableMouseDown(e) {
+    const td = e.target.closest('td');
+    if (!td || e.target.tagName === 'INPUT') return;
+
+    e.preventDefault();
+    tableEditor.isSelecting = true;
+    tableEditor.selectionStart = {
+        row: parseInt(td.dataset.row),
+        col: parseInt(td.dataset.col)
+    };
+
+    // Clear previous selection
+    tableEditor.selectedCells = [{ ...tableEditor.selectionStart }];
+    updateCellSelection();
+}
+
+function handleTableMouseOver(e) {
+    if (!tableEditor.isSelecting) return;
+
+    const td = e.target.closest('td');
+    if (!td) return;
+
+    const endRow = parseInt(td.dataset.row);
+    const endCol = parseInt(td.dataset.col);
+    const startRow = tableEditor.selectionStart.row;
+    const startCol = tableEditor.selectionStart.col;
+
+    // Calculate selection rectangle
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+
+    // Select all cells in rectangle
+    tableEditor.selectedCells = [];
+    for (let r = minRow; r <= maxRow; r++) {
+        for (let c = minCol; c <= maxCol; c++) {
+            if (!tableEditor.cells[r][c].hidden) {
+                tableEditor.selectedCells.push({ row: r, col: c });
+            }
+        }
+    }
+
+    updateCellSelection();
+}
+
+function handleTableMouseUp() {
+    tableEditor.isSelecting = false;
+    updateTableEditorInfo();
+}
+
+function updateCellSelection() {
+    const table = document.getElementById('tableEditorTable');
+    if (!table) return;
+
+    // Remove all selection classes
+    table.querySelectorAll('td').forEach(td => {
+        td.classList.remove('selected');
+    });
+
+    // Add selection class to selected cells
+    tableEditor.selectedCells.forEach(({ row, col }) => {
+        const td = table.querySelector(`td[data-row="${row}"][data-col="${col}"]`);
+        if (td) {
+            td.classList.add('selected');
+        }
+    });
+
+    updateTableEditorInfo();
+}
+
+function updateTableEditorInfo() {
+    const sizeEl = document.getElementById('tableEditorSize');
+    const selectionEl = document.getElementById('tableEditorSelection');
+    const mergeBtn = document.getElementById('tableEditorMerge');
+    const unmergeBtn = document.getElementById('tableEditorUnmerge');
+
+    if (sizeEl) {
+        sizeEl.textContent = `Size: ${tableEditor.cols} x ${tableEditor.rows + 1}`;
+    }
+
+    if (selectionEl) {
+        selectionEl.textContent = `Selected: ${tableEditor.selectedCells.length} cells`;
+    }
+
+    // Enable/disable merge button
+    const canMerge = tableEditor.selectedCells.length > 1 && isSelectionRectangle();
+    if (mergeBtn) {
+        mergeBtn.disabled = !canMerge;
+    }
+
+    // Enable/disable unmerge button
+    const canUnmerge = tableEditor.selectedCells.length === 1 &&
+        tableEditor.selectedCells[0] &&
+        (tableEditor.cells[tableEditor.selectedCells[0].row][tableEditor.selectedCells[0].col].colspan > 1 ||
+         tableEditor.cells[tableEditor.selectedCells[0].row][tableEditor.selectedCells[0].col].rowspan > 1);
+    if (unmergeBtn) {
+        unmergeBtn.disabled = !canUnmerge;
+    }
+}
+
+function isSelectionRectangle() {
+    if (tableEditor.selectedCells.length < 2) return false;
+
+    // Get bounds
+    const rows = tableEditor.selectedCells.map(c => c.row);
+    const cols = tableEditor.selectedCells.map(c => c.col);
+    const minRow = Math.min(...rows);
+    const maxRow = Math.max(...rows);
+    const minCol = Math.min(...cols);
+    const maxCol = Math.max(...cols);
+
+    // Check if all cells in the rectangle are selected and none are already part of a merge
+    const expectedCount = (maxRow - minRow + 1) * (maxCol - minCol + 1);
+
+    // Count visible cells in rectangle
+    let visibleCount = 0;
+    for (let r = minRow; r <= maxRow; r++) {
+        for (let c = minCol; c <= maxCol; c++) {
+            if (!tableEditor.cells[r][c].hidden) {
+                visibleCount++;
+            }
+        }
+    }
+
+    return tableEditor.selectedCells.length === visibleCount;
+}
+
+function mergeCells() {
+    if (tableEditor.selectedCells.length < 2) return;
+
+    // Get bounds
+    const rows = tableEditor.selectedCells.map(c => c.row);
+    const cols = tableEditor.selectedCells.map(c => c.col);
+    const minRow = Math.min(...rows);
+    const maxRow = Math.max(...rows);
+    const minCol = Math.min(...cols);
+    const maxCol = Math.max(...cols);
+
+    // Check for existing merged cells - unmerge them first
+    for (let r = minRow; r <= maxRow; r++) {
+        for (let c = minCol; c <= maxCol; c++) {
+            const cell = tableEditor.cells[r][c];
+            if (cell.colspan > 1 || cell.rowspan > 1) {
+                // Unmerge this cell first
+                unmergeCell(r, c);
+            }
+        }
+    }
+
+    // Set the top-left cell as the merged cell
+    const mergedCell = tableEditor.cells[minRow][minCol];
+    mergedCell.colspan = maxCol - minCol + 1;
+    mergedCell.rowspan = maxRow - minRow + 1;
+    mergedCell.hidden = false;
+
+    // Hide all other cells in the merge
+    for (let r = minRow; r <= maxRow; r++) {
+        for (let c = minCol; c <= maxCol; c++) {
+            if (r !== minRow || c !== minCol) {
+                tableEditor.cells[r][c].hidden = true;
+                tableEditor.cells[r][c].mergeParent = { row: minRow, col: minCol };
+            }
+        }
+    }
+
+    tableEditor.selectedCells = [{ row: minRow, col: minCol }];
+    renderTableEditor();
+    initTableEditorEvents();
+    updateTableEditorInfo();
+}
+
+function unmergeCells() {
+    if (tableEditor.selectedCells.length !== 1) return;
+
+    const { row, col } = tableEditor.selectedCells[0];
+    unmergeCell(row, col);
+
+    renderTableEditor();
+    initTableEditorEvents();
+    updateTableEditorInfo();
+}
+
+function unmergeCell(row, col) {
+    const cell = tableEditor.cells[row][col];
+    if (cell.colspan <= 1 && cell.rowspan <= 1) return;
+
+    const colspan = cell.colspan;
+    const rowspan = cell.rowspan;
+
+    // Unhide all cells
+    for (let r = row; r < row + rowspan; r++) {
+        for (let c = col; c < col + colspan; c++) {
+            tableEditor.cells[r][c].hidden = false;
+            tableEditor.cells[r][c].mergeParent = null;
+            tableEditor.cells[r][c].colspan = 1;
+            tableEditor.cells[r][c].rowspan = 1;
+            if (r !== row || c !== col) {
+                tableEditor.cells[r][c].content = `Cell ${r}-${c + 1}`;
+            }
+        }
+    }
+}
+
+function insertTableFromEditor() {
+    if (!cmEditor) return;
+
+    // Generate AsciiDoc table with spans
     let table = '[cols="';
-    for (let c = 0; c < cols; c++) {
+    for (let c = 0; c < tableEditor.cols; c++) {
         table += '1';
-        if (c < cols - 1) table += ',';
+        if (c < tableEditor.cols - 1) table += ',';
     }
     table += '"]\n|===\n';
 
-    // Generate header row
-    for (let c = 0; c < cols; c++) {
-        table += `| Header ${c + 1} `;
-    }
-    table += '\n\n';
+    // Generate rows
+    for (let r = 0; r <= tableEditor.rows; r++) {
+        for (let c = 0; c < tableEditor.cols; c++) {
+            const cell = tableEditor.cells[r][c];
 
-    // Generate data rows
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            table += `| Cell ${r + 1}-${c + 1} `;
+            if (cell.hidden) continue;
+
+            // Build span prefix
+            let prefix = '';
+            if (cell.colspan > 1 && cell.rowspan > 1) {
+                prefix = `${cell.colspan}.${cell.rowspan}+`;
+            } else if (cell.colspan > 1) {
+                prefix = `${cell.colspan}+`;
+            } else if (cell.rowspan > 1) {
+                prefix = `.${cell.rowspan}+`;
+            }
+
+            table += `${prefix}| ${cell.content} `;
         }
         table += '\n';
+
+        // Add empty line after header row
+        if (r === 0) {
+            table += '\n';
+        }
     }
 
     table += '|===\n';
@@ -3870,6 +4251,8 @@ function insertAsciiDocTable(cols, rows) {
     cmEditor.replaceSelection(table);
     cmEditor.focus();
     triggerAutoSave();
+
+    closeTableEditor();
 }
 
 function updatePreview() {

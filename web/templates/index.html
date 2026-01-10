@@ -782,6 +782,32 @@ WARNING: Warn</code></pre>
                     </div>
                 </div>
             </div>
+
+            <!-- AsciiDoc Table Editor Modal -->
+            <div id="tableEditorModal" class="table-editor-modal">
+                <div class="table-editor-content">
+                    <div class="table-editor-header">
+                        <h3 data-i18n="tableEditor.title">AsciiDoc Table Editor</h3>
+                        <button class="table-editor-close" id="tableEditorClose">&times;</button>
+                    </div>
+                    <div class="table-editor-instructions" data-i18n="tableEditor.instructions">
+                        Click and drag to select cells for merging. Click "Merge" to combine selected cells.
+                    </div>
+                    <div class="table-editor-info">
+                        <span id="tableEditorSize">Size: 0 x 0</span>
+                        <span id="tableEditorSelection">Selected: 0 cells</span>
+                    </div>
+                    <div class="table-editor-preview" id="tableEditorPreview">
+                        <table id="tableEditorTable"></table>
+                    </div>
+                    <div class="table-editor-actions">
+                        <button id="tableEditorUnmerge" disabled data-i18n="tableEditor.unmerge">Unmerge</button>
+                        <button id="tableEditorMerge" disabled data-i18n="tableEditor.merge">Merge Cells</button>
+                        <button id="tableEditorCancel" data-i18n="common.cancel">Cancel</button>
+                        <button id="tableEditorInsert" class="primary" data-i18n="tableEditor.insert">Insert Table</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 

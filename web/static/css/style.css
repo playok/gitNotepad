@@ -1243,6 +1243,184 @@ body {
     display: inline-block;
 }
 
+/* AsciiDoc Table Editor Modal */
+.table-editor-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.table-editor-modal.visible {
+    display: flex;
+}
+
+.table-editor-content {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.table-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.table-editor-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.table-editor-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 8px;
+}
+
+.table-editor-close:hover {
+    color: var(--text);
+}
+
+.table-editor-instructions {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.table-editor-preview {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: auto;
+    margin-bottom: 16px;
+}
+
+.table-editor-preview table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table-editor-preview td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    min-width: 80px;
+    min-height: 32px;
+    cursor: pointer;
+    position: relative;
+    background: var(--bg);
+    transition: background-color 0.1s;
+    user-select: none;
+}
+
+.table-editor-preview td:hover {
+    background: var(--bg-secondary);
+}
+
+.table-editor-preview td.selected {
+    background: var(--accent);
+    color: white;
+}
+
+.table-editor-preview td.merged {
+    background: var(--accent-light, #e3f2fd);
+    border: 2px solid var(--accent);
+}
+
+.table-editor-preview td.merge-start {
+    background: var(--accent);
+    color: white;
+}
+
+.table-editor-preview td.hidden-cell {
+    display: none;
+}
+
+.table-editor-preview td input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: inherit;
+    padding: 0;
+    outline: none;
+}
+
+.table-editor-preview td.header-cell {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.table-editor-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.table-editor-actions button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    transition: all 0.15s;
+}
+
+.table-editor-actions button:hover {
+    background: var(--bg-secondary);
+}
+
+.table-editor-actions button.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.table-editor-actions button.primary:hover {
+    opacity: 0.9;
+}
+
+.table-editor-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.table-editor-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.table-editor-info span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 /* Editor Body */
 .editor-body {
     flex: 1;

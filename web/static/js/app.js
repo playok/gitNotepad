@@ -1774,7 +1774,17 @@ function setupEventListeners() {
     newNoteBtn.addEventListener('click', createNewNote);
 
     // Search
-    searchInput.addEventListener('input', filterNotes);
+    searchInput.addEventListener('input', () => {
+        filterNotes();
+        updateSearchClearButton();
+    });
+
+    // Search clear button
+    const searchClear = document.getElementById('searchClear');
+    if (searchClear) {
+        searchClear.addEventListener('click', clearSearch);
+    }
+    updateSearchClearButton();
 
     // Save
     saveBtn.addEventListener('click', saveNote);
@@ -2739,32 +2749,30 @@ function buildNoteTree(notesList) {
     const isDateFilter = searchTerm.match(/^\d{4}-\d{2}-\d{2}$/);
 
     // Add folders from API first (so empty folders are also displayed)
-    // Skip when filtering by date
-    if (!isDateFilter) {
-        folders.forEach(folder => {
-            // Skip if searching and folder doesn't match
-            if (searchTerm && !folder.path.toLowerCase().includes(searchTerm)) {
-                return;
+    // Always show folders - even during date filtering to preserve hierarchy
+    folders.forEach(folder => {
+        // Skip if searching by text (not date) and folder doesn't match
+        if (searchTerm && !isDateFilter && !folder.path.toLowerCase().includes(searchTerm)) {
+            return;
+        }
+
+        const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
+        let current = tree;
+
+        parts.forEach((part, index) => {
+            if (!current[part]) {
+                current[part] = {
+                    _children: {},
+                    _notes: [],
+                    _isFolder: true
+                };
             }
-
-            const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
-            let current = tree;
-
-            parts.forEach((part, index) => {
-                if (!current[part]) {
-                    current[part] = {
-                        _children: {},
-                        _notes: [],
-                        _isFolder: true
-                    };
-                }
-                current[part]._isFolder = true;
-                if (index < parts.length - 1) {
-                    current = current[part]._children;
-                }
-            });
+            current[part]._isFolder = true;
+            if (index < parts.length - 1) {
+                current = current[part]._children;
+            }
         });
-    }
+    });
 
     // Filter notes
     const filteredNotes = notesList.filter(note => {
@@ -2968,6 +2976,25 @@ function countNotesInTree(data) {
 
 function filterNotes() {
     renderNoteTree();
+}
+
+function clearSearch() {
+    searchInput.value = '';
+    miniCalSelectedDate = null;
+    updateSearchClearButton();
+    renderMiniCalendar();
+    renderNoteTree();
+}
+
+function updateSearchClearButton() {
+    const searchBox = searchInput.closest('.search-box');
+    if (searchBox) {
+        if (searchInput.value) {
+            searchBox.classList.add('has-value');
+        } else {
+            searchBox.classList.remove('has-value');
+        }
+    }
 }
 
 function createNewNote() {
@@ -4520,6 +4547,7 @@ function selectMiniCalDate(dateKey) {
         // Filter notes by selected date
         searchInput.value = dateKey;
     }
+    updateSearchClearButton();
     renderMiniCalendar();
     renderNoteTree();
 }

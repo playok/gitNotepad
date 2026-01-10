@@ -420,6 +420,7 @@ body {
 }
 
 .search-box {
+    position: relative;
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border);
     background: var(--bg-primary);
@@ -430,8 +431,7 @@ body {
     display: flex;
     width: 100%;
     height: 2rem;
-    padding: 0.375rem 0.5rem;
-    padding-left: 2rem;
+    padding: 0.375rem 1.75rem 0.375rem 2rem;
     border: 1px solid var(--input-border);
     border-radius: var(--radius);
     background-color: var(--bg-primary);
@@ -452,6 +452,34 @@ body {
     outline: none;
     border-color: var(--ring);
     box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.search-clear {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.search-clear:hover {
+    color: var(--text-primary);
+}
+
+.search-box.has-value .search-clear {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Mini Calendar */

@@ -5219,8 +5219,9 @@ async function loadFolderIcons() {
         if (response.ok) {
             folderIcons = await response.json();
         }
+        // Silently ignore 401 (unauthorized) - user not logged in yet
     } catch (err) {
-        console.error('Failed to load folder icons:', err);
+        // Network error - silently ignore
     }
 }
 

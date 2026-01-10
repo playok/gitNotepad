@@ -134,6 +134,9 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
+	// Folder icons GET - public with optional auth (to avoid 401 errors in browser console)
+	base.GET("/api/folder-icons", authMiddleware.OptionalAuth(), folderIconHandler.List)
+
 	// Protected routes (require authentication)
 	if s.config.Auth.Enabled {
 		// Main page - require auth
@@ -168,8 +171,7 @@ func (s *Server) setupRoutes() {
 			api.POST("/folders", noteHandler.CreateFolder)
 			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
 
-			// Folder icons
-			api.GET("/folder-icons", folderIconHandler.List)
+			// Folder icons (GET is public with optional auth, POST/DELETE require auth)
 			api.POST("/folder-icons", folderIconHandler.Set)
 			api.DELETE("/folder-icons", folderIconHandler.Delete)
 
@@ -233,8 +235,7 @@ func (s *Server) setupRoutes() {
 			api.POST("/folders", noteHandler.CreateFolder)
 			api.DELETE("/folders/*path", noteHandler.DeleteFolder)
 
-			// Folder icons
-			api.GET("/folder-icons", folderIconHandler.List)
+			// Folder icons (GET is already registered as public)
 			api.POST("/folder-icons", folderIconHandler.Set)
 			api.DELETE("/folder-icons", folderIconHandler.Delete)
 

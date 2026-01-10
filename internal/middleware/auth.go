@@ -83,6 +83,38 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	}
 }
 
+// OptionalAuth middleware - sets user context if authenticated, but doesn't require it
+func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cookie, err := c.Cookie(SessionCookieName)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		session, err := m.sessionRepo.GetByToken(cookie)
+		if err != nil || session == nil || session.IsExpired() {
+			c.Next()
+			return
+		}
+
+		user, err := m.userRepo.GetByID(session.UserID)
+		if err != nil || user == nil {
+			c.Next()
+			return
+		}
+
+		c.Set(UserContextKey, user)
+
+		// Set encryption key in context if available
+		if key, ok := encryption.GetKeyStore().Get(cookie); ok {
+			c.Set(EncryptionKeyContext, key)
+		}
+
+		c.Next()
+	}
+}
+
 // RequireAdmin middleware - requires admin privileges
 func (m *AuthMiddleware) RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {

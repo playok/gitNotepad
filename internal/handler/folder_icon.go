@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/user/gitnotepad/internal/database"
+	"github.com/user/gitnotepad/internal/middleware"
 )
 
 type FolderIconHandler struct {
@@ -27,8 +28,8 @@ type SetFolderIconRequest struct {
 
 // List returns all folder icons for the current user
 func (h *FolderIconHandler) List(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
 		// Return empty map for unauthenticated users instead of 401
 		c.JSON(http.StatusOK, make(map[string]string))
 		return
@@ -36,7 +37,7 @@ func (h *FolderIconHandler) List(c *gin.Context) {
 
 	rows, err := h.db.Query(
 		"SELECT folder_path, icon FROM folder_icons WHERE user_id = ?",
-		userID,
+		user.ID,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch folder icons"})
@@ -58,8 +59,8 @@ func (h *FolderIconHandler) List(c *gin.Context) {
 
 // Set creates or updates a folder icon
 func (h *FolderIconHandler) Set(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
@@ -74,7 +75,7 @@ func (h *FolderIconHandler) Set(c *gin.Context) {
 	_, err := h.db.Exec(
 		`INSERT INTO folder_icons (user_id, folder_path, icon) VALUES (?, ?, ?)
 		 ON CONFLICT(user_id, folder_path) DO UPDATE SET icon = excluded.icon`,
-		userID, req.FolderPath, req.Icon,
+		user.ID, req.FolderPath, req.Icon,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save folder icon"})
@@ -86,8 +87,8 @@ func (h *FolderIconHandler) Set(c *gin.Context) {
 
 // Delete removes a folder icon
 func (h *FolderIconHandler) Delete(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
@@ -100,7 +101,7 @@ func (h *FolderIconHandler) Delete(c *gin.Context) {
 
 	_, err := h.db.Exec(
 		"DELETE FROM folder_icons WHERE user_id = ? AND folder_path = ?",
-		userID, folderPath,
+		user.ID, folderPath,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder icon"})

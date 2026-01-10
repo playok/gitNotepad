@@ -1,28 +1,24 @@
+# Git Notepad Configuration
+
 server:
-  port: 8080
-  host: "0.0.0.0"
-  base_path: ""  # Set to "/note" for nginx proxy_pass to /note
-
+    port: 8080
+    host: 0.0.0.0
+    base_path: ""
 storage:
-  path: "./data"
-  auto_init_git: true
-
-logging:
-  encoding: ""  # "utf-8" (default) or "euc-kr" for console output (auto-detect from LANG env if empty)
-
+    path: ./data
+    auto_init_git: true
 editor:
-  default_type: "markdown"
-  auto_save: false
-
+    default_type: markdown
+    auto_save: false
 auth:
-  enabled: true
-  session_timeout: 168  # 7 days in hours
-  admin_username: "admin"
-  admin_password_hash: ""  # SHA-512 hash, set on first run
-
+    enabled: true
+    session_timeout: 168
+    admin_username: admin
+    admin_password_hash: 0cfda5cba0b71960e6d6829844ce4c8bffb6ab7aebb526ef86f0cdc0a48cdc3f172d62b3084d7b2f741fc5e467c5901f336fc1694b7f917054a7e694b28acd6a
 database:
-  path: "./data/gitnotepad.db"
-
+    path: ./data/gitnotepad.db
+logging:
+    encoding: utf-8
 encryption:
-  enabled: false  # Enable to encrypt note files with AES-256
-  salt: ""  # Auto-generated on first run when encryption is enabled
+    enabled: false
+    salt: ""

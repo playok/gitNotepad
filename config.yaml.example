@@ -1,4 +1,5 @@
 # Git Notepad Configuration
+# Copy this file to config.yaml and modify as needed
 
 server:
     port: 8080
@@ -14,11 +15,11 @@ auth:
     enabled: true
     session_timeout: 168
     admin_username: admin
-    admin_password_hash: 0cfda5cba0b71960e6d6829844ce4c8bffb6ab7aebb526ef86f0cdc0a48cdc3f172d62b3084d7b2f741fc5e467c5901f336fc1694b7f917054a7e694b28acd6a
+    admin_password_hash: ""  # Set on first run via terminal prompt
 database:
     path: ./data/gitnotepad.db
 logging:
     encoding: utf-8
 encryption:
     enabled: false
-    salt: ""
+    salt: ""  # Auto-generated on first run if encryption enabled

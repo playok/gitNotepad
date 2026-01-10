@@ -3,6 +3,9 @@ gitnotepad
 gitnotepad.exe
 gitnotepad_*
 
+# Config file (contains sensitive data like admin_password_hash)
+config.yaml
+
 # GoReleaser
 dist/
 

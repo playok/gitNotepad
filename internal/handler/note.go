@@ -33,7 +33,7 @@ func NewNoteHandler(repo *git.Repository, cfg *config.Config) *NoteHandler {
 	}
 }
 
-// getUserStoragePath returns the user-specific storage directory
+// getUserStoragePath returns the user-specific storage directory (root)
 func (h *NoteHandler) getUserStoragePath(c *gin.Context) string {
 	user := middleware.GetCurrentUser(c)
 	if user == nil {
@@ -46,6 +46,58 @@ func (h *NoteHandler) getUserStoragePath(c *gin.Context) string {
 	os.MkdirAll(userPath, 0755)
 
 	return userPath
+}
+
+// getNotesPath returns the user's notes directory (userStoragePath/notes)
+func (h *NoteHandler) getNotesPath(c *gin.Context) string {
+	userPath := h.getUserStoragePath(c)
+	notesPath := filepath.Join(userPath, "notes")
+
+	// Ensure notes directory exists
+	os.MkdirAll(notesPath, 0755)
+
+	// Migrate existing notes if needed (first run)
+	h.migrateExistingNotes(userPath, notesPath)
+
+	return notesPath
+}
+
+// migrateExistingNotes moves existing notes from user root to notes/ folder
+func (h *NoteHandler) migrateExistingNotes(userPath, notesPath string) {
+	// Check if migration is needed (look for .md/.txt/.adoc files in root)
+	entries, err := os.ReadDir(userPath)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+
+		// Skip directories that should stay in root
+		if entry.IsDir() {
+			// Skip special directories
+			if name == "notes" || name == "files" || name == "images" || strings.HasPrefix(name, ".") {
+				continue
+			}
+			// Move user folders to notes/
+			srcPath := filepath.Join(userPath, name)
+			dstPath := filepath.Join(notesPath, name)
+			if _, err := os.Stat(dstPath); os.IsNotExist(err) {
+				os.Rename(srcPath, dstPath)
+			}
+			continue
+		}
+
+		// Check for note files
+		ext := filepath.Ext(name)
+		if ext == ".md" || ext == ".txt" || ext == ".adoc" {
+			srcPath := filepath.Join(userPath, name)
+			dstPath := filepath.Join(notesPath, name)
+			if _, err := os.Stat(dstPath); os.IsNotExist(err) {
+				os.Rename(srcPath, dstPath)
+			}
+		}
+	}
 }
 
 // loadNoteFromFile loads a note from file, decrypting if necessary
@@ -125,13 +177,13 @@ type NoteListItem struct {
 }
 
 func (h *NoteHandler) List(c *gin.Context) {
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	var notes []NoteListItem
 
 	// Walk through all directories recursively
-	err := filepath.WalkDir(storagePath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(notesPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil // Skip errors
 		}
@@ -139,8 +191,8 @@ func (h *NoteHandler) List(c *gin.Context) {
 		// Skip directories
 		if d.IsDir() {
 			name := d.Name()
-			// Skip hidden directories and special directories
-			if strings.HasPrefix(name, ".") || name == "files" || name == "images" {
+			// Skip hidden directories
+			if strings.HasPrefix(name, ".") {
 				return filepath.SkipDir
 			}
 			return nil
@@ -164,8 +216,8 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
-		// Calculate relative path from storagePath for the ID
-		relPath, err := filepath.Rel(storagePath, path)
+		// Calculate relative path from notesPath for the ID
+		relPath, err := filepath.Rel(notesPath, path)
 		if err != nil {
 			return nil
 		}
@@ -199,7 +251,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 
 func (h *NoteHandler) Get(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Try both extensions
@@ -208,7 +260,7 @@ func (h *NoteHandler) Get(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
+		filePath, _ = filepath.Abs(filepath.Join(notesPath, id+ext))
 		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
@@ -270,7 +322,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		req.Type = h.config.Editor.DefaultType
 	}
 
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Parse folder path from title (e.g., "folder/subfolder/note title")
@@ -285,7 +337,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		}
 
 		// Create folder if it doesn't exist
-		fullFolderPath := filepath.Join(storagePath, folderPath)
+		fullFolderPath := filepath.Join(notesPath, folderPath)
 		if err := os.MkdirAll(fullFolderPath, 0755); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
 			return
@@ -295,10 +347,10 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	// Generate unique UUID for the note
 	id := generateID()
 
-	// Build the target directory (either storagePath or storagePath/folderPath)
-	targetDir := storagePath
+	// Build the target directory (either notesPath or notesPath/folderPath)
+	targetDir := notesPath
 	if folderPath != "" {
-		targetDir = filepath.Join(storagePath, folderPath)
+		targetDir = filepath.Join(notesPath, folderPath)
 	}
 
 	// Build the full ID with folder path for consistency
@@ -356,7 +408,7 @@ type UpdateNoteRequest struct {
 
 func (h *NoteHandler) Update(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note
@@ -365,7 +417,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
+		filePath, _ = filepath.Abs(filepath.Join(notesPath, id+ext))
 		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
@@ -431,9 +483,9 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	}
 
 	// Determine target folder
-	targetFolder := storagePath
+	targetFolder := notesPath
 	if newFolderPath != "" {
-		targetFolder = filepath.Join(storagePath, filepath.FromSlash(newFolderPath))
+		targetFolder = filepath.Join(notesPath, filepath.FromSlash(newFolderPath))
 		// Create folder if it doesn't exist
 		if err := os.MkdirAll(targetFolder, 0755); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
@@ -467,9 +519,9 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	// Calculate relative path from storagePath for the ID (consistent with List handler)
-	absStoragePath, _ := filepath.Abs(storagePath)
-	relPath, err := filepath.Rel(absStoragePath, newFilePath)
+	// Calculate relative path from notesPath for the ID (consistent with List handler)
+	absNotesPath, _ := filepath.Abs(notesPath)
+	relPath, err := filepath.Rel(absNotesPath, newFilePath)
 	if err == nil {
 		// Convert to forward slashes for consistency across platforms
 		relPath = filepath.ToSlash(relPath)
@@ -482,7 +534,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 func (h *NoteHandler) Delete(c *gin.Context) {
 	id := decodeNoteID(c.Param("id"))
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note
@@ -491,7 +543,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
+		filePath, _ = filepath.Abs(filepath.Join(notesPath, id+ext))
 		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
@@ -530,7 +582,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 // DecryptNote removes encryption from a note file
 func (h *NoteHandler) DecryptNote(c *gin.Context) {
 	id := c.Param("id")
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	// Get encryption key from context
 	encryptionKey := middleware.GetEncryptionKey(c)
@@ -540,7 +592,7 @@ func (h *NoteHandler) DecryptNote(c *gin.Context) {
 	var err error
 
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath, _ = filepath.Abs(filepath.Join(storagePath, id+ext))
+		filePath, _ = filepath.Abs(filepath.Join(notesPath, id+ext))
 		note, err = h.loadNoteFromFile(filePath, encryptionKey)
 		if err == nil {
 			break
@@ -588,13 +640,13 @@ type Folder struct {
 	Modified time.Time `json:"modified"`
 }
 
-// ListFolders returns all folders in the user's storage (recursively)
+// ListFolders returns all folders in the user's notes directory (recursively)
 func (h *NoteHandler) ListFolders(c *gin.Context) {
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	var folders []Folder
 
-	err := filepath.WalkDir(storagePath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(notesPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -604,14 +656,14 @@ func (h *NoteHandler) ListFolders(c *gin.Context) {
 			return nil
 		}
 
-		// Skip the root storage path itself
-		if path == storagePath {
+		// Skip the root notes path itself
+		if path == notesPath {
 			return nil
 		}
 
 		name := d.Name()
-		// Skip hidden directories and special directories
-		if strings.HasPrefix(name, ".") || name == "files" || name == "images" {
+		// Skip hidden directories
+		if strings.HasPrefix(name, ".") {
 			return filepath.SkipDir
 		}
 
@@ -620,8 +672,8 @@ func (h *NoteHandler) ListFolders(c *gin.Context) {
 			return nil
 		}
 
-		// Calculate relative path from storagePath
-		relPath, err := filepath.Rel(storagePath, path)
+		// Calculate relative path from notesPath
+		relPath, err := filepath.Rel(notesPath, path)
 		if err != nil {
 			return nil
 		}
@@ -673,20 +725,20 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 		return
 	}
 
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	// Build full path
 	var folderPath string
 	if req.Path != "" {
 		// Validate parent path
-		parentPath := filepath.Join(storagePath, req.Path)
+		parentPath := filepath.Join(notesPath, req.Path)
 		if _, err := os.Stat(parentPath); os.IsNotExist(err) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Parent folder does not exist"})
 			return
 		}
-		folderPath = filepath.Join(storagePath, req.Path, folderName)
+		folderPath = filepath.Join(notesPath, req.Path, folderName)
 	} else {
-		folderPath = filepath.Join(storagePath, folderName)
+		folderPath = filepath.Join(notesPath, folderName)
 	}
 
 	// Check if folder already exists
@@ -728,7 +780,7 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 	})
 }
 
-// DeleteFolder deletes a folder from the user's storage
+// DeleteFolder deletes a folder from the user's notes directory
 func (h *NoteHandler) DeleteFolder(c *gin.Context) {
 	folderPath := c.Param("path")
 
@@ -738,8 +790,8 @@ func (h *NoteHandler) DeleteFolder(c *gin.Context) {
 		return
 	}
 
-	storagePath := h.getUserStoragePath(c)
-	fullPath := filepath.Join(storagePath, folderPath)
+	notesPath := h.getNotesPath(c)
+	fullPath := filepath.Join(notesPath, folderPath)
 
 	// Check if folder exists
 	info, err := os.Stat(fullPath)

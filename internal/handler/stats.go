@@ -52,8 +52,17 @@ func (h *StatsHandler) getUserStoragePath(c *gin.Context) string {
 	return filepath.Join(h.basePath, user.Username)
 }
 
+// getNotesPath returns the user's notes directory (userStoragePath/notes)
+func (h *StatsHandler) getNotesPath(c *gin.Context) string {
+	userPath := h.getUserStoragePath(c)
+	notesPath := filepath.Join(userPath, "notes")
+	os.MkdirAll(notesPath, 0755)
+	return notesPath
+}
+
 func (h *StatsHandler) GetStats(c *gin.Context) {
-	storagePath := h.getUserStoragePath(c)
+	userStoragePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	stats := UsageStats{
 		NotesByType:    make(map[string]int),
@@ -66,8 +75,8 @@ func (h *StatsHandler) GetStats(c *gin.Context) {
 	}
 	var recentNotes []noteInfo
 
-	// Walk through all files recursively
-	err := filepath.Walk(storagePath, func(path string, info os.FileInfo, err error) error {
+	// Walk through notes directory for notes
+	err := filepath.Walk(notesPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip files with errors
 		}
@@ -84,15 +93,6 @@ func (h *StatsHandler) GetStats(c *gin.Context) {
 
 		name := info.Name()
 		ext := filepath.Ext(name)
-
-		// Check for images/files directories (attachments)
-		relPath, _ := filepath.Rel(storagePath, path)
-		if strings.HasPrefix(relPath, "images"+string(filepath.Separator)) ||
-			strings.HasPrefix(relPath, "files"+string(filepath.Separator)) {
-			stats.TotalAttachments++
-			stats.StorageUsed += info.Size()
-			return nil
-		}
 
 		// Skip non-note files
 		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
@@ -127,6 +127,19 @@ func (h *StatsHandler) GetStats(c *gin.Context) {
 
 		return nil
 	})
+
+	// Walk through images/files directories for attachments storage size
+	for _, dir := range []string{"images", "files"} {
+		attachmentPath := filepath.Join(userStoragePath, dir)
+		filepath.Walk(attachmentPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			stats.TotalAttachments++
+			stats.StorageUsed += info.Size()
+			return nil
+		})
+	}
 
 	if err != nil {
 		c.JSON(http.StatusOK, stats)
@@ -234,7 +247,8 @@ func (h *StatsHandler) ExportNotes(c *gin.Context) {
 }
 
 func (h *StatsHandler) ImportNotes(c *gin.Context) {
-	storagePath := h.getUserStoragePath(c)
+	userStoragePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
@@ -272,7 +286,24 @@ func (h *StatsHandler) ImportNotes(c *gin.Context) {
 			continue
 		}
 
-		destPath := filepath.Join(storagePath, zipFile.Name)
+		// Determine destination path based on file type
+		var destPath string
+		if strings.HasPrefix(zipFile.Name, "images/") || strings.HasPrefix(zipFile.Name, "files/") {
+			// Attachments go to user storage root
+			destPath = filepath.Join(userStoragePath, zipFile.Name)
+		} else if strings.HasPrefix(zipFile.Name, "notes/") {
+			// Notes already in notes/ folder - extract directly
+			destPath = filepath.Join(userStoragePath, zipFile.Name)
+		} else {
+			// Legacy format or note files - go to notes/ folder
+			ext := filepath.Ext(zipFile.Name)
+			if ext == ".md" || ext == ".txt" || ext == ".adoc" || zipFile.FileInfo().IsDir() {
+				destPath = filepath.Join(notesPath, zipFile.Name)
+			} else {
+				// Other files go to user storage root
+				destPath = filepath.Join(userStoragePath, zipFile.Name)
+			}
+		}
 
 		if zipFile.FileInfo().IsDir() {
 			os.MkdirAll(destPath, 0755)
@@ -311,34 +342,36 @@ func (h *StatsHandler) ImportNotes(c *gin.Context) {
 }
 
 func (h *StatsHandler) DeleteAllNotes(c *gin.Context) {
-	storagePath := h.getUserStoragePath(c)
-
-	// Read directory
-	entries, err := os.ReadDir(storagePath)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"deleted": 0})
-		return
-	}
+	notesPath := h.getNotesPath(c)
 
 	deleted := 0
 
-	for _, entry := range entries {
-		// Skip directories (preserve images/files/git)
-		if entry.IsDir() {
-			continue
+	// Recursively delete all note files from notes/ directory
+	filepath.Walk(notesPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
 		}
 
-		name := entry.Name()
-		ext := filepath.Ext(name)
+		ext := filepath.Ext(info.Name())
 		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
-			continue
+			return nil
 		}
 
-		filePath := filepath.Join(storagePath, name)
-		if err := os.Remove(filePath); err == nil {
+		if err := os.Remove(path); err == nil {
 			deleted++
 		}
-	}
+		return nil
+	})
+
+	// Clean up empty directories
+	filepath.Walk(notesPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || !info.IsDir() || path == notesPath {
+			return nil
+		}
+		// Try to remove directory (will fail if not empty)
+		os.Remove(path)
+		return nil
+	})
 
 	c.JSON(http.StatusOK, gin.H{"deleted": deleted})
 }

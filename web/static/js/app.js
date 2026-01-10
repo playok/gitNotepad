@@ -2309,7 +2309,7 @@ function renderAttachments() {
                 <button class="attachment-btn" title="Insert into content" onclick="insertAttachmentToContent(currentAttachments[${index}])">
                     &#8629;
                 </button>
-                <a href="${att.url}" download="${escapeHtml(att.name)}" class="attachment-btn" title="Download">
+                <a href="${att.url}?download=true" download="${escapeHtml(att.name)}" class="attachment-btn" title="Download">
                     &#8681;
                 </a>
                 <button class="attachment-btn btn-danger" title="Remove" onclick="removeAttachment(${index})">
@@ -2321,9 +2321,14 @@ function renderAttachments() {
 }
 
 function insertAttachmentToContent(attachment) {
+    // For non-image files, add ?download=true to enable original filename on download
+    const downloadUrl = attachment.isImage
+        ? attachment.url
+        : `${attachment.url}?download=true`;
+
     const markdown = attachment.isImage
         ? `![${attachment.name}](${attachment.url})`
-        : `[${attachment.name}](${attachment.url})`;
+        : `[${attachment.name}](${downloadUrl})`;
 
     insertAtCursor(markdown);
     updatePreview();

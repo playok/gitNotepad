@@ -1,17 +1,30 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/user/gitnotepad/internal/middleware"
 )
+
+// FileMetadata stores the mapping between UUID filenames and original filenames
+type FileMetadata struct {
+	sync.RWMutex
+	cache map[string]map[string]string // username -> (uuid -> originalName)
+}
+
+var fileMetadata = &FileMetadata{
+	cache: make(map[string]map[string]string),
+}
 
 type FileHandler struct {
 	storagePath string
@@ -23,6 +36,65 @@ func NewFileHandler(storagePath string, basePath string) *FileHandler {
 		storagePath: storagePath,
 		basePath:    basePath,
 	}
+}
+
+// getMetadataPath returns the path to the metadata file for a user
+func (h *FileHandler) getMetadataPath(username string) string {
+	return filepath.Join(h.storagePath, username, "files", ".filemeta.json")
+}
+
+// loadMetadata loads file metadata from disk for a user
+func (h *FileHandler) loadMetadata(username string) map[string]string {
+	fileMetadata.RLock()
+	if data, ok := fileMetadata.cache[username]; ok {
+		fileMetadata.RUnlock()
+		return data
+	}
+	fileMetadata.RUnlock()
+
+	// Load from file
+	metaPath := h.getMetadataPath(username)
+	data := make(map[string]string)
+
+	file, err := os.ReadFile(metaPath)
+	if err == nil {
+		json.Unmarshal(file, &data)
+	}
+
+	fileMetadata.Lock()
+	fileMetadata.cache[username] = data
+	fileMetadata.Unlock()
+
+	return data
+}
+
+// saveMetadata saves file metadata to disk for a user
+func (h *FileHandler) saveMetadata(username string, uuidName, originalName string) error {
+	fileMetadata.Lock()
+	defer fileMetadata.Unlock()
+
+	if fileMetadata.cache[username] == nil {
+		fileMetadata.cache[username] = make(map[string]string)
+	}
+	fileMetadata.cache[username][uuidName] = originalName
+
+	// Save to file
+	metaPath := h.getMetadataPath(username)
+	data, err := json.MarshalIndent(fileMetadata.cache[username], "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(metaPath, data, 0644)
+}
+
+// getOriginalName returns the original filename for a UUID filename
+func (h *FileHandler) getOriginalName(username, uuidName string) string {
+	meta := h.loadMetadata(username)
+	if name, ok := meta[uuidName]; ok {
+		return name
+	}
+	return ""
 }
 
 // getUserFilesPath returns the user-specific files directory
@@ -81,6 +153,9 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		username = user.Username
 	}
 
+	// Save metadata mapping (UUID -> original filename)
+	h.saveMetadata(username, filename, originalName)
+
 	// Return URL for the file (with base path and username)
 	fileURL := fmt.Sprintf("%s/u/%s/files/%s", h.basePath, username, filename)
 	c.JSON(http.StatusOK, gin.H{
@@ -93,6 +168,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 func (h *FileHandler) Serve(c *gin.Context) {
 	username := c.Param("username")
 	filename := c.Param("filename")
+	download := c.Query("download") == "true"
 
 	// Security: prevent path traversal
 	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
@@ -105,6 +181,7 @@ func (h *FileHandler) Serve(c *gin.Context) {
 	}
 
 	filePath := filepath.Join(h.storagePath, username, "files", filename)
+	isLegacy := false
 
 	// Check if file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -114,8 +191,24 @@ func (h *FileHandler) Serve(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
 			return
 		}
-		c.File(legacyPath)
-		return
+		filePath = legacyPath
+		isLegacy = true
+	}
+
+	// Get original filename for download
+	originalName := ""
+	if !isLegacy {
+		originalName = h.getOriginalName(username, filename)
+	}
+	if originalName == "" {
+		originalName = filename // Fallback to UUID filename
+	}
+
+	// Set Content-Disposition header for download with original filename
+	if download {
+		// RFC 5987 encoded filename for non-ASCII characters
+		encodedName := url.PathEscape(originalName)
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", originalName, encodedName))
 	}
 
 	c.File(filePath)

@@ -190,12 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initMiniCalendar();
     initMarkdownToolbar();
     initLocaleSelector();
-    // Load folder icons then notes
-    loadFolderIcons().then(() => {
-        loadNotes().then(() => {
-            handleHashNavigation();
-            renderMiniCalendar();
-        });
+    // Load notes (includes folder icons)
+    loadNotes().then(() => {
+        handleHashNavigation();
+        renderMiniCalendar();
     });
     setupEventListeners();
 
@@ -2438,10 +2436,11 @@ function loadAttachmentsFromNote(note) {
 // API Functions
 async function loadNotes() {
     try {
-        // Fetch notes and folders in parallel
-        const [notesResponse, foldersResponse] = await Promise.all([
+        // Fetch notes, folders, and folder icons in parallel
+        const [notesResponse, foldersResponse, iconsResponse] = await Promise.all([
             fetch(basePath + '/api/notes'),
-            fetch(basePath + '/api/folders')
+            fetch(basePath + '/api/folders'),
+            fetch(basePath + '/api/folder-icons')
         ]);
 
         notes = await notesResponse.json();
@@ -2449,6 +2448,11 @@ async function loadNotes() {
 
         folders = await foldersResponse.json();
         if (!folders) folders = [];
+
+        // Load folder icons if authenticated
+        if (iconsResponse.ok) {
+            folderIcons = await iconsResponse.json();
+        }
 
         renderNoteTree();
         updateCalendarIfVisible();
@@ -5231,18 +5235,6 @@ function showIconPicker(type, id) {
     }
     iconPickerTarget = { type, id };
     iconPickerModal.style.display = 'flex';
-}
-
-async function loadFolderIcons() {
-    try {
-        const response = await fetch(basePath + '/api/folder-icons');
-        if (response.ok) {
-            folderIcons = await response.json();
-        }
-        // Silently ignore 401 (unauthorized) - user not logged in yet
-    } catch (err) {
-        // Network error - silently ignore
-    }
 }
 
 async function setCustomIcon(type, id, icon) {

@@ -2745,15 +2745,11 @@ function buildNoteTree(notesList) {
     const tree = {};
     const searchTerm = searchInput.value.toLowerCase();
 
-    // Check if search term is a date filter (explicit boolean)
-    const isDateFilter = /^\d{4}-\d{2}-\d{2}$/.test(searchTerm);
-
     // Add folders from API first (so empty folders are also displayed)
-    // ALWAYS add all folders to maintain hierarchy - only filter notes by date/search
+    // Always show all folders unless text search filters them out
     folders.forEach(folder => {
-        // For text search (non-date): hide folders that don't match the search term
-        // For date filter or no search: always show all folders
-        if (searchTerm && !isDateFilter && !folder.path.toLowerCase().includes(searchTerm)) {
+        // For text search: hide folders that don't match the search term
+        if (searchTerm && !folder.path.toLowerCase().includes(searchTerm)) {
             return;
         }
 
@@ -2777,23 +2773,12 @@ function buildNoteTree(notesList) {
         });
     });
 
-    // Filter notes
+    // Filter notes by text search only (date filtering removed - handled by panel)
     const filteredNotes = notesList.filter(note => {
+        // No search term - show all notes
+        if (!searchTerm) return true;
         // Check title match
-        if (note.title.toLowerCase().includes(searchTerm)) {
-            return true;
-        }
-        // Check date match (YYYY-MM-DD format)
-        if (isDateFilter) {
-            const noteDate = note.created || note.modified;
-            if (noteDate) {
-                // Use same logic as buildNotesMapByDate for consistency
-                const date = new Date(noteDate);
-                const noteDateKey = formatDateKey(date);
-                return noteDateKey === searchTerm;
-            }
-        }
-        return false;
+        return note.title.toLowerCase().includes(searchTerm);
     });
 
     // Build tree structure from note IDs (which include folder paths)
@@ -2983,9 +2968,7 @@ function filterNotes() {
 
 function clearSearch() {
     searchInput.value = '';
-    miniCalSelectedDate = null;
     updateSearchClearButton();
-    renderMiniCalendar();
     renderNoteTree();
 }
 
@@ -4418,6 +4401,29 @@ function initMiniCalendar() {
         });
     }
 
+    // Date Notes Panel event listeners
+    const dateNotesPanelClose = document.getElementById('dateNotesPanelClose');
+    const dateNotesNewBtn = document.getElementById('dateNotesNewBtn');
+
+    if (dateNotesPanelClose) {
+        dateNotesPanelClose.addEventListener('click', () => {
+            miniCalSelectedDate = null;
+            hideDateNotesPanel();
+            renderMiniCalendar();
+        });
+    }
+
+    if (dateNotesNewBtn) {
+        dateNotesNewBtn.addEventListener('click', () => {
+            if (miniCalSelectedDate) {
+                createNoteForDate(miniCalSelectedDate);
+                hideDateNotesPanel();
+                miniCalSelectedDate = null;
+                renderMiniCalendar();
+            }
+        });
+    }
+
     // Initial render
     renderMiniCalendar();
 }
@@ -4542,17 +4548,100 @@ function createNoteForMiniCalDate(dateKey) {
 
 function selectMiniCalDate(dateKey) {
     if (miniCalSelectedDate && formatDateKey(miniCalSelectedDate) === dateKey) {
-        // Deselect if clicking the same date
+        // Deselect if clicking the same date - close panel
         miniCalSelectedDate = null;
-        searchInput.value = '';
+        hideDateNotesPanel();
     } else {
         miniCalSelectedDate = new Date(dateKey + 'T00:00:00');
-        // Filter notes by selected date
-        searchInput.value = dateKey;
+        // Show date notes panel instead of filtering
+        showDateNotesPanel(dateKey);
     }
-    updateSearchClearButton();
     renderMiniCalendar();
-    renderNoteTree();
+}
+
+// Date Notes Panel Functions
+function showDateNotesPanel(dateKey) {
+    const panel = document.getElementById('dateNotesPanel');
+    const title = document.getElementById('dateNotesPanelTitle');
+    const list = document.getElementById('dateNotesList');
+
+    // Format date for display
+    const date = new Date(dateKey + 'T00:00:00');
+    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+    const locale = localStorage.getItem('locale') || 'en';
+    title.textContent = date.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', options);
+
+    // Get notes for this date
+    const notesMap = buildNotesMapByDate();
+    const dateNotes = notesMap[dateKey] || [];
+
+    // Render notes list
+    renderDateNotesList(list, dateNotes);
+
+    // Show panel, hide other views
+    panel.style.display = 'flex';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('editor').style.display = 'none';
+}
+
+function hideDateNotesPanel() {
+    const panel = document.getElementById('dateNotesPanel');
+    panel.style.display = 'none';
+
+    // Show appropriate view
+    if (currentNote) {
+        document.getElementById('editor').style.display = 'flex';
+    } else {
+        document.getElementById('emptyState').style.display = 'flex';
+    }
+}
+
+function renderDateNotesList(container, dateNotes) {
+    container.innerHTML = '';
+
+    if (dateNotes.length === 0) {
+        const emptyMsg = i18n ? i18n.t('datePanel.empty') || 'No notes for this date' : 'No notes for this date';
+        container.innerHTML = `
+            <div class="date-notes-empty">
+                <span class="date-notes-empty-icon">&#128196;</span>
+                <span>${emptyMsg}</span>
+            </div>
+        `;
+        return;
+    }
+
+    dateNotes.forEach(note => {
+        const item = document.createElement('div');
+        item.className = 'date-note-item';
+        item.dataset.noteId = note.id;
+
+        const icon = note.type === 'markdown' ? '📄' : (note.type === 'asciidoc' ? '📝' : '📃');
+        const typeLabel = note.type === 'markdown' ? 'MD' : (note.type === 'asciidoc' ? 'ADOC' : 'TXT');
+        const lockIcon = note.private ? ' &#128274;' : '';
+
+        // Extract folder path and note name
+        const parts = note.title.split('/');
+        const noteName = parts.pop();
+        const folderPath = parts.join('/');
+
+        item.innerHTML = `
+            <span class="date-note-item-icon">${icon}</span>
+            <div class="date-note-item-content">
+                <div class="date-note-item-title">${escapeHtml(noteName)}${lockIcon}</div>
+                ${folderPath ? `<div class="date-note-item-path">📁 ${escapeHtml(folderPath)}</div>` : ''}
+            </div>
+            <span class="date-note-item-type">${typeLabel}</span>
+        `;
+
+        item.addEventListener('click', () => {
+            hideDateNotesPanel();
+            miniCalSelectedDate = null;
+            renderMiniCalendar();
+            loadNote(note.id);
+        });
+
+        container.appendChild(item);
+    });
 }
 
 function buildNotesMapByDate() {

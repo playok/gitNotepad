@@ -78,7 +78,10 @@
                 <input type="text" id="searchInput" placeholder="Search notes..." data-i18n-placeholder="sidebar.search">
                 <button id="searchClear" class="search-clear" title="Clear search">×</button>
             </div>
-            <!-- Mini Calendar -->
+            <ul id="noteList" class="note-list">
+                <!-- Notes will be loaded here -->
+            </ul>
+            <!-- Mini Calendar (Bottom Fixed) -->
             <div class="mini-calendar" id="miniCalendar">
                 <div class="mini-calendar-header">
                     <button id="miniCalToggle" class="mini-cal-toggle" title="Toggle calendar">&#9660;</button>
@@ -101,9 +104,6 @@
                     </div>
                 </div>
             </div>
-            <ul id="noteList" class="note-list">
-                <!-- Notes will be loaded here -->
-            </ul>
         </aside>
 
         <!-- Sidebar Splitter -->
@@ -113,6 +113,26 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Date Notes Panel -->
+            <div id="dateNotesPanel" class="date-notes-panel" style="display: none;">
+                <div class="date-notes-header">
+                    <div class="date-notes-title">
+                        <span class="date-notes-icon">&#128197;</span>
+                        <span id="dateNotesPanelTitle"></span>
+                    </div>
+                    <button id="dateNotesPanelClose" class="date-notes-close" title="Close">&times;</button>
+                </div>
+                <div id="dateNotesList" class="date-notes-list">
+                    <!-- Date notes will be rendered here -->
+                </div>
+                <div class="date-notes-footer">
+                    <button id="dateNotesNewBtn" class="date-notes-new-btn">
+                        <span>&#10133;</span>
+                        <span data-i18n="datePanel.newNote">New note for this date</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
                 <h2 data-i18n="app.selectNote">Select a note or create a new one</h2>

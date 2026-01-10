@@ -482,12 +482,13 @@ body {
     visibility: visible;
 }
 
-/* Mini Calendar */
+/* Mini Calendar - Fixed at bottom */
 .mini-calendar {
     padding: 0.5rem;
-    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
     background: var(--bg-primary);
     user-select: none;
+    flex-shrink: 0;
 }
 
 .mini-calendar-header {
@@ -724,6 +725,7 @@ body {
     overflow: hidden;
     background: var(--bg-secondary);
     transition: background-color 0.3s ease;
+    position: relative;
 }
 
 .empty-state {
@@ -4490,4 +4492,165 @@ code.hljs[data-line-count^="1000"] .line-number {
 
 .icon-picker-footer .btn {
     min-width: 150px;
+}
+
+/* Date Notes Panel */
+.date-notes-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.date-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.date-notes-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.date-notes-icon {
+    font-size: 1.5rem;
+}
+
+.date-notes-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.date-notes-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.date-notes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.date-notes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    gap: 0.5rem;
+}
+
+.date-notes-empty-icon {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+.date-note-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.date-note-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+    transform: translateX(4px);
+}
+
+.date-note-item-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.date-note-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.date-note-item-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.date-note-item-path {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.date-note-item-type {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.date-notes-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.date-notes-new-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--accent);
+    color: var(--accent-foreground);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.date-notes-new-btn:hover {
+    background: var(--accent-dark);
 }

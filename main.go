@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"syscall"
 
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/database"
 	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/encryption"
+	"github.com/user/gitnotepad/internal/repository"
 	"github.com/user/gitnotepad/internal/server"
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/term"
 )
 
 const nginxHelp = `
@@ -46,10 +51,17 @@ To run Git Notepad behind nginx at a sub-path (e.g., /note):
 func main() {
 	configPath := flag.String("config", "config.yaml", "Path to config file")
 	showNginx := flag.Bool("nginx", false, "Show nginx reverse proxy configuration")
+	resetPassword := flag.String("reset-password", "", "Reset password for specified username")
 	flag.Parse()
 
 	if *showNginx {
 		fmt.Print(nginxHelp)
+		return
+	}
+
+	// Handle password reset
+	if *resetPassword != "" {
+		handlePasswordReset(*configPath, *resetPassword)
 		return
 	}
 
@@ -115,4 +127,80 @@ func main() {
 	if err := srv.Run(); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
+}
+
+// handlePasswordReset resets the password for the specified username
+func handlePasswordReset(configPath, username string) {
+	// Load config to get database path
+	var cfg *config.Config
+	var err error
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		cfg = config.Default()
+	} else {
+		cfg, err = config.Load(configPath)
+		if err != nil {
+			log.Fatalf("Failed to load config: %v", err)
+		}
+	}
+
+	// Connect to database
+	db, err := database.New(cfg.Database.Path)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	// Get user repository
+	userRepo := repository.NewUserRepository(db.DB)
+
+	// Find user by username
+	user, err := userRepo.GetByUsername(username)
+	if err != nil {
+		log.Fatalf("Failed to find user: %v", err)
+	}
+	if user == nil {
+		log.Fatalf("User '%s' not found", username)
+	}
+
+	// Prompt for new password
+	fmt.Printf("Resetting password for user: %s (ID: %d)\n", user.Username, user.ID)
+	fmt.Print("Enter new password: ")
+
+	passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Fatalf("Failed to read password: %v", err)
+	}
+	fmt.Println()
+
+	password := string(passwordBytes)
+	if password == "" {
+		log.Fatal("Password cannot be empty")
+	}
+
+	// Confirm password
+	fmt.Print("Confirm new password: ")
+	confirmBytes, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		log.Fatalf("Failed to read password confirmation: %v", err)
+	}
+	fmt.Println()
+
+	if password != string(confirmBytes) {
+		log.Fatal("Passwords do not match")
+	}
+
+	// Hash new password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatalf("Failed to hash password: %v", err)
+	}
+
+	// Update user password
+	user.PasswordHash = string(hash)
+	if err := userRepo.Update(user); err != nil {
+		log.Fatalf("Failed to update password: %v", err)
+	}
+
+	fmt.Printf("Password for user '%s' has been reset successfully.\n", username)
 }

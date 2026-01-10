@@ -884,6 +884,9 @@ function copyCodeBlock(btn) {
         copyIcon.style.display = 'none';
         checkIcon.style.display = 'inline';
 
+        // Show toast message
+        showToast(i18n ? i18n.t('toast.codeCopied') || 'Code copied!' : 'Code copied!');
+
         // Reset after 2 seconds
         setTimeout(() => {
             copyIcon.style.display = 'inline';
@@ -891,6 +894,7 @@ function copyCodeBlock(btn) {
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy:', err);
+        showToast(i18n ? i18n.t('toast.copyFailed') || 'Failed to copy' : 'Failed to copy');
     });
 }
 

@@ -263,6 +263,8 @@ const i18n = {
 
             // Toast
             'toast.noteDecrypted': 'Note decrypted successfully',
+            'toast.codeCopied': 'Code copied!',
+            'toast.copyFailed': 'Failed to copy',
 
             // Help
             'help.title': 'Keyboard Shortcuts',
@@ -546,6 +548,8 @@ const i18n = {
 
             // Toast
             'toast.noteDecrypted': '노트 암호화가 해제되었습니다',
+            'toast.codeCopied': '코드가 복사되었습니다!',
+            'toast.copyFailed': '복사 실패',
 
             // Help
             'help.title': '키보드 단축키',

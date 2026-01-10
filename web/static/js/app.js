@@ -3374,10 +3374,10 @@ function updateMarkdownToolbarVisibility() {
 function applyMarkdownFormat(action) {
     if (!cmEditor) return;
 
-    const selection = cmEditor.state.selection.main;
-    const selectedText = cmEditor.state.sliceDoc(selection.from, selection.to);
+    const selectedText = cmEditor.getSelection();
     let replacement = '';
-    let cursorOffset = 0;
+    let selectStart = 0;
+    let selectEnd = 0;
 
     switch (action) {
         case 'bold':
@@ -3385,7 +3385,8 @@ function applyMarkdownFormat(action) {
                 replacement = `**${selectedText}**`;
             } else {
                 replacement = '**bold**';
-                cursorOffset = -2;
+                selectStart = 2;
+                selectEnd = 6;
             }
             break;
         case 'italic':
@@ -3393,7 +3394,8 @@ function applyMarkdownFormat(action) {
                 replacement = `*${selectedText}*`;
             } else {
                 replacement = '*italic*';
-                cursorOffset = -1;
+                selectStart = 1;
+                selectEnd = 7;
             }
             break;
         case 'strikethrough':
@@ -3401,7 +3403,8 @@ function applyMarkdownFormat(action) {
                 replacement = `~~${selectedText}~~`;
             } else {
                 replacement = '~~strikethrough~~';
-                cursorOffset = -2;
+                selectStart = 2;
+                selectEnd = 15;
             }
             break;
         case 'code':
@@ -3409,34 +3412,42 @@ function applyMarkdownFormat(action) {
                 replacement = `\`${selectedText}\``;
             } else {
                 replacement = '`code`';
-                cursorOffset = -1;
+                selectStart = 1;
+                selectEnd = 5;
             }
             break;
         case 'h1':
             replacement = selectedText ? `# ${selectedText}` : '# Heading 1';
+            if (!selectedText) { selectStart = 2; selectEnd = 11; }
             break;
         case 'h2':
             replacement = selectedText ? `## ${selectedText}` : '## Heading 2';
+            if (!selectedText) { selectStart = 3; selectEnd = 12; }
             break;
         case 'h3':
             replacement = selectedText ? `### ${selectedText}` : '### Heading 3';
+            if (!selectedText) { selectStart = 4; selectEnd = 13; }
             break;
         case 'link':
             if (selectedText) {
                 replacement = `[${selectedText}](url)`;
-                cursorOffset = -1;
+                selectStart = selectedText.length + 3;
+                selectEnd = selectedText.length + 6;
             } else {
                 replacement = '[link text](url)';
-                cursorOffset = -1;
+                selectStart = 1;
+                selectEnd = 10;
             }
             break;
         case 'image':
             if (selectedText) {
                 replacement = `![${selectedText}](url)`;
-                cursorOffset = -1;
+                selectStart = selectedText.length + 4;
+                selectEnd = selectedText.length + 7;
             } else {
                 replacement = '![alt text](url)';
-                cursorOffset = -1;
+                selectStart = 2;
+                selectEnd = 10;
             }
             break;
         case 'quote':
@@ -3444,6 +3455,8 @@ function applyMarkdownFormat(action) {
                 replacement = selectedText.split('\n').map(line => `> ${line}`).join('\n');
             } else {
                 replacement = '> quote';
+                selectStart = 2;
+                selectEnd = 7;
             }
             break;
         case 'ul':
@@ -3451,6 +3464,8 @@ function applyMarkdownFormat(action) {
                 replacement = selectedText.split('\n').map(line => `- ${line}`).join('\n');
             } else {
                 replacement = '- list item';
+                selectStart = 2;
+                selectEnd = 11;
             }
             break;
         case 'ol':
@@ -3458,6 +3473,8 @@ function applyMarkdownFormat(action) {
                 replacement = selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
             } else {
                 replacement = '1. list item';
+                selectStart = 3;
+                selectEnd = 12;
             }
             break;
         case 'tasklist':
@@ -3465,6 +3482,8 @@ function applyMarkdownFormat(action) {
                 replacement = selectedText.split('\n').map(line => `- [ ] ${line}`).join('\n');
             } else {
                 replacement = '- [ ] task item';
+                selectStart = 6;
+                selectEnd = 15;
             }
             break;
         case 'codeblock':
@@ -3472,7 +3491,8 @@ function applyMarkdownFormat(action) {
                 replacement = `\`\`\`\n${selectedText}\n\`\`\``;
             } else {
                 replacement = '```\ncode\n```';
-                cursorOffset = -4;
+                selectStart = 4;
+                selectEnd = 8;
             }
             break;
         case 'table':
@@ -3485,17 +3505,22 @@ function applyMarkdownFormat(action) {
             return;
     }
 
-    // Insert the replacement
-    cmEditor.dispatch({
-        changes: {
-            from: selection.from,
-            to: selection.to,
-            insert: replacement
-        },
-        selection: {
-            anchor: selection.from + replacement.length + cursorOffset
-        }
-    });
+    // Get cursor position before replacement
+    const cursor = cmEditor.getCursor();
+
+    // Replace selection
+    cmEditor.replaceSelection(replacement);
+
+    // Select placeholder text if no text was selected
+    if (!selectedText && selectEnd > selectStart) {
+        const newCursor = cmEditor.getCursor();
+        const line = newCursor.line;
+        const ch = newCursor.ch - replacement.length + selectStart;
+        cmEditor.setSelection(
+            { line: line, ch: ch },
+            { line: line, ch: ch + (selectEnd - selectStart) }
+        );
+    }
 
     cmEditor.focus();
     triggerAutoSave();

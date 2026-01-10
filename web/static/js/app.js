@@ -394,6 +394,12 @@ function handleKeyboardShortcut(e) {
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
             if (modal.style.display !== 'none') {
+                // If closing setPasswordModal without setting password, uncheck private toggle
+                if (modal.id === 'setPasswordModal') {
+                    notePrivate.checked = false;
+                    setPasswordInput.value = '';
+                    confirmPasswordInput.value = '';
+                }
                 modal.style.display = 'none';
             }
         });

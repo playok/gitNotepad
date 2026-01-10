@@ -3108,6 +3108,12 @@ function showEditorPane() {
     emptyState.style.display = 'none';
     editor.style.display = 'flex';
 
+    // Hide date notes panel if open
+    const dateNotesPanel = document.getElementById('dateNotesPanel');
+    if (dateNotesPanel) {
+        dateNotesPanel.style.display = 'none';
+    }
+
     const editorBody = document.querySelector('.editor-body');
     const editorPane = document.querySelector('.editor-pane');
 
@@ -3128,6 +3134,12 @@ function showEditorPane() {
 function showPreviewPane() {
     emptyState.style.display = 'none';
     editor.style.display = 'flex';
+
+    // Hide date notes panel if open
+    const dateNotesPanel = document.getElementById('dateNotesPanel');
+    if (dateNotesPanel) {
+        dateNotesPanel.style.display = 'none';
+    }
 
     const splitter = document.getElementById('editorSplitter');
     const editorBody = document.querySelector('.editor-body');
@@ -4417,7 +4429,7 @@ function initMiniCalendar() {
         dateNotesNewBtn.addEventListener('click', () => {
             if (miniCalSelectedDate) {
                 createNoteForDate(miniCalSelectedDate);
-                hideDateNotesPanel();
+                // Note: hideDateNotesPanel() not needed - showEditorPane() handles it
                 miniCalSelectedDate = null;
                 renderMiniCalendar();
             }

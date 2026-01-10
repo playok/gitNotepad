@@ -2745,18 +2745,21 @@ function buildNoteTree(notesList) {
     const tree = {};
     const searchTerm = searchInput.value.toLowerCase();
 
-    // Check if search term is a date filter
-    const isDateFilter = searchTerm.match(/^\d{4}-\d{2}-\d{2}$/);
+    // Check if search term is a date filter (explicit boolean)
+    const isDateFilter = /^\d{4}-\d{2}-\d{2}$/.test(searchTerm);
 
     // Add folders from API first (so empty folders are also displayed)
-    // Always show folders - even during date filtering to preserve hierarchy
+    // ALWAYS add all folders to maintain hierarchy - only filter notes by date/search
     folders.forEach(folder => {
-        // Skip if searching by text (not date) and folder doesn't match
+        // For text search (non-date): hide folders that don't match the search term
+        // For date filter or no search: always show all folders
         if (searchTerm && !isDateFilter && !folder.path.toLowerCase().includes(searchTerm)) {
             return;
         }
 
         const parts = folder.path.split('/').map(p => p.trim()).filter(p => p);
+        if (parts.length === 0) return; // Skip invalid folder paths
+
         let current = tree;
 
         parts.forEach((part, index) => {

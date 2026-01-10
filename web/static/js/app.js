@@ -3378,6 +3378,30 @@ function updatePreview() {
             console.warn('AsciiDoctor library not loaded');
         }
     }
+
+    // Render LaTeX math with KaTeX
+    renderMathInPreview();
+}
+
+// Render LaTeX math expressions using KaTeX
+function renderMathInPreview() {
+    if (typeof renderMathInElement !== 'undefined') {
+        try {
+            renderMathInElement(previewContent, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\[', right: '\\]', display: true },
+                    { left: '\\(', right: '\\)', display: false }
+                ],
+                throwOnError: false,
+                errorColor: '#cc0000',
+                strict: false
+            });
+        } catch (e) {
+            console.error('KaTeX rendering error:', e);
+        }
+    }
 }
 
 let pendingPassword = null;

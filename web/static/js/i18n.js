@@ -54,6 +54,24 @@ const i18n = {
             'editor.attachments': 'Attachments',
             'editor.dropFiles': 'Drop files here to attach',
 
+            // Markdown Toolbar
+            'toolbar.bold': 'Bold (Ctrl+B)',
+            'toolbar.italic': 'Italic (Ctrl+I)',
+            'toolbar.strikethrough': 'Strikethrough',
+            'toolbar.code': 'Inline Code',
+            'toolbar.h1': 'Heading 1',
+            'toolbar.h2': 'Heading 2',
+            'toolbar.h3': 'Heading 3',
+            'toolbar.link': 'Link (Ctrl+K)',
+            'toolbar.image': 'Image',
+            'toolbar.quote': 'Quote',
+            'toolbar.ul': 'Bullet List',
+            'toolbar.ol': 'Numbered List',
+            'toolbar.tasklist': 'Task List',
+            'toolbar.codeblock': 'Code Block',
+            'toolbar.table': 'Table',
+            'toolbar.hr': 'Horizontal Rule',
+
             // Note types
             'type.markdown': 'Markdown',
             'type.asciidoc': 'AsciiDoc',
@@ -348,6 +366,24 @@ const i18n = {
             'editor.share': '공유',
             'editor.attachments': '첨부파일',
             'editor.dropFiles': '파일을 여기에 드롭하세요',
+
+            // Markdown Toolbar
+            'toolbar.bold': '굵게 (Ctrl+B)',
+            'toolbar.italic': '기울임 (Ctrl+I)',
+            'toolbar.strikethrough': '취소선',
+            'toolbar.code': '인라인 코드',
+            'toolbar.h1': '제목 1',
+            'toolbar.h2': '제목 2',
+            'toolbar.h3': '제목 3',
+            'toolbar.link': '링크 (Ctrl+K)',
+            'toolbar.image': '이미지',
+            'toolbar.quote': '인용',
+            'toolbar.ul': '글머리 기호 목록',
+            'toolbar.ol': '번호 목록',
+            'toolbar.tasklist': '할 일 목록',
+            'toolbar.codeblock': '코드 블록',
+            'toolbar.table': '표',
+            'toolbar.hr': '구분선',
 
             // Note types
             'type.markdown': '마크다운',

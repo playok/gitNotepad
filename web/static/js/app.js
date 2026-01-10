@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMiniCalendar();
     initMarkdownToolbar();
     initLocaleSelector();
+    initFontSize();
     // Load notes (includes folder icons)
     loadNotes().then(() => {
         handleHashNavigation();
@@ -4842,6 +4843,7 @@ function initGeneralSettings() {
     const defaultTypeSelect = document.getElementById('settingsDefaultType');
     const autoSaveToggle = document.getElementById('settingsAutoSave');
     const lineNumbersToggle = document.getElementById('settingsLineNumbers');
+    const fontSizeSelect = document.getElementById('settingsFontSize');
 
     if (themeSelect) {
         themeSelect.addEventListener('change', () => {
@@ -4873,6 +4875,14 @@ function initGeneralSettings() {
             applyLineNumbersSetting(lineNumbersToggle.checked);
         });
     }
+
+    if (fontSizeSelect) {
+        fontSizeSelect.addEventListener('change', () => {
+            const fontSize = fontSizeSelect.value;
+            localStorage.setItem('editorFontSize', fontSize);
+            applyFontSize(fontSize);
+        });
+    }
 }
 
 function applyLineNumbersSetting(enabled) {
@@ -4881,11 +4891,38 @@ function applyLineNumbersSetting(enabled) {
     }
 }
 
+function applyFontSize(size) {
+    const fontSize = size + 'px';
+
+    // Apply to CodeMirror editor
+    const cmWrapper = document.querySelector('.CodeMirror');
+    if (cmWrapper) {
+        cmWrapper.style.fontSize = fontSize;
+    }
+
+    // Apply to preview pane
+    const previewContent = document.getElementById('previewContent');
+    if (previewContent) {
+        previewContent.style.fontSize = fontSize;
+    }
+
+    // Refresh CodeMirror to recalculate line heights
+    if (cmEditor) {
+        cmEditor.refresh();
+    }
+}
+
+function initFontSize() {
+    const savedFontSize = localStorage.getItem('editorFontSize') || '14';
+    applyFontSize(savedFontSize);
+}
+
 function loadGeneralSettings() {
     const themeSelect = document.getElementById('settingsTheme');
     const defaultTypeSelect = document.getElementById('settingsDefaultType');
     const autoSaveToggle = document.getElementById('settingsAutoSave');
     const lineNumbersToggle = document.getElementById('settingsLineNumbers');
+    const fontSizeSelect = document.getElementById('settingsFontSize');
 
     if (themeSelect) {
         themeSelect.value = localStorage.getItem('theme') || 'light';
@@ -4903,6 +4940,12 @@ function loadGeneralSettings() {
         const lineNumbersEnabled = localStorage.getItem('lineNumbersEnabled');
         lineNumbersToggle.checked = lineNumbersEnabled !== 'false'; // Default to true
         applyLineNumbersSetting(lineNumbersToggle.checked);
+    }
+
+    if (fontSizeSelect) {
+        const savedFontSize = localStorage.getItem('editorFontSize') || '14';
+        fontSizeSelect.value = savedFontSize;
+        applyFontSize(savedFontSize);
     }
 }
 

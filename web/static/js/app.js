@@ -4452,6 +4452,7 @@ function initDataManagement() {
     const importBtn = document.getElementById('importNotesBtn');
     const importFileInput = document.getElementById('importFileInput');
     const deleteAllBtn = document.getElementById('deleteAllNotesBtn');
+    const refreshStatsBtn = document.getElementById('refreshStatsBtn');
 
     if (exportBtn) {
         exportBtn.addEventListener('click', exportNotes);
@@ -4469,6 +4470,25 @@ function initDataManagement() {
 
     if (deleteAllBtn) {
         deleteAllBtn.addEventListener('click', deleteAllNotes);
+    }
+
+    if (refreshStatsBtn) {
+        refreshStatsBtn.addEventListener('click', refreshStats);
+    }
+}
+
+async function refreshStats() {
+    const btn = document.getElementById('refreshStatsBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    }
+
+    await loadUsageStats();
+
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
     }
 }
 

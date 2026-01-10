@@ -230,6 +230,7 @@ const i18n = {
             'stats.export': 'Export',
             'stats.import': 'Import',
             'stats.deleteAll': 'Delete All',
+            'stats.refresh': 'Refresh',
 
             // Messages
             'msg.confirmDelete': 'Are you sure you want to delete this note?',
@@ -543,6 +544,7 @@ const i18n = {
             'stats.export': '내보내기',
             'stats.import': '가져오기',
             'stats.deleteAll': '전체 삭제',
+            'stats.refresh': '새로고침',
 
             // Messages
             'msg.confirmDelete': '이 노트를 삭제하시겠습니까?',

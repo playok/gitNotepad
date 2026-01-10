@@ -3791,6 +3791,27 @@ code.hljs[data-line-count^="1000"] .line-number {
     font-size: 0.75rem;
 }
 
+/* Stats Header */
+.stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.stats-header h4 {
+    margin: 0;
+}
+
+.stats-header .btn-icon {
+    font-size: 1.25rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.stats-header .btn-icon:hover {
+    background: var(--bg-hover);
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;

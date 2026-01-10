@@ -167,13 +167,16 @@ encryption:
 - **파일 암호화**: AES-256-GCM으로 노트 파일 암호화 (선택적), PBKDF2 키 파생
 - 비밀번호 보호 (bcrypt)
 - 단축 URL 생성 (만료일 설정 가능)
-- 이미지/파일 첨부
-- 라이트/다크 테마
+- 이미지/파일 첨부 (원본 파일명 복원 지원)
+- **4개 테마**: Light, Dark, Dark High Contrast, Dark Cyan
 - nginx 리버스 프록시 지원 (base_path)
 - 크로스 플랫폼 빌드 (CGO 불필요)
 - 키보드 단축키 (Ctrl+S 저장, Ctrl+B 사이드바, F1 도움말)
-- **캘린더 뷰**: 월간 캘린더에서 날짜별 노트 관리, 드래그 앤 드롭으로 날짜 이동
-- **폴더 관리**: 드래그 앤 드롭으로 노트를 폴더로 이동, 폴더 내 새 노트 생성
+- **편집 툴바**: Markdown/AsciiDoc 서식 버튼, 표 그리드 선택기
+- **AsciiDoc 테이블 에디터**: 드래그로 셀 선택, 병합/해제, span 문법 자동 생성
+- **KaTeX 수식 렌더링**: LaTeX 문법 지원 ($...$, $$...$$)
+- **캘린더 뷰**: 사이드바 미니 캘린더, 날짜별 노트 관리, Daily 폴더 자동 생성
+- **폴더 관리**: 드래그 앤 드롭, 폴더 펼치기/닫기, 아이콘 변경
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
 - **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
@@ -211,11 +214,17 @@ encryption:
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
 - **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
-  - 캘린더 뷰: initCalendarView(), renderCalendar(), buildNotesMapByDate()
-  - 드래그 앤 드롭: handleCalendarDragStart/End/Drop(), 폴더 드래그 앤 드롭
+  - 편집 툴바: `applyFormat()`, `applyAsciiDocFormat()` - Markdown/AsciiDoc 서식 적용
+  - 표 그리드 선택기: `initTableGridSelector()`, 8x8 드래그로 행/열 선택
+  - AsciiDoc 테이블 에디터: `openTableEditor()`, `mergeCells()`, `insertTableFromEditor()`
+  - 캘린더 뷰: `initMiniCalendar()`, `renderMiniCalendar()`, Daily 폴더 자동 생성
+  - 드래그 앤 드롭: 캘린더 날짜 이동, 폴더 드래그 앤 드롭
   - 자동 저장: `autoSaveEnabled` 플래그, `isSaving` 중복 저장 방지
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
-  - Settings 다이얼로그 번역 키 포함
+  - Settings 다이얼로그, 툴바, 테이블 에디터 번역 키 포함
+- **handler/file.go**, **handler/image.go**: 파일 메타데이터 저장
+  - `.filemeta.json`, `.imagemeta.json`: UUID-원본파일명 매핑
+  - `?download=true` 파라미터로 원본 파일명 복원
 
 ## 빌드 및 배포
 
@@ -244,8 +253,12 @@ encryption:
 - i18n 적용 (`data-i18n` 속성)
 
 ### 에디터 툴바
+- Markdown/AsciiDoc 서식 버튼 (Bold, Italic, Heading, Link, Image, Code, List, Table 등)
+- 표 그리드 선택기: 8x8 그리드에서 드래그로 행/열 선택
+- AsciiDoc 테이블 에디터: 셀 병합/해제, span 문법 자동 생성 (2+, .2+, 2.2+)
 - 자동 저장 토글 체크박스
 - localStorage에 설정 저장
+- i18n 툴팁 지원
 
 ## 폴더 관리
 
@@ -263,20 +276,22 @@ encryption:
 ## 캘린더 뷰
 
 ### 기능
-- 리스트/캘린더 뷰 전환 (사이드바 상단 토글 버튼)
-- 월간 캘린더 표시 (에디터+프리뷰 영역 대체)
+- 사이드바 상단 미니 캘린더 (노트 목록 위)
 - 날짜별 노트 매핑 (노트의 created 날짜 기준)
-- 날짜 선택 시 해당 날짜 노트 목록 표시
+- 날짜 선택 시 에디터 영역에 해당 날짜 노트 패널 표시
 - 노트 드래그 앤 드롭으로 날짜 이동
+- **Daily 폴더 자동 생성**: 캘린더에서 새 노트 생성 시 `Daily/YYYY.MM/` 폴더에 저장
 
 ### 구현 세부사항
-- **뷰 전환**: `currentViewMode` 상태 ('list' | 'calendar'), localStorage 저장
-- **캘린더 렌더링**: `renderCalendar()` - 6주 x 7일 그리드 생성
+- **미니 캘린더**: `initMiniCalendar()`, `renderMiniCalendar()` - 사이드바에 표시
+- **날짜 노트 패널**: 날짜 클릭 시 에디터 영역에 해당 날짜 노트 목록 표시
 - **날짜-노트 매핑**: `buildNotesMapByDate()` - notes 배열에서 created 날짜 기준 맵 생성
+- **Daily 폴더 자동 생성**: `createNoteForDate()`, `ensureDailyFolderExists()`
+  - Daily 폴더와 년.월 하위 폴더 자동 생성
+  - 자동 생성된 폴더는 기본 collapsed 상태
 - **드래그 앤 드롭**: HTML5 Drag API 사용
-  - `data-note-id` 속성으로 노트 식별
   - PUT `/api/notes/:id`에 `created` 필드 전송하여 날짜 변경
-- **CSS 클래스**: `.calendar-view`, `.calendar-day`, `.calendar-day.drag-over`
+- **CSS 클래스**: `.mini-calendar`, `.date-notes-panel`, `.calendar-day.has-notes`
 
 ### API 변경사항
 - `NoteListItem`에 `Created` 필드 추가

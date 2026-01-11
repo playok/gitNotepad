@@ -93,10 +93,17 @@ gitnotepad start -config my.yaml       # 설정 파일 지정하여 시작
 
 1. **빌드**: `make build` 실행하여 컴파일 확인
 2. **커밋**: 변경사항 git commit 및 push
+3. **커밋 메시지**: 한글로 작성
 
 ```bash
 make build && git add -A && git commit -m "feat: 기능 설명" && git push
 ```
+
+**커밋 메시지 예시:**
+- `feat: 사용자 인증 기능 추가`
+- `fix: 폰트 파일 손상 문제 수정`
+- `refactor: 코드 구조 개선`
+- `docs: README 업데이트`
 
 **비밀번호 리셋:**
 ```bash

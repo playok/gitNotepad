@@ -2918,6 +2918,11 @@ async function loadNote(id) {
         currentNote = note;
         showPreviewOnly(note);
         updateNoteListSelection(id);
+
+        // In tab mode, switch to preview tab when loading a note
+        if (layoutState.tabMode) {
+            switchTab('preview');
+        }
     } catch (error) {
         console.error('Failed to load note:', error);
     }
@@ -2949,6 +2954,11 @@ async function editNote(id) {
         currentNote = note;
         showEditor(note);
         updateNoteListSelection(id);
+
+        // In tab mode, switch to editor tab when editing a note
+        if (layoutState.tabMode) {
+            switchTab('editor');
+        }
     } catch (error) {
         console.error('Failed to load note:', error);
     }

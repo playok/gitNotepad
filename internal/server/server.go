@@ -153,6 +153,13 @@ func (s *Server) setupRoutes() {
 			})
 		})
 
+		// Popout preview page - require auth
+		base.GET("/popout-preview", authMiddleware.RequireAuth(), func(c *gin.Context) {
+			c.HTML(200, "popout-preview.html", gin.H{
+				"basePath": basePath,
+			})
+		})
+
 		// Protected API routes
 		api := base.Group("/api")
 		api.Use(authMiddleware.RequireAuth())
@@ -220,6 +227,13 @@ func (s *Server) setupRoutes() {
 		base.GET("/", func(c *gin.Context) {
 			c.HTML(200, "index.html", gin.H{
 				"config":   s.config,
+				"basePath": basePath,
+			})
+		})
+
+		// Popout preview page
+		base.GET("/popout-preview", func(c *gin.Context) {
+			c.HTML(200, "popout-preview.html", gin.H{
 				"basePath": basePath,
 			})
 		})

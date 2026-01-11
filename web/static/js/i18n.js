@@ -97,6 +97,14 @@ const i18n = {
             'calendar.notesForDate': 'Click on a date to view notes',
             'calendar.toggle': 'Toggle calendar',
 
+            // Layout
+            'layout.direction': 'Toggle Layout (Horizontal/Vertical)',
+            'layout.position': 'Toggle Preview Position',
+            'layout.tabMode': 'Tab Mode',
+            'layout.popout': 'Pop-out Preview',
+            'layout.editorTab': 'Editor',
+            'layout.previewTab': 'Preview',
+
             // Months
             'month.january': 'January',
             'month.february': 'February',
@@ -459,6 +467,14 @@ const i18n = {
             'calendar.selectDate': '날짜를 선택하세요',
             'calendar.notesForDate': '날짜를 클릭하여 노트를 확인하세요',
             'calendar.toggle': '캘린더 토글',
+
+            // Layout
+            'layout.direction': '레이아웃 전환 (가로/세로)',
+            'layout.position': '프리뷰 위치 전환',
+            'layout.tabMode': '탭 모드',
+            'layout.popout': '프리뷰 팝아웃',
+            'layout.editorTab': '에디터',
+            'layout.previewTab': '프리뷰',
 
             // Months
             'month.january': '1월',

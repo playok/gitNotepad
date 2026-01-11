@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCodeMirror();
     initContextMenu();
     initFullscreenButtons();
+    initLayoutControls();
     initRootDropZone();
     initShortLinkButton();
     initSidebarToggle();
@@ -1752,6 +1753,284 @@ function initFullscreenButtons() {
             if (previewFullscreen) togglePreviewFullscreen();
         }
     });
+}
+
+// ============================================
+// Layout Controls & Docking System
+// ============================================
+
+let layoutState = {
+    direction: 'horizontal',  // 'horizontal' | 'vertical'
+    previewFirst: false,
+    tabMode: false,
+    activeTab: 'editor',
+    popoutWindow: null
+};
+
+function initLayoutControls() {
+    // Load saved layout state
+    loadLayoutState();
+
+    const editorBody = document.querySelector('.editor-body');
+    const layoutDirectionBtn = document.getElementById('layoutDirectionBtn');
+    const layoutPositionBtn = document.getElementById('layoutPositionBtn');
+    const tabModeBtn = document.getElementById('tabModeBtn');
+    const popoutPreviewBtn = document.getElementById('popoutPreviewBtn');
+    const tabBar = document.getElementById('layoutTabBar');
+
+    // Apply initial state
+    applyLayoutState();
+
+    // Direction toggle (horizontal/vertical)
+    if (layoutDirectionBtn) {
+        layoutDirectionBtn.addEventListener('click', toggleLayoutDirection);
+    }
+
+    // Position toggle (preview first/last)
+    if (layoutPositionBtn) {
+        layoutPositionBtn.addEventListener('click', togglePreviewPosition);
+    }
+
+    // Tab mode toggle
+    if (tabModeBtn) {
+        tabModeBtn.addEventListener('click', toggleTabMode);
+    }
+
+    // Popout preview
+    if (popoutPreviewBtn) {
+        popoutPreviewBtn.addEventListener('click', popoutPreview);
+    }
+
+    // Tab bar click handlers
+    if (tabBar) {
+        tabBar.querySelectorAll('.layout-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                switchTab(tab.dataset.tab);
+            });
+        });
+    }
+
+    // Listen for popout window close
+    window.addEventListener('message', (e) => {
+        if (e.data === 'popout-closed') {
+            onPopoutClosed();
+        }
+    });
+}
+
+function loadLayoutState() {
+    const saved = localStorage.getItem('layoutState');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            layoutState = { ...layoutState, ...parsed };
+            // Reset popout window reference on page load
+            layoutState.popoutWindow = null;
+        } catch (e) {
+            console.error('Failed to load layout state:', e);
+        }
+    }
+}
+
+function saveLayoutState() {
+    const toSave = {
+        direction: layoutState.direction,
+        previewFirst: layoutState.previewFirst,
+        tabMode: layoutState.tabMode,
+        activeTab: layoutState.activeTab
+    };
+    localStorage.setItem('layoutState', JSON.stringify(toSave));
+}
+
+function applyLayoutState() {
+    const editorBody = document.querySelector('.editor-body');
+    const editorPane = document.querySelector('.editor-pane');
+    const previewPane = document.getElementById('previewPane');
+    const tabBar = document.getElementById('layoutTabBar');
+    const layoutDirectionBtn = document.getElementById('layoutDirectionBtn');
+    const layoutPositionBtn = document.getElementById('layoutPositionBtn');
+    const tabModeBtn = document.getElementById('tabModeBtn');
+
+    if (!editorBody) return;
+
+    // Apply direction
+    editorBody.classList.toggle('layout-vertical', layoutState.direction === 'vertical');
+
+    // Apply preview position
+    editorBody.classList.toggle('preview-first', layoutState.previewFirst);
+
+    // Apply tab mode
+    editorBody.classList.toggle('tab-mode', layoutState.tabMode);
+    if (tabBar) {
+        tabBar.style.display = layoutState.tabMode ? 'flex' : 'none';
+    }
+
+    // Apply active tab
+    if (layoutState.tabMode) {
+        editorPane.classList.toggle('active', layoutState.activeTab === 'editor');
+        previewPane.classList.toggle('active', layoutState.activeTab === 'preview');
+        updateTabBarState();
+    }
+
+    // Update button states
+    if (layoutDirectionBtn) {
+        layoutDirectionBtn.classList.toggle('active', layoutState.direction === 'vertical');
+        layoutDirectionBtn.innerHTML = layoutState.direction === 'vertical' ? '&#8645;' : '&#8644;';
+    }
+
+    if (layoutPositionBtn) {
+        layoutPositionBtn.classList.toggle('active', layoutState.previewFirst);
+    }
+
+    if (tabModeBtn) {
+        tabModeBtn.classList.toggle('active', layoutState.tabMode);
+    }
+}
+
+function toggleLayoutDirection() {
+    layoutState.direction = layoutState.direction === 'horizontal' ? 'vertical' : 'horizontal';
+    applyLayoutState();
+    saveLayoutState();
+
+    // Refresh CodeMirror after layout change
+    if (cmEditor) {
+        setTimeout(() => cmEditor.refresh(), 100);
+    }
+}
+
+function togglePreviewPosition() {
+    layoutState.previewFirst = !layoutState.previewFirst;
+    applyLayoutState();
+    saveLayoutState();
+}
+
+function toggleTabMode() {
+    layoutState.tabMode = !layoutState.tabMode;
+
+    // If entering tab mode, ensure editor is active
+    if (layoutState.tabMode && !layoutState.activeTab) {
+        layoutState.activeTab = 'editor';
+    }
+
+    applyLayoutState();
+    saveLayoutState();
+
+    // Refresh CodeMirror after layout change
+    if (cmEditor) {
+        setTimeout(() => cmEditor.refresh(), 100);
+    }
+}
+
+function switchTab(tabName) {
+    layoutState.activeTab = tabName;
+
+    const editorPane = document.querySelector('.editor-pane');
+    const previewPane = document.getElementById('previewPane');
+
+    editorPane.classList.toggle('active', tabName === 'editor');
+    previewPane.classList.toggle('active', tabName === 'preview');
+
+    updateTabBarState();
+    saveLayoutState();
+
+    // Update preview when switching to preview tab
+    if (tabName === 'preview') {
+        updatePreview();
+    }
+
+    // Refresh CodeMirror when switching to editor tab
+    if (tabName === 'editor' && cmEditor) {
+        setTimeout(() => cmEditor.refresh(), 100);
+    }
+}
+
+function updateTabBarState() {
+    const tabBar = document.getElementById('layoutTabBar');
+    if (!tabBar) return;
+
+    tabBar.querySelectorAll('.layout-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === layoutState.activeTab);
+    });
+}
+
+function popoutPreview() {
+    // Close existing popout window if any
+    if (layoutState.popoutWindow && !layoutState.popoutWindow.closed) {
+        layoutState.popoutWindow.focus();
+        return;
+    }
+
+    // Get current preview content
+    const previewContent = document.getElementById('previewContent');
+    const noteTypeValue = document.getElementById('noteType').value;
+    const content = getEditorContent();
+    const title = noteTitle.value || 'Preview';
+
+    // Open new window
+    const width = 800;
+    const height = 600;
+    const left = window.screenX + window.outerWidth - width - 50;
+    const top = window.screenY + 50;
+
+    layoutState.popoutWindow = window.open(
+        `${basePath}/popout-preview`,
+        'preview-popout',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
+
+    if (layoutState.popoutWindow) {
+        // Apply popout mode to main window
+        const editorBody = document.querySelector('.editor-body');
+        editorBody.classList.add('popout-mode');
+
+        const popoutBtn = document.getElementById('popoutPreviewBtn');
+        if (popoutBtn) popoutBtn.classList.add('active');
+
+        // Send initial content to popout window
+        layoutState.popoutWindow.addEventListener('load', () => {
+            sendContentToPopout();
+        });
+
+        // Monitor popout window close
+        const checkClosed = setInterval(() => {
+            if (layoutState.popoutWindow && layoutState.popoutWindow.closed) {
+                clearInterval(checkClosed);
+                onPopoutClosed();
+            }
+        }, 500);
+    }
+}
+
+function sendContentToPopout() {
+    if (!layoutState.popoutWindow || layoutState.popoutWindow.closed) return;
+
+    const noteTypeValue = document.getElementById('noteType').value;
+    const content = getEditorContent();
+    const title = noteTitle.value || 'Preview';
+
+    layoutState.popoutWindow.postMessage({
+        type: 'preview-update',
+        content: content,
+        noteType: noteTypeValue,
+        title: title
+    }, '*');
+}
+
+function onPopoutClosed() {
+    layoutState.popoutWindow = null;
+
+    const editorBody = document.querySelector('.editor-body');
+    editorBody.classList.remove('popout-mode');
+
+    const popoutBtn = document.getElementById('popoutPreviewBtn');
+    if (popoutBtn) popoutBtn.classList.remove('active');
+}
+
+// Update popout preview when editor content changes
+function updatePopoutPreview() {
+    if (layoutState.popoutWindow && !layoutState.popoutWindow.closed) {
+        sendContentToPopout();
+    }
 }
 
 // Auto-save functions
@@ -4568,6 +4847,9 @@ function updatePreview() {
 
     // Render LaTeX math with KaTeX
     renderMathInPreview();
+
+    // Update popout preview if open
+    updatePopoutPreview();
 }
 
 // Render LaTeX math expressions using KaTeX

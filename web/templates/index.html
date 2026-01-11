@@ -179,6 +179,13 @@
                         <button id="historyBtn" class="btn-icon" title="History" data-i18n-title="editor.history">&#128337;</button>
                         <button id="saveBtn" class="btn-icon" title="Save" data-i18n-title="editor.save">&#128190;</button>
                         <button id="deleteBtn" class="btn-icon btn-icon-danger" title="Delete" data-i18n-title="editor.delete">&#128465;</button>
+                        <span class="action-separator"></span>
+                        <div class="layout-controls">
+                            <button id="layoutDirectionBtn" class="btn-icon" title="Toggle Layout (Horizontal/Vertical)" data-i18n-title="layout.direction">&#8644;</button>
+                            <button id="layoutPositionBtn" class="btn-icon" title="Toggle Preview Position" data-i18n-title="layout.position">&#8649;</button>
+                            <button id="tabModeBtn" class="btn-icon" title="Tab Mode" data-i18n-title="layout.tabMode">&#9783;</button>
+                            <button id="popoutPreviewBtn" class="btn-icon" title="Pop-out Preview" data-i18n-title="layout.popout">&#10064;</button>
+                        </div>
                     </div>
                 </div>
                 <!-- Attachments Section -->
@@ -238,6 +245,10 @@
                         </div>
                         <button type="button" class="toolbar-btn" data-action="hr" data-i18n-title="toolbar.hr">―</button>
                     </div>
+                </div>
+                <div class="layout-tab-bar" id="layoutTabBar" style="display: none;">
+                    <button class="layout-tab active" data-tab="editor" data-i18n="layout.editorTab">Editor</button>
+                    <button class="layout-tab" data-tab="preview" data-i18n="layout.previewTab">Preview</button>
                 </div>
                 <div class="editor-body">
                     <div class="editor-pane">

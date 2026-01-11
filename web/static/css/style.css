@@ -1535,6 +1535,121 @@ body {
     max-width: 100%;
 }
 
+/* ============================================
+   Layout Controls & Docking System
+   ============================================ */
+
+/* Layout Controls in Editor Actions */
+.layout-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.action-separator {
+    width: 1px;
+    height: 1.25rem;
+    background: var(--border);
+    margin: 0 0.5rem;
+}
+
+/* Vertical Layout */
+.editor-body.layout-vertical {
+    flex-direction: column;
+}
+
+.editor-body.layout-vertical .splitter {
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+}
+
+.editor-body.layout-vertical .splitter-handle {
+    width: 40px;
+    height: 4px;
+}
+
+.editor-body.layout-vertical.resizing {
+    cursor: row-resize;
+}
+
+/* Preview Position Toggle */
+.editor-body.preview-first {
+    flex-direction: row-reverse;
+}
+
+.editor-body.layout-vertical.preview-first {
+    flex-direction: column-reverse;
+}
+
+/* Tab Bar */
+.layout-tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    padding: 0 0.5rem;
+}
+
+.layout-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.layout-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.layout-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+/* Tab Mode */
+.editor-body.tab-mode .splitter {
+    display: none;
+}
+
+.editor-body.tab-mode .editor-pane,
+.editor-body.tab-mode .preview-pane {
+    display: none;
+}
+
+.editor-body.tab-mode .editor-pane.active {
+    display: flex;
+    flex: 1 1 100%;
+}
+
+.editor-body.tab-mode .preview-pane.active {
+    display: flex;
+    flex: 1 1 100%;
+}
+
+/* Popout Mode - Hide preview in main window */
+.editor-body.popout-mode .preview-pane {
+    display: none;
+}
+
+.editor-body.popout-mode .splitter {
+    display: none;
+}
+
+.editor-body.popout-mode .editor-pane {
+    flex: 1 1 100%;
+}
+
+/* Layout button active state */
+.layout-controls .btn-icon.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+}
+
 /* CodeMirror 5 Editor Styles */
 .editor-pane {
     display: flex;

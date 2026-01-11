@@ -25,7 +25,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **Nginx 프록시**: 서브 경로에서 운영 가능
 - **단일 바이너리**: 템플릿/정적 파일 임베디드 (go:embed)
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status)
-- **로그 롤링**: 파일 기반 로깅, 크기/일수 기반 자동 롤링 및 압축
+- **로그 롤링**: 일단위 로그 파일 생성 (`gitnotepad.log.YYYY-MM-DD`)
 
 ## 스크린샷
 
@@ -246,10 +246,8 @@ storage:
 logging:
   encoding: ""        # "utf-8" (기본) 또는 "euc-kr"
   file: false         # 파일 로깅 활성화
-  dir: "./logs"       # 로그 디렉토리
-  max_size: 10        # 로그 파일 최대 크기 (MB)
+  dir: "./logs"       # 로그 디렉토리 (일단위 롤링: gitnotepad.log.YYYY-MM-DD)
   max_age: 30         # 로그 보관 일수
-  max_backups: 5      # 보관할 이전 로그 파일 수
 
 editor:
   default_type: "markdown"  # 기본 문서 형식

@@ -154,10 +154,8 @@ storage:
 logging:
   encoding: ""         # "utf-8" (기본) 또는 "euc-kr" 콘솔 출력용 (LANG 환경변수에서 자동 감지)
   file: false          # 파일 로깅 활성화
-  dir: "./logs"        # 로그 디렉토리
-  max_size: 10         # 로그 파일 최대 크기 (MB), 초과 시 롤링
+  dir: "./logs"        # 로그 디렉토리 (일단위 롤링: gitnotepad.log.YYYY-MM-DD)
   max_age: 30          # 로그 보관 일수
-  max_backups: 5       # 보관할 이전 로그 파일 수
 editor:
   default_type: "markdown"
   auto_save: false
@@ -198,7 +196,7 @@ daemon:
 - **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
-- **로그 롤링**: lumberjack 기반 파일 로깅, 크기/일수 기반 자동 롤링 및 압축
+- **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
 
 ## 핵심 모듈
 
@@ -220,7 +218,8 @@ daemon:
   - `Restart()`: Stop 후 Start 호출
   - `Status()`: PID 파일 기반 상태 확인
   - `SetupLogging()`: 포그라운드 모드 (콘솔 + 파일)
-  - `SetupLoggingFileOnly()`: 데몬 모드 (파일만, lumberjack 롤링)
+  - `SetupLoggingFileOnly()`: 데몬 모드 (파일만, 일단위 롤링)
+  - 로그 파일 형식: `gitnotepad.log.YYYY-MM-DD`, symlink: `gitnotepad.log`
 - **encryption/encryption.go**: AES-256-GCM 암호화 모듈
   - `DeriveKey()`: PBKDF2 키 파생 (100,000 iterations)
   - `Encrypt()` / `Decrypt()`: AES-256-GCM 암호화/복호화

@@ -13,7 +13,7 @@ import (
 
 	"github.com/user/gitnotepad/internal/config"
 
-	"gopkg.in/natefinch/lumberjack.v2"
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 )
 
 // Daemon manages the daemon lifecycle
@@ -196,14 +196,17 @@ func (d *Daemon) SetupLogging() {
 		return
 	}
 
-	// Configure lumberjack for log rotation
-	logFile := &lumberjack.Logger{
-		Filename:   filepath.Join(d.cfg.Logging.Dir, "gitnotepad.log"),
-		MaxSize:    d.cfg.Logging.MaxSize,    // megabytes
-		MaxAge:     d.cfg.Logging.MaxAge,     // days
-		MaxBackups: d.cfg.Logging.MaxBackups, // number of backups
-		LocalTime:  true,
-		Compress:   true, // compress rotated files
+	// Configure file-rotatelogs for daily rotation
+	logPath := filepath.Join(d.cfg.Logging.Dir, "gitnotepad.log")
+	logFile, err := rotatelogs.New(
+		logPath+".%Y-%m-%d",                                         // rotated file pattern
+		rotatelogs.WithLinkName(logPath),                            // symlink to current log
+		rotatelogs.WithMaxAge(time.Duration(d.cfg.Logging.MaxAge)*24*time.Hour), // max retention
+		rotatelogs.WithRotationTime(24*time.Hour),                   // rotate daily
+	)
+	if err != nil {
+		log.Printf("Failed to create log rotator: %v", err)
+		return
 	}
 
 	// Set log output to both file and stdout
@@ -212,40 +215,25 @@ func (d *Daemon) SetupLogging() {
 }
 
 // SetupLoggingFileOnly configures logging to file only (for daemon mode)
-func (d *Daemon) SetupLoggingFileOnly() *lumberjack.Logger {
+func (d *Daemon) SetupLoggingFileOnly() {
 	// Create log directory
 	if err := os.MkdirAll(d.cfg.Logging.Dir, 0755); err != nil {
-		return nil
-	}
-
-	// Configure lumberjack for log rotation
-	logFile := &lumberjack.Logger{
-		Filename:   filepath.Join(d.cfg.Logging.Dir, "gitnotepad.log"),
-		MaxSize:    d.cfg.Logging.MaxSize,
-		MaxAge:     d.cfg.Logging.MaxAge,
-		MaxBackups: d.cfg.Logging.MaxBackups,
-		LocalTime:  true,
-		Compress:   true,
-	}
-
-	// Redirect log output to file
-	log.SetOutput(logFile)
-
-	// Also redirect stdout and stderr for fmt.Println etc.
-	// Create a pipe to capture stdout/stderr
-	multiWriter := io.MultiWriter(logFile)
-	log.SetOutput(multiWriter)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	return logFile
-}
-
-// RedirectOutput redirects stdout and stderr to the log file
-func RedirectOutput(logFile *lumberjack.Logger) {
-	if logFile == nil {
 		return
 	}
-	// Note: In Go, we can't directly redirect os.Stdout/os.Stderr to a Writer
-	// but we can set up log package to use the file
+
+	// Configure file-rotatelogs for daily rotation
+	logPath := filepath.Join(d.cfg.Logging.Dir, "gitnotepad.log")
+	logFile, err := rotatelogs.New(
+		logPath+".%Y-%m-%d",                                         // rotated file pattern
+		rotatelogs.WithLinkName(logPath),                            // symlink to current log
+		rotatelogs.WithMaxAge(time.Duration(d.cfg.Logging.MaxAge)*24*time.Hour), // max retention
+		rotatelogs.WithRotationTime(24*time.Hour),                   // rotate daily
+	)
+	if err != nil {
+		return
+	}
+
+	// Redirect log output to file only
 	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }

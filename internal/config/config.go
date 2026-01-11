@@ -41,12 +41,10 @@ type StorageConfig struct {
 }
 
 type LoggingConfig struct {
-	Encoding   string `yaml:"encoding"`    // "utf-8" (default) or "euc-kr" for console output
-	File       bool   `yaml:"file"`        // Enable file logging
-	Dir        string `yaml:"dir"`         // Log directory
-	MaxSize    int    `yaml:"max_size"`    // Max size in MB before rotation
-	MaxAge     int    `yaml:"max_age"`     // Max days to retain old log files
-	MaxBackups int    `yaml:"max_backups"` // Max number of old log files to retain
+	Encoding string `yaml:"encoding"` // "utf-8" (default) or "euc-kr" for console output
+	File     bool   `yaml:"file"`     // Enable file logging
+	Dir      string `yaml:"dir"`      // Log directory
+	MaxAge   int    `yaml:"max_age"`  // Max days to retain old log files
 }
 
 type DaemonConfig struct {
@@ -105,14 +103,8 @@ func Load(path string) (*Config, error) {
 	if cfg.Logging.Dir == "" {
 		cfg.Logging.Dir = "./logs"
 	}
-	if cfg.Logging.MaxSize == 0 {
-		cfg.Logging.MaxSize = 10 // 10 MB
-	}
 	if cfg.Logging.MaxAge == 0 {
 		cfg.Logging.MaxAge = 30 // 30 days
-	}
-	if cfg.Logging.MaxBackups == 0 {
-		cfg.Logging.MaxBackups = 5
 	}
 	if cfg.Daemon.PidFile == "" {
 		cfg.Daemon.PidFile = "./gitnotepad.pid"
@@ -154,12 +146,10 @@ func Default() *Config {
 			Path: "./data/gitnotepad.db",
 		},
 		Logging: LoggingConfig{
-			Encoding:   getDefaultEncoding(),
-			File:       false,
-			Dir:        "./logs",
-			MaxSize:    10,  // 10 MB
-			MaxAge:     30,  // 30 days
-			MaxBackups: 5,
+			Encoding: getDefaultEncoding(),
+			File:     false,
+			Dir:      "./logs",
+			MaxAge:   30, // 30 days
 		},
 		Encryption: EncryptionConfig{
 			Enabled: false,

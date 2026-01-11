@@ -214,11 +214,11 @@
         </div>
     </div>
 
-    <script src="{{.basePath}}/static/lib/marked/marked.min.js"></script>
+    <script src="{{.basePath}}/static/lib/marked.min.js"></script>
     <script src="{{.basePath}}/static/lib/highlight/highlight.min.js"></script>
     <script src="{{.basePath}}/static/lib/katex/katex.min.js"></script>
     <script src="{{.basePath}}/static/lib/katex/auto-render.min.js"></script>
-    <script src="{{.basePath}}/static/lib/asciidoctor/asciidoctor.min.js"></script>
+    <script src="{{.basePath}}/static/lib/asciidoctor.min.js"></script>
     <script>
         const basePath = '{{.basePath}}';
         const code = '{{.code}}';
@@ -299,6 +299,11 @@
             if (typeof marked === 'undefined') {
                 return escapeHtml(content);
             }
+            // Configure marked for GitHub Flavored Markdown
+            marked.setOptions({
+                gfm: true,
+                breaks: true
+            });
             return marked.parse(content);
         }
 

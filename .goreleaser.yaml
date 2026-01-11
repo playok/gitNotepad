@@ -29,20 +29,39 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - id: default
-    format: tar.gz
+  - id: unix
+    builds:
+      - gitnotepad
+    formats:
+      - tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
       {{- .Arch }}
-    format_overrides:
-      - goos: windows
-        format: zip
     files:
       - README.md
       - LICENSE*
       - config.yaml
+    exclude:
+      - goos: windows
+
+  - id: windows
+    builds:
+      - gitnotepad
+    formats:
+      - zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    files:
+      - README.md
+      - LICENSE*
+      - config.yaml
+    include:
+      - goos: windows
 
 checksum:
   name_template: 'checksums.txt'

@@ -87,6 +87,17 @@ gitnotepad status                      # 데몬 상태 확인
 gitnotepad start -config my.yaml       # 설정 파일 지정하여 시작
 ```
 
+## 개발 워크플로우 (Claude Code)
+
+기능 구현 완료 시 반드시 다음 절차를 수행:
+
+1. **빌드**: `make build` 실행하여 컴파일 확인
+2. **커밋**: 변경사항 git commit 및 push
+
+```bash
+make build && git add -A && git commit -m "feat: 기능 설명" && git push
+```
+
 **비밀번호 리셋:**
 ```bash
 # 특정 사용자의 비밀번호 리셋

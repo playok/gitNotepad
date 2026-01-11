@@ -19,6 +19,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 ├── .goreleaser.yaml        # GoReleaser 릴리즈 자동화
 ├── internal/
 │   ├── config/config.go    # 설정 로딩 (base_path 포함)
+│   ├── daemon/daemon.go    # 데몬 프로세스 관리, 로그 롤링
 │   ├── database/database.go # SQLite 초기화 (modernc.org/sqlite)
 │   ├── encryption/         # AES-256 파일 암호화
 │   │   ├── encryption.go   # AES-256-GCM 암호화/복호화, PBKDF2 키 파생
@@ -75,6 +76,15 @@ gitnotepad --help                      # 도움말
 gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
 gitnotepad -config my.yaml             # 설정 파일 지정
 gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
+```
+
+**데몬 명령어:**
+```bash
+gitnotepad start                       # 백그라운드 데몬 시작
+gitnotepad stop                        # 데몬 중지
+gitnotepad restart                     # 데몬 재시작
+gitnotepad status                      # 데몬 상태 확인
+gitnotepad start -config my.yaml       # 설정 파일 지정하여 시작
 ```
 
 **비밀번호 리셋:**
@@ -143,6 +153,11 @@ storage:
   auto_init_git: true
 logging:
   encoding: ""         # "utf-8" (기본) 또는 "euc-kr" 콘솔 출력용 (LANG 환경변수에서 자동 감지)
+  file: false          # 파일 로깅 활성화
+  dir: "./logs"        # 로그 디렉토리
+  max_size: 10         # 로그 파일 최대 크기 (MB), 초과 시 롤링
+  max_age: 30          # 로그 보관 일수
+  max_backups: 5       # 보관할 이전 로그 파일 수
 editor:
   default_type: "markdown"
   auto_save: false
@@ -156,6 +171,8 @@ database:
 encryption:
   enabled: false  # AES-256 파일 암호화 활성화
   salt: ""        # PBKDF2 salt (최초 실행 시 자동 생성)
+daemon:
+  pid_file: "./gitnotepad.pid"  # PID 파일 경로
 ```
 
 ## 주요 기능
@@ -180,6 +197,8 @@ encryption:
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
 - **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
+- **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
+- **로그 롤링**: lumberjack 기반 파일 로깅, 크기/일수 기반 자동 롤링 및 압축
 
 ## 핵심 모듈
 
@@ -195,6 +214,13 @@ encryption:
   - `Log()`, `Logln()`, `Logf()`: EUC-KR 인코딩 지원 로깅 함수
   - `Init()`: config 또는 LANG 환경변수에서 인코딩 초기화
   - 파일 저장은 항상 UTF-8, 콘솔 출력만 EUC-KR 변환 지원
+- **daemon/daemon.go**: 데몬 프로세스 관리
+  - `Start()`: 백그라운드 프로세스 시작 (fork, setsid)
+  - `Stop()`: SIGTERM 후 SIGKILL 전송, PID 파일 삭제
+  - `Restart()`: Stop 후 Start 호출
+  - `Status()`: PID 파일 기반 상태 확인
+  - `SetupLogging()`: 포그라운드 모드 (콘솔 + 파일)
+  - `SetupLoggingFileOnly()`: 데몬 모드 (파일만, lumberjack 롤링)
 - **encryption/encryption.go**: AES-256-GCM 암호화 모듈
   - `DeriveKey()`: PBKDF2 키 파생 (100,000 iterations)
   - `Encrypt()` / `Decrypt()`: AES-256-GCM 암호화/복호화

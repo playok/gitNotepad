@@ -24,6 +24,8 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **크로스 플랫폼**: CGO 없이 Linux/macOS/Windows 빌드
 - **Nginx 프록시**: 서브 경로에서 운영 가능
 - **단일 바이너리**: 템플릿/정적 파일 임베디드 (go:embed)
+- **데몬 모드**: 백그라운드 실행 (start/stop/restart/status)
+- **로그 롤링**: 파일 기반 로깅, 크기/일수 기반 자동 롤링 및 압축
 
 ## 스크린샷
 
@@ -94,6 +96,16 @@ gitnotepad --help                      # 도움말 출력
 gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
 gitnotepad -config my.yaml             # 설정 파일 지정
 gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
+```
+
+### 데몬 명령어
+
+```bash
+gitnotepad start                       # 백그라운드 데몬 시작
+gitnotepad stop                        # 데몬 중지
+gitnotepad restart                     # 데몬 재시작
+gitnotepad status                      # 데몬 상태 확인
+gitnotepad start -config my.yaml       # 설정 파일 지정하여 시작
 ```
 
 ## 초기 설정
@@ -231,6 +243,14 @@ storage:
   path: "./data"      # 노트 저장 경로
   auto_init_git: true # Git 자동 초기화
 
+logging:
+  encoding: ""        # "utf-8" (기본) 또는 "euc-kr"
+  file: false         # 파일 로깅 활성화
+  dir: "./logs"       # 로그 디렉토리
+  max_size: 10        # 로그 파일 최대 크기 (MB)
+  max_age: 30         # 로그 보관 일수
+  max_backups: 5      # 보관할 이전 로그 파일 수
+
 editor:
   default_type: "markdown"  # 기본 문서 형식
   auto_save: true           # 자동 저장 (2초 후)
@@ -247,6 +267,9 @@ database:
 encryption:
   enabled: false               # 파일 암호화 활성화
   salt: ""                     # 암호화 salt (첫 실행 시 자동 생성)
+
+daemon:
+  pid_file: "./gitnotepad.pid" # PID 파일 경로
 ```
 
 ### 환경별 설정
@@ -358,6 +381,7 @@ gitNotepad/
 ├── config.yaml             # 설정 파일
 ├── internal/
 │   ├── config/             # 설정 로드
+│   ├── daemon/             # 데몬 관리, 로그 롤링
 │   ├── database/           # SQLite 초기화
 │   ├── encryption/         # AES-256 암호화
 │   ├── git/                # Git 연동

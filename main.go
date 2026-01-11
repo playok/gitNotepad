@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/daemon"
 	"github.com/user/gitnotepad/internal/database"
 	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/encryption"
@@ -48,10 +49,55 @@ To run Git Notepad behind nginx at a sub-path (e.g., /note):
 4. Access at: http://your-domain/note
 `
 
+const usageHelp = `
+Git Notepad - Web-based note application with Git version control
+
+Usage:
+  gitnotepad [options]
+  gitnotepad <command> [options]
+
+Commands:
+  start       Start the daemon in background
+  stop        Stop the running daemon
+  restart     Restart the daemon
+  status      Show daemon status
+
+Options:
+  -config string
+        Path to config file (default "config.yaml")
+  -nginx
+        Show nginx reverse proxy configuration
+  -reset-password string
+        Reset password for specified username
+  -help
+        Show this help message
+
+Examples:
+  gitnotepad                    # Run in foreground
+  gitnotepad start              # Start as daemon
+  gitnotepad stop               # Stop daemon
+  gitnotepad status             # Check daemon status
+  gitnotepad -config my.yaml    # Use custom config
+`
+
 func main() {
+	// Check for daemon commands first (before flag parsing)
+	if len(os.Args) > 1 {
+		cmd := os.Args[1]
+		switch cmd {
+		case "start", "stop", "restart", "status":
+			handleDaemonCommand(cmd, os.Args[2:])
+			return
+		case "help", "-h", "--help":
+			fmt.Print(usageHelp)
+			return
+		}
+	}
+
 	configPath := flag.String("config", "config.yaml", "Path to config file")
 	showNginx := flag.Bool("nginx", false, "Show nginx reverse proxy configuration")
 	resetPassword := flag.String("reset-password", "", "Reset password for specified username")
+	daemonChild := flag.Bool("daemon-child", false, "Internal flag for daemon child process")
 	flag.Parse()
 
 	if *showNginx {
@@ -78,14 +124,36 @@ func main() {
 		}
 	}
 
+	// Setup logging
+	d := daemon.New(cfg, *configPath)
+	if *daemonChild {
+		// Running as daemon child - log to file only
+		d.SetupLoggingFileOnly()
+		// Write PID file
+		if err := d.WritePID(os.Getpid()); err != nil {
+			log.Printf("Warning: failed to write PID file: %v", err)
+		}
+	} else {
+		// Running in foreground - log to both console and file (if enabled)
+		d.SetupLogging()
+	}
+
 	// Initialize logging encoding (for EUC-KR console output support)
 	encoding.Init(cfg.Logging.Encoding)
 
-	fmt.Println("Git Notepad")
-	fmt.Println("===========")
-	fmt.Printf("Storage path: %s\n", cfg.Storage.Path)
-	fmt.Printf("Default editor type: %s\n", cfg.Editor.DefaultType)
-	fmt.Println()
+	// Use log.Println in daemon mode, fmt.Println in foreground mode
+	if *daemonChild {
+		log.Println("Git Notepad")
+		log.Println("===========")
+		log.Printf("Storage path: %s", cfg.Storage.Path)
+		log.Printf("Default editor type: %s", cfg.Editor.DefaultType)
+	} else {
+		fmt.Println("Git Notepad")
+		fmt.Println("===========")
+		fmt.Printf("Storage path: %s\n", cfg.Storage.Path)
+		fmt.Printf("Default editor type: %s\n", cfg.Editor.DefaultType)
+		fmt.Println()
+	}
 
 	// Generate encryption salt if encryption is enabled but salt is empty
 	configChanged := false
@@ -96,12 +164,15 @@ func main() {
 		}
 		cfg.Encryption.Salt = salt
 		configChanged = true
-		fmt.Println("Encryption salt generated.")
+		log.Println("Encryption salt generated.")
 	}
 
-	// Prompt for admin password on first run
+	// Prompt for admin password on first run (only in foreground mode)
 	var adminPassword string
 	if cfg.NeedsAdminPassword() {
+		if *daemonChild {
+			log.Fatal("Admin password not set. Please run in foreground mode first to set admin password.")
+		}
 		var err error
 		adminPassword, err = config.PromptAdminPassword()
 		if err != nil {
@@ -116,7 +187,7 @@ func main() {
 		if err := cfg.Save(*configPath); err != nil {
 			log.Fatalf("Failed to save config: %v", err)
 		}
-		fmt.Printf("Config saved to %s\n\n", *configPath)
+		log.Printf("Config saved to %s", *configPath)
 	}
 
 	srv, err := server.NewWithAdminPassword(cfg, adminPassword)
@@ -126,6 +197,46 @@ func main() {
 
 	if err := srv.Run(); err != nil {
 		log.Fatalf("Server error: %v", err)
+	}
+}
+
+// handleDaemonCommand handles start/stop/restart/status commands
+func handleDaemonCommand(cmd string, args []string) {
+	// Parse flags for daemon commands
+	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
+	configPath := fs.String("config", "config.yaml", "Path to config file")
+	fs.Parse(args)
+
+	// Load config
+	var cfg *config.Config
+
+	if _, statErr := os.Stat(*configPath); os.IsNotExist(statErr) {
+		cfg = config.Default()
+	} else {
+		var loadErr error
+		cfg, loadErr = config.Load(*configPath)
+		if loadErr != nil {
+			log.Fatalf("Failed to load config: %v", loadErr)
+		}
+	}
+
+	d := daemon.New(cfg, *configPath)
+
+	switch cmd {
+	case "start":
+		if err := d.Start(); err != nil {
+			log.Fatalf("Failed to start: %v", err)
+		}
+	case "stop":
+		if err := d.Stop(); err != nil {
+			log.Fatalf("Failed to stop: %v", err)
+		}
+	case "restart":
+		if err := d.Restart(); err != nil {
+			log.Fatalf("Failed to restart: %v", err)
+		}
+	case "status":
+		d.Status()
 	}
 }
 

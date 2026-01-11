@@ -12,6 +12,12 @@ dist/
 # Data directory (user notes)
 data/
 
+# Logs directory
+logs/
+
+# PID file
+*.pid
+
 # IDE
 .idea/
 .vscode/

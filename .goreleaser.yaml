@@ -29,11 +29,11 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - id: unix
+  - id: default
     builds:
       - gitnotepad
     formats:
-      - tar.gz
+      - '{{ if eq .Os "windows" }}zip{{ else }}tar.gz{{ end }}'
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -43,25 +43,6 @@ archives:
       - README.md
       - LICENSE*
       - config.yaml
-    exclude:
-      - goos: windows
-
-  - id: windows
-    builds:
-      - gitnotepad
-    formats:
-      - zip
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      {{- .Os }}_
-      {{- .Arch }}
-    files:
-      - README.md
-      - LICENSE*
-      - config.yaml
-    include:
-      - goos: windows
 
 checksum:
   name_template: 'checksums.txt'

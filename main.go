@@ -61,6 +61,7 @@ Commands:
   stop        Stop the running daemon
   restart     Restart the daemon
   status      Show daemon status
+  run         Run in foreground (for debugging)
 
 Options:
   -config string
@@ -72,9 +73,14 @@ Options:
   -help
         Show this help message
 
+Default Behavior (no arguments):
+  - If initial setup needed (admin password not set): runs in foreground for setup
+  - If setup complete: starts as daemon (same as 'gitnotepad start')
+
 Examples:
-  gitnotepad                    # Run in foreground
+  gitnotepad                    # Auto: foreground setup or daemon start
   gitnotepad start              # Start as daemon
+  gitnotepad run                # Run in foreground
   gitnotepad stop               # Stop daemon
   gitnotepad status             # Check daemon status
   gitnotepad -config my.yaml    # Use custom config
@@ -88,6 +94,9 @@ func main() {
 		case "start", "stop", "restart", "status":
 			handleDaemonCommand(cmd, os.Args[2:])
 			return
+		case "run":
+			// Run in foreground mode - continue with normal execution
+			os.Args = append([]string{os.Args[0]}, os.Args[2:]...)
 		case "help", "-h", "--help":
 			fmt.Print(usageHelp)
 			return
@@ -109,6 +118,19 @@ func main() {
 	if *resetPassword != "" {
 		handlePasswordReset(*configPath, *resetPassword)
 		return
+	}
+
+	// If no command given (not run, not daemon-child), check if setup is needed
+	// If setup is done, default to "start" command
+	if len(os.Args) == 1 || (len(os.Args) == 3 && os.Args[1] == "-config") {
+		if !needsInitialSetup(*configPath) {
+			// Setup is complete, default to daemon mode
+			fmt.Println("Starting Git Notepad daemon...")
+			handleDaemonCommand("start", os.Args[1:])
+			return
+		}
+		// Need initial setup, continue in foreground mode
+		fmt.Println("Initial setup required. Running in foreground mode...")
 	}
 
 	var cfg *config.Config
@@ -314,4 +336,27 @@ func handlePasswordReset(configPath, username string) {
 	}
 
 	fmt.Printf("Password for user '%s' has been reset successfully.\n", username)
+}
+
+// needsInitialSetup checks if initial setup is required (admin password not set)
+func needsInitialSetup(configPath string) bool {
+	// Check if config file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// No config file - needs setup
+		return true
+	}
+
+	// Load config
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		// Can't load config - needs setup
+		return true
+	}
+
+	// Check if auth is enabled and admin password is not set
+	if cfg.Auth.Enabled && cfg.Auth.AdminPasswordHash == "" {
+		return true
+	}
+
+	return false
 }

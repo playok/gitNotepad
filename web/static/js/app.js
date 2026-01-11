@@ -4522,12 +4522,12 @@ function setPassword() {
     const confirm = confirmPasswordInput.value;
 
     if (!password) {
-        alert('Please enter a password');
+        alert(i18n.t('password.required'));
         return;
     }
 
     if (password !== confirm) {
-        alert('Passwords do not match');
+        alert(i18n.t('password.mismatch'));
         return;
     }
 

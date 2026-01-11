@@ -256,12 +256,12 @@
             <!-- Password Modal -->
             <div id="passwordModal" class="modal" style="display: none;">
                 <div class="modal-content">
-                    <h3>Private Note</h3>
-                    <p>Enter password to access this note:</p>
-                    <input type="password" id="passwordInput" placeholder="Password">
+                    <h3 data-i18n="password.privateNote">Private Note</h3>
+                    <p data-i18n="password.enterToAccess">Enter password to access this note:</p>
+                    <input type="password" id="passwordInput" placeholder="Password" data-i18n-placeholder="password.placeholder">
                     <div class="modal-actions">
-                        <button id="passwordCancel" class="btn btn-secondary">Cancel</button>
-                        <button id="passwordSubmit" class="btn btn-primary">Unlock</button>
+                        <button id="passwordCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="passwordSubmit" class="btn btn-primary" data-i18n="password.unlock">Unlock</button>
                     </div>
                 </div>
             </div>
@@ -269,13 +269,13 @@
             <!-- Set Password Modal -->
             <div id="setPasswordModal" class="modal" style="display: none;">
                 <div class="modal-content">
-                    <h3>Set Password</h3>
-                    <p>Enter a password for this private note:</p>
-                    <input type="password" id="setPasswordInput" placeholder="Password">
-                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password">
+                    <h3 data-i18n="password.set">Set Password</h3>
+                    <p data-i18n="password.setDescription">Enter a password for this private note:</p>
+                    <input type="password" id="setPasswordInput" placeholder="Password" data-i18n-placeholder="password.placeholder">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password" data-i18n-placeholder="password.confirmPlaceholder">
                     <div class="modal-actions">
-                        <button id="setPasswordCancel" class="btn btn-secondary">Cancel</button>
-                        <button id="setPasswordSubmit" class="btn btn-primary">Set Password</button>
+                        <button id="setPasswordCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="setPasswordSubmit" class="btn btn-primary" data-i18n="password.set">Set Password</button>
                     </div>
                 </div>
             </div>

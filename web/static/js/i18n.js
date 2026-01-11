@@ -136,6 +136,10 @@ const i18n = {
             'password.submit': 'Submit',
             'password.mismatch': 'Passwords do not match',
             'password.required': 'Password is required',
+            'password.privateNote': 'Private Note',
+            'password.enterToAccess': 'Enter password to access this note:',
+            'password.setDescription': 'Enter a password for this private note:',
+            'password.unlock': 'Unlock',
 
             // Share
             'share.title': 'Share Note',
@@ -487,6 +491,10 @@ const i18n = {
             'password.submit': '확인',
             'password.mismatch': '비밀번호가 일치하지 않습니다',
             'password.required': '비밀번호를 입력해주세요',
+            'password.privateNote': '비공개 노트',
+            'password.enterToAccess': '이 노트에 접근하려면 비밀번호를 입력하세요:',
+            'password.setDescription': '비공개 노트의 비밀번호를 설정하세요:',
+            'password.unlock': '잠금 해제',
 
             // Share
             'share.title': '노트 공유',

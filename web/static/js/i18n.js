@@ -124,8 +124,10 @@ const i18n = {
             'history.title': 'Version History',
             'history.noHistory': 'No history available',
             'history.restore': 'Restore',
+            'history.restoreVersion': 'Restore this version',
             'history.version': 'Version',
             'history.current': 'Current',
+            'history.loadFailed': 'Failed to load history',
 
             // Password
             'password.enter': 'Enter Password',
@@ -479,8 +481,10 @@ const i18n = {
             'history.title': '버전 기록',
             'history.noHistory': '기록이 없습니다',
             'history.restore': '복원',
+            'history.restoreVersion': '이 버전으로 복원',
             'history.version': '버전',
             'history.current': '현재',
+            'history.loadFailed': '기록을 불러오지 못했습니다',
 
             // Password
             'password.enter': '비밀번호 입력',

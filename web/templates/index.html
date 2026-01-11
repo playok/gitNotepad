@@ -283,12 +283,12 @@
             <!-- History Modal -->
             <div id="historyModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">
-                    <h3>Version History</h3>
+                    <h3 data-i18n="history.title">Version History</h3>
                     <div id="historyList" class="history-list">
                         <!-- History items will be loaded here -->
                     </div>
                     <div class="modal-actions">
-                        <button id="historyClose" class="btn btn-secondary">Close</button>
+                        <button id="historyClose" class="btn btn-secondary" data-i18n="common.close">Close</button>
                     </div>
                 </div>
             </div>
@@ -296,11 +296,11 @@
             <!-- Version View Modal -->
             <div id="versionModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">
-                    <h3>Version: <span id="versionHash"></span></h3>
+                    <h3><span data-i18n="history.version">Version</span>: <span id="versionHash"></span></h3>
                     <div id="versionContent" class="version-content"></div>
                     <div class="modal-actions">
-                        <button id="versionRestore" class="btn btn-primary">Restore this version</button>
-                        <button id="versionClose" class="btn btn-secondary">Close</button>
+                        <button id="versionRestore" class="btn btn-primary" data-i18n="history.restoreVersion">Restore this version</button>
+                        <button id="versionClose" class="btn btn-secondary" data-i18n="common.close">Close</button>
                     </div>
                 </div>
             </div>

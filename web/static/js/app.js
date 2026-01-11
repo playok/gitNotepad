@@ -2739,7 +2739,7 @@ async function showHistory() {
 
         if (!response.ok) {
             console.error('History API error:', data.error);
-            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || 'Failed to load history'}</p>`;
+            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || i18n.t('history.loadFailed')}</p>`;
             historyModal.style.display = 'flex';
             return;
         }
@@ -2748,7 +2748,7 @@ async function showHistory() {
         historyList.innerHTML = '';
 
         if (commits.length === 0) {
-            historyList.innerHTML = '<p style="padding: 20px; color: var(--text-secondary);">No history available</p>';
+            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${i18n.t('history.noHistory')}</p>`;
         } else {
             commits.forEach(commit => {
                 const item = document.createElement('div');

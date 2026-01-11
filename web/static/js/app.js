@@ -524,7 +524,8 @@ function initShortLinkButton() {
     shareBtn.id = 'shareBtn';
     shareBtn.className = 'btn-icon';
     shareBtn.innerHTML = '&#128279;';
-    shareBtn.title = 'Share link';
+    shareBtn.setAttribute('data-i18n-title', 'editor.share');
+    shareBtn.title = i18n.t('editor.share');
     shareBtn.addEventListener('click', showShareModal);
 
     // Insert before History button
@@ -542,22 +543,22 @@ function createShareModal() {
     modal.style.display = 'none';
     modal.innerHTML = `
         <div class="modal-content">
-            <h3>Share Note</h3>
-            <p>Share this link with your team:</p>
+            <h3 data-i18n="share.title">Share Note</h3>
+            <p data-i18n="share.description">Share this link with your team:</p>
             <div class="share-link-container">
                 <input type="text" id="shareLinkInput" readonly>
-                <button id="copyLinkBtn" class="btn btn-primary">Copy</button>
+                <button id="copyLinkBtn" class="btn btn-primary" data-i18n="share.copy">Copy</button>
             </div>
             <div class="share-expiry-container" style="margin-top: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">Link expiration:</label>
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.expiration">Link expiration:</label>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
                         <input type="radio" name="expiryType" id="expiryNever" value="never" checked>
-                        <span style="font-size: 0.875rem;">Never</span>
+                        <span style="font-size: 0.875rem;" data-i18n="share.never">Never</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
                         <input type="radio" name="expiryType" id="expiryDate" value="date">
-                        <span style="font-size: 0.875rem;">Expires on:</span>
+                        <span style="font-size: 0.875rem;" data-i18n="share.expiresOn">Expires on:</span>
                     </label>
                     <input type="date" id="shareLinkExpiryDate" style="padding: 0.375rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.875rem;" disabled>
                 </div>
@@ -565,12 +566,17 @@ function createShareModal() {
             <div id="shareLinkExpiryInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
             <div id="shareLinkStatus" class="share-status"></div>
             <div class="modal-actions">
-                <button id="regenerateLinkBtn" class="btn btn-secondary">Regenerate</button>
-                <button id="shareCloseBtn" class="btn btn-secondary">Close</button>
+                <button id="regenerateLinkBtn" class="btn btn-secondary" data-i18n="share.regenerate">Regenerate</button>
+                <button id="shareCloseBtn" class="btn btn-secondary" data-i18n="common.close">Close</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+
+    // Apply i18n to the modal
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
 
     // Event listeners
     document.getElementById('copyLinkBtn').addEventListener('click', copyShortLink);
@@ -627,7 +633,7 @@ async function showShareModal() {
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
 
     modal.style.display = 'flex';
-    input.value = 'Generating...';
+    input.value = i18n.t('share.generating');
     status.textContent = '';
     expiryInfo.textContent = '';
     expiryNever.checked = true;
@@ -655,24 +661,24 @@ async function showShareModal() {
             // Update expiry info and UI
             if (data.expiresAt) {
                 const expiryDate = new Date(data.expiresAt);
-                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+                expiryInfo.textContent = i18n.t('share.expires', { date: expiryDate.toLocaleDateString() });
                 expiryDateRadio.checked = true;
                 expiryDateInput.disabled = false;
                 expiryDateInput.value = expiryDate.toISOString().split('T')[0];
             } else {
-                expiryInfo.textContent = 'This link never expires';
+                expiryInfo.textContent = i18n.t('share.neverExpires');
                 expiryNever.checked = true;
                 expiryDateInput.disabled = true;
             }
         } else {
             input.value = '';
-            status.textContent = 'Failed to generate link';
+            status.textContent = i18n.t('share.failedToGenerate');
             status.className = 'share-status error';
         }
     } catch (error) {
         console.error('Failed to get short link:', error);
         input.value = '';
-        status.textContent = 'Error generating link';
+        status.textContent = i18n.t('share.errorGenerating');
         status.className = 'share-status error';
     }
 }
@@ -701,7 +707,7 @@ async function updateShareLinkExpiry() {
     if (!currentNote) return;
 
     const input = document.getElementById('shareLinkInput');
-    if (!input.value || input.value === 'Generating...') return;
+    if (!input.value || input.value === i18n.t('share.generating')) return;
 
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
     const status = document.getElementById('shareLinkStatus');
@@ -718,17 +724,17 @@ async function updateShareLinkExpiry() {
             const data = await response.json();
             if (data.expiresAt) {
                 const expiryDate = new Date(data.expiresAt);
-                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+                expiryInfo.textContent = i18n.t('share.expires', { date: expiryDate.toLocaleDateString() });
             } else {
-                expiryInfo.textContent = 'This link never expires';
+                expiryInfo.textContent = i18n.t('share.neverExpires');
             }
-            status.textContent = 'Expiry updated!';
+            status.textContent = i18n.t('share.expiryUpdated');
             status.className = 'share-status success';
             setTimeout(() => { status.textContent = ''; }, 2000);
         }
     } catch (error) {
         console.error('Failed to update expiry:', error);
-        status.textContent = 'Error updating expiry';
+        status.textContent = i18n.t('share.errorUpdating');
         status.className = 'share-status error';
     }
 }
@@ -737,11 +743,11 @@ async function copyShortLink() {
     const input = document.getElementById('shareLinkInput');
     const status = document.getElementById('shareLinkStatus');
 
-    if (!input.value || input.value === 'Generating...') return;
+    if (!input.value || input.value === i18n.t('share.generating')) return;
 
     try {
         await navigator.clipboard.writeText(input.value);
-        status.textContent = 'Copied to clipboard!';
+        status.textContent = i18n.t('share.copySuccess');
         status.className = 'share-status success';
         setTimeout(() => {
             status.textContent = '';
@@ -750,7 +756,7 @@ async function copyShortLink() {
         // Fallback for older browsers
         input.select();
         document.execCommand('copy');
-        status.textContent = 'Copied!';
+        status.textContent = i18n.t('share.copied');
         status.className = 'share-status success';
     }
 }
@@ -763,7 +769,7 @@ async function regenerateShortLink() {
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
     const expiresIn = getExpiryDays();
 
-    input.value = 'Regenerating...';
+    input.value = i18n.t('share.regenerating');
     status.textContent = '';
 
     try {
@@ -783,20 +789,20 @@ async function regenerateShortLink() {
             const data = await response.json();
             const fullUrl = `${window.location.origin}${data.shortLink}`;
             input.value = fullUrl;
-            status.textContent = 'New link generated!';
+            status.textContent = i18n.t('share.newLinkGenerated');
             status.className = 'share-status success';
 
             // Update expiry info
             if (data.expiresAt) {
                 const expiryDate = new Date(data.expiresAt);
-                expiryInfo.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+                expiryInfo.textContent = i18n.t('share.expires', { date: expiryDate.toLocaleDateString() });
             } else {
-                expiryInfo.textContent = 'This link never expires';
+                expiryInfo.textContent = i18n.t('share.neverExpires');
             }
         }
     } catch (error) {
         console.error('Failed to regenerate link:', error);
-        status.textContent = 'Error regenerating link';
+        status.textContent = i18n.t('share.errorRegenerating');
         status.className = 'share-status error';
     }
 }

@@ -564,6 +564,20 @@ function createShareModal() {
                 </div>
             </div>
             <div id="shareLinkExpiryInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
+            <div class="share-visibility-container" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.visibility">Link visibility:</label>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                        <input type="radio" name="visibilityType" id="visibilityPrivate" value="private" checked>
+                        <span style="font-size: 0.875rem;" data-i18n="share.private">Private</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                        <input type="radio" name="visibilityType" id="visibilityPublic" value="public">
+                        <span style="font-size: 0.875rem;" data-i18n="share.public">Public</span>
+                    </label>
+                </div>
+                <div id="shareLinkVisibilityInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
+            </div>
             <div id="shareLinkStatus" class="share-status"></div>
             <div class="modal-actions">
                 <button id="regenerateLinkBtn" class="btn btn-secondary" data-i18n="share.regenerate">Regenerate</button>
@@ -608,6 +622,13 @@ function createShareModal() {
 
     expiryDateInput.addEventListener('change', updateShareLinkExpiry);
 
+    // Visibility radio buttons
+    const visibilityPrivate = document.getElementById('visibilityPrivate');
+    const visibilityPublic = document.getElementById('visibilityPublic');
+
+    visibilityPrivate.addEventListener('change', updateShareLinkVisibility);
+    visibilityPublic.addEventListener('change', updateShareLinkVisibility);
+
     // Set min date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -631,14 +652,19 @@ async function showShareModal() {
     const expiryDateRadio = document.getElementById('expiryDate');
     const expiryDateInput = document.getElementById('shareLinkExpiryDate');
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
+    const visibilityPrivate = document.getElementById('visibilityPrivate');
+    const visibilityPublic = document.getElementById('visibilityPublic');
+    const visibilityInfo = document.getElementById('shareLinkVisibilityInfo');
 
     modal.style.display = 'flex';
     input.value = i18n.t('share.generating');
     status.textContent = '';
     expiryInfo.textContent = '';
+    visibilityInfo.textContent = '';
     expiryNever.checked = true;
     expiryDateInput.disabled = true;
     expiryDateInput.value = '';
+    visibilityPrivate.checked = true;
 
     try {
         // Try to get existing short link first
@@ -649,7 +675,7 @@ async function showShareModal() {
             response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ expires_in: 0 })
+                body: JSON.stringify({ expires_in: 0, is_public: false })
             });
         }
 
@@ -669,6 +695,15 @@ async function showShareModal() {
                 expiryInfo.textContent = i18n.t('share.neverExpires');
                 expiryNever.checked = true;
                 expiryDateInput.disabled = true;
+            }
+
+            // Update visibility info and UI
+            if (data.isPublic) {
+                visibilityPublic.checked = true;
+                visibilityInfo.textContent = i18n.t('share.publicInfo');
+            } else {
+                visibilityPrivate.checked = true;
+                visibilityInfo.textContent = i18n.t('share.privateInfo');
             }
         } else {
             input.value = '';
@@ -703,6 +738,11 @@ function getExpiryDays() {
     return 7; // Default 7 days
 }
 
+function getIsPublic() {
+    const visibilityPublic = document.getElementById('visibilityPublic');
+    return visibilityPublic.checked;
+}
+
 async function updateShareLinkExpiry() {
     if (!currentNote) return;
 
@@ -712,12 +752,13 @@ async function updateShareLinkExpiry() {
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
     const status = document.getElementById('shareLinkStatus');
     const expiresIn = getExpiryDays();
+    const isPublic = getIsPublic();
 
     try {
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expires_in: expiresIn })
+            body: JSON.stringify({ expires_in: expiresIn, is_public: isPublic })
         });
 
         if (response.ok) {
@@ -734,6 +775,41 @@ async function updateShareLinkExpiry() {
         }
     } catch (error) {
         console.error('Failed to update expiry:', error);
+        status.textContent = i18n.t('share.errorUpdating');
+        status.className = 'share-status error';
+    }
+}
+
+async function updateShareLinkVisibility() {
+    if (!currentNote) return;
+
+    const input = document.getElementById('shareLinkInput');
+    if (!input.value || input.value === i18n.t('share.generating')) return;
+
+    const visibilityInfo = document.getElementById('shareLinkVisibilityInfo');
+    const status = document.getElementById('shareLinkStatus');
+    const expiresIn = getExpiryDays();
+    const isPublic = getIsPublic();
+
+    try {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expires_in: expiresIn, is_public: isPublic })
+        });
+
+        if (response.ok) {
+            if (isPublic) {
+                visibilityInfo.textContent = i18n.t('share.publicInfo');
+            } else {
+                visibilityInfo.textContent = i18n.t('share.privateInfo');
+            }
+            status.textContent = i18n.t('share.visibilityUpdated');
+            status.className = 'share-status success';
+            setTimeout(() => { status.textContent = ''; }, 2000);
+        }
+    } catch (error) {
+        console.error('Failed to update visibility:', error);
         status.textContent = i18n.t('share.errorUpdating');
         status.className = 'share-status error';
     }
@@ -767,7 +843,9 @@ async function regenerateShortLink() {
     const input = document.getElementById('shareLinkInput');
     const status = document.getElementById('shareLinkStatus');
     const expiryInfo = document.getElementById('shareLinkExpiryInfo');
+    const visibilityInfo = document.getElementById('shareLinkVisibilityInfo');
     const expiresIn = getExpiryDays();
+    const isPublic = getIsPublic();
 
     input.value = i18n.t('share.regenerating');
     status.textContent = '';
@@ -778,11 +856,11 @@ async function regenerateShortLink() {
             method: 'DELETE'
         });
 
-        // Generate new with expiry
+        // Generate new with expiry and visibility
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/shortlink`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expires_in: expiresIn })
+            body: JSON.stringify({ expires_in: expiresIn, is_public: isPublic })
         });
 
         if (response.ok) {
@@ -798,6 +876,13 @@ async function regenerateShortLink() {
                 expiryInfo.textContent = i18n.t('share.expires', { date: expiryDate.toLocaleDateString() });
             } else {
                 expiryInfo.textContent = i18n.t('share.neverExpires');
+            }
+
+            // Update visibility info
+            if (isPublic) {
+                visibilityInfo.textContent = i18n.t('share.publicInfo');
+            } else {
+                visibilityInfo.textContent = i18n.t('share.privateInfo');
             }
         }
     } catch (error) {

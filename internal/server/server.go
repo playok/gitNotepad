@@ -91,7 +91,7 @@ func (s *Server) setupRoutes() {
 	noteHandler := handler.NewNoteHandler(s.repo, s.config)
 	gitHandler := handler.NewGitHandler(s.repo)
 	authHandler := handler.NewAuthHandler(s.repo, userRepo, sessionRepo, s.config)
-	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config.Server.BasePath)
+	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config, s.config.Server.BasePath)
 	imageHandler := handler.NewImageHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	fileHandler := handler.NewFileHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	adminHandler := handler.NewAdminHandler(userRepo)
@@ -125,6 +125,10 @@ func (s *Server) setupRoutes() {
 
 	// Short link redirect (public)
 	base.GET("/s/:code", shortLinkHandler.Redirect)
+
+	// Public preview page and API (no authentication required)
+	base.GET("/preview/:code", shortLinkHandler.PublicPreview)
+	base.GET("/api/public/note/:code", shortLinkHandler.GetPublicNote)
 
 	// Config endpoint (public)
 	base.GET("/api/config", func(c *gin.Context) {

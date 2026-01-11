@@ -167,6 +167,12 @@ const i18n = {
             'share.errorGenerating': 'Error generating link',
             'share.errorUpdating': 'Error updating expiry',
             'share.errorRegenerating': 'Error regenerating link',
+            'share.visibility': 'Link visibility:',
+            'share.private': 'Private',
+            'share.public': 'Public',
+            'share.privateInfo': 'Only accessible by authenticated users',
+            'share.publicInfo': 'Anyone with the link can view this note',
+            'share.visibilityUpdated': 'Visibility updated!',
 
             // Settings
             'settings.title': 'Settings',
@@ -524,6 +530,12 @@ const i18n = {
             'share.errorGenerating': '링크 생성 오류',
             'share.errorUpdating': '만료일 변경 오류',
             'share.errorRegenerating': '링크 재생성 오류',
+            'share.visibility': '링크 공개 설정:',
+            'share.private': '비공개',
+            'share.public': '공개',
+            'share.privateInfo': '인증된 사용자만 접근 가능',
+            'share.publicInfo': '링크가 있는 모든 사용자가 이 노트를 볼 수 있습니다',
+            'share.visibilityUpdated': '공개 설정이 변경되었습니다!',
 
             // Settings
             'settings.title': '설정',

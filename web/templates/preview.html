@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - Git Notepad</title>
+    <link rel="stylesheet" href="{{.basePath}}/static/css/style.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/highlight/styles/github.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/katex/katex.min.css">
+    <style>
+        .preview-container {
+            min-height: 100vh;
+            background: hsl(var(--background));
+            padding: 2rem;
+        }
+
+        .preview-card {
+            max-width: 900px;
+            margin: 0 auto;
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid hsl(var(--border));
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .preview-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .preview-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+            margin: 0;
+            word-break: break-word;
+        }
+
+        .preview-meta {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .preview-content {
+            padding: 2rem;
+            min-height: 300px;
+        }
+
+        .preview-content .preview-body {
+            line-height: 1.7;
+            color: hsl(var(--foreground));
+        }
+
+        .preview-content .preview-body h1,
+        .preview-content .preview-body h2,
+        .preview-content .preview-body h3,
+        .preview-content .preview-body h4,
+        .preview-content .preview-body h5,
+        .preview-content .preview-body h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .preview-content .preview-body h1 { font-size: 2em; }
+        .preview-content .preview-body h2 { font-size: 1.5em; }
+        .preview-content .preview-body h3 { font-size: 1.25em; }
+
+        .preview-content .preview-body p {
+            margin: 1em 0;
+        }
+
+        .preview-content .preview-body pre {
+            background: hsl(var(--muted));
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+        }
+
+        .preview-content .preview-body code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        .preview-content .preview-body :not(pre) > code {
+            background: hsl(var(--muted));
+            padding: 0.2em 0.4em;
+            border-radius: var(--radius-sm);
+        }
+
+        .preview-content .preview-body blockquote {
+            border-left: 4px solid hsl(var(--border));
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            color: hsl(var(--muted-foreground));
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .preview-content .preview-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        .preview-content .preview-body th,
+        .preview-content .preview-body td {
+            border: 1px solid hsl(var(--border));
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+
+        .preview-content .preview-body th {
+            background: hsl(var(--muted));
+            font-weight: 600;
+        }
+
+        .preview-content .preview-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--radius);
+        }
+
+        .preview-content .preview-body a {
+            color: hsl(var(--primary));
+            text-decoration: none;
+        }
+
+        .preview-content .preview-body a:hover {
+            text-decoration: underline;
+        }
+
+        .preview-content .preview-body ul,
+        .preview-content .preview-body ol {
+            padding-left: 1.5em;
+            margin: 1em 0;
+        }
+
+        .preview-content .preview-body li {
+            margin: 0.25em 0;
+        }
+
+        .preview-footer {
+            padding: 1rem 2rem;
+            border-top: 1px solid hsl(var(--border));
+            background: hsl(var(--muted) / 0.3);
+            text-align: center;
+        }
+
+        .preview-footer a {
+            color: hsl(var(--primary));
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .preview-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 3rem;
+            color: hsl(var(--destructive));
+        }
+
+        /* Plain text styling */
+        .preview-body.plain-text {
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="preview-card">
+            <div class="preview-header">
+                <div class="preview-badge">
+                    <span>&#128279;</span>
+                    <span>Shared Note</span>
+                </div>
+                <h1 class="preview-title" id="noteTitle">Loading...</h1>
+                <div class="preview-meta" id="noteMeta"></div>
+            </div>
+            <div class="preview-content">
+                <div class="loading" id="loadingIndicator">Loading note...</div>
+                <div class="preview-body" id="previewBody" style="display: none;"></div>
+                <div class="error-message" id="errorMessage" style="display: none;"></div>
+            </div>
+            <div class="preview-footer">
+                <a href="{{.basePath}}/">Powered by Git Notepad</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{.basePath}}/static/lib/marked/marked.min.js"></script>
+    <script src="{{.basePath}}/static/lib/highlight/highlight.min.js"></script>
+    <script src="{{.basePath}}/static/lib/katex/katex.min.js"></script>
+    <script src="{{.basePath}}/static/lib/katex/auto-render.min.js"></script>
+    <script src="{{.basePath}}/static/lib/asciidoctor/asciidoctor.min.js"></script>
+    <script>
+        const basePath = '{{.basePath}}';
+        const code = '{{.code}}';
+
+        async function loadNote() {
+            const loadingEl = document.getElementById('loadingIndicator');
+            const bodyEl = document.getElementById('previewBody');
+            const errorEl = document.getElementById('errorMessage');
+            const titleEl = document.getElementById('noteTitle');
+            const metaEl = document.getElementById('noteMeta');
+
+            try {
+                const response = await fetch(`${basePath}/api/public/note/${code}`);
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to load note');
+                }
+
+                const note = await response.json();
+
+                // Update title
+                titleEl.textContent = note.title || 'Untitled';
+
+                // Update meta
+                if (note.modified) {
+                    const date = new Date(note.modified);
+                    metaEl.textContent = `Last modified: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                }
+
+                // Render content based on type
+                let html = '';
+                if (note.type === 'markdown' || note.type === 'md') {
+                    html = renderMarkdown(note.content);
+                } else if (note.type === 'asciidoc' || note.type === 'adoc') {
+                    html = renderAsciiDoc(note.content);
+                } else {
+                    bodyEl.classList.add('plain-text');
+                    bodyEl.textContent = note.content;
+                    loadingEl.style.display = 'none';
+                    bodyEl.style.display = 'block';
+                    return;
+                }
+
+                bodyEl.innerHTML = html;
+
+                // Apply syntax highlighting
+                bodyEl.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+
+                // Render math
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(bodyEl, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                }
+
+                loadingEl.style.display = 'none';
+                bodyEl.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading note:', error);
+                loadingEl.style.display = 'none';
+                errorEl.textContent = error.message || 'Failed to load note';
+                errorEl.style.display = 'block';
+                titleEl.textContent = 'Error';
+            }
+        }
+
+        function renderMarkdown(content) {
+            if (typeof marked === 'undefined') {
+                return escapeHtml(content);
+            }
+            return marked.parse(content);
+        }
+
+        function renderAsciiDoc(content) {
+            if (typeof Asciidoctor === 'undefined') {
+                return escapeHtml(content);
+            }
+            const asciidoctor = Asciidoctor();
+            return asciidoctor.convert(content, { safe: 'safe' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load note when page loads
+        document.addEventListener('DOMContentLoaded', loadNote);
+    </script>
+</body>
+</html>

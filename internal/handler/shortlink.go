@@ -12,18 +12,24 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/gitnotepad/internal/config"
 	"github.com/user/gitnotepad/internal/git"
+	"github.com/user/gitnotepad/internal/middleware"
+	"github.com/user/gitnotepad/internal/model"
 )
 
 // ShortLinkInfo contains short link data with optional expiry
 type ShortLinkInfo struct {
 	NoteID    string     `json:"note_id"`
+	Username  string     `json:"username"`
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
+	IsPublic  bool       `json:"is_public"`
 }
 
 type ShortLinkHandler struct {
 	repo        *git.Repository
+	config      *config.Config
 	links       map[string]*ShortLinkInfo // shortCode -> ShortLinkInfo
 	reverseMap  map[string]string         // noteId -> shortCode
 	mu          sync.RWMutex
@@ -31,9 +37,10 @@ type ShortLinkHandler struct {
 	basePath    string
 }
 
-func NewShortLinkHandler(repo *git.Repository, basePath string) *ShortLinkHandler {
+func NewShortLinkHandler(repo *git.Repository, cfg *config.Config, basePath string) *ShortLinkHandler {
 	h := &ShortLinkHandler{
 		repo:        repo,
+		config:      cfg,
 		links:       make(map[string]*ShortLinkInfo),
 		reverseMap:  make(map[string]string),
 		storagePath: filepath.Join(repo.GetPath(), ".shortlinks.json"),
@@ -136,7 +143,8 @@ func generateShortCode() string {
 
 // GenerateRequest represents the request body for generating a short link
 type GenerateRequest struct {
-	ExpiresIn *int `json:"expires_in"` // Days until expiry (nil = never expires)
+	ExpiresIn *int  `json:"expires_in"` // Days until expiry (nil = never expires)
+	IsPublic  *bool `json:"is_public"`  // Whether the link is publicly accessible without auth
 }
 
 // decodeNoteIDParam base64-decodes the note ID from path parameter
@@ -156,6 +164,13 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 		return
 	}
 
+	// Get current user for public links
+	user := middleware.GetCurrentUser(c)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
 	// Parse request body for expiry
 	var req GenerateRequest
 	c.ShouldBindJSON(&req)
@@ -166,6 +181,7 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 	// Check if short link already exists
 	if code, exists := h.reverseMap[noteId]; exists {
 		info := h.links[code]
+		changed := false
 		// Update expiry if provided
 		if req.ExpiresIn != nil {
 			if *req.ExpiresIn == 0 {
@@ -174,12 +190,21 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 				expiresAt := time.Now().AddDate(0, 0, *req.ExpiresIn)
 				info.ExpiresAt = &expiresAt
 			}
+			changed = true
+		}
+		// Update public flag if provided
+		if req.IsPublic != nil {
+			info.IsPublic = *req.IsPublic
+			changed = true
+		}
+		if changed {
 			go h.save()
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"code":      code,
 			"shortLink": h.basePath + "/s/" + code,
 			"expiresAt": info.ExpiresAt,
+			"isPublic":  info.IsPublic,
 		})
 		return
 	}
@@ -200,10 +225,18 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 		expiresAt = &t
 	}
 
+	// Determine public flag
+	isPublic := false
+	if req.IsPublic != nil {
+		isPublic = *req.IsPublic
+	}
+
 	h.links[code] = &ShortLinkInfo{
 		NoteID:    noteId,
+		Username:  username,
 		ExpiresAt: expiresAt,
 		CreatedAt: time.Now(),
+		IsPublic:  isPublic,
 	}
 	h.reverseMap[noteId] = code
 
@@ -213,6 +246,7 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 		"code":      code,
 		"shortLink": h.basePath + "/s/" + code,
 		"expiresAt": expiresAt,
+		"isPublic":  isPublic,
 	})
 }
 
@@ -238,6 +272,12 @@ func (h *ShortLinkHandler) Redirect(c *gin.Context) {
 		c.HTML(http.StatusGone, "expired.html", gin.H{
 			"basePath": h.basePath,
 		})
+		return
+	}
+
+	// For public links, redirect to public preview page
+	if info.IsPublic {
+		c.Redirect(http.StatusFound, h.basePath+"/preview/"+code)
 		return
 	}
 
@@ -271,6 +311,7 @@ func (h *ShortLinkHandler) Get(c *gin.Context) {
 		"shortLink": h.basePath + "/s/" + code,
 		"expiresAt": info.ExpiresAt,
 		"createdAt": info.CreatedAt,
+		"isPublic":  info.IsPublic,
 	})
 }
 
@@ -307,6 +348,7 @@ type ShortLinkListItem struct {
 	ShortLink string     `json:"short_link"`
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
+	IsPublic  bool       `json:"is_public"`
 }
 
 // List returns all short links for the current user
@@ -323,6 +365,7 @@ func (h *ShortLinkHandler) List(c *gin.Context) {
 			ShortLink: h.basePath + "/s/" + code,
 			ExpiresAt: info.ExpiresAt,
 			CreatedAt: info.CreatedAt,
+			IsPublic:  info.IsPublic,
 		})
 	}
 
@@ -331,7 +374,8 @@ func (h *ShortLinkHandler) List(c *gin.Context) {
 
 // UpdateRequest represents the request body for updating a short link
 type UpdateRequest struct {
-	ExpiresIn *int `json:"expires_in"` // Days until expiry (nil = no change, 0 = never expires, >0 = days)
+	ExpiresIn *int  `json:"expires_in"` // Days until expiry (nil = no change, 0 = never expires, >0 = days)
+	IsPublic  *bool `json:"is_public"`  // Whether the link is publicly accessible
 }
 
 // UpdateByCode updates a short link's expiry by code
@@ -367,6 +411,11 @@ func (h *ShortLinkHandler) UpdateByCode(c *gin.Context) {
 		}
 	}
 
+	// Update public flag
+	if req.IsPublic != nil {
+		info.IsPublic = *req.IsPublic
+	}
+
 	go h.save()
 
 	c.JSON(http.StatusOK, gin.H{
@@ -374,6 +423,7 @@ func (h *ShortLinkHandler) UpdateByCode(c *gin.Context) {
 		"shortLink": h.basePath + "/s/" + code,
 		"expiresAt": info.ExpiresAt,
 		"createdAt": info.CreatedAt,
+		"isPublic":  info.IsPublic,
 	})
 }
 
@@ -400,4 +450,109 @@ func (h *ShortLinkHandler) DeleteByCode(c *gin.Context) {
 	go h.save()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Short link deleted"})
+}
+
+// PublicPreview renders the public preview page for a shared note
+func (h *ShortLinkHandler) PublicPreview(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	h.mu.RLock()
+	info, exists := h.links[code]
+	h.mu.RUnlock()
+
+	if !exists {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	// Check if link is public
+	if !info.IsPublic {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	// Check if link has expired
+	if info.ExpiresAt != nil && info.ExpiresAt.Before(time.Now()) {
+		c.HTML(http.StatusGone, "expired.html", gin.H{
+			"basePath": h.basePath,
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "preview.html", gin.H{
+		"basePath": h.basePath,
+		"code":     code,
+	})
+}
+
+// GetPublicNote returns note content for public preview (no authentication required)
+func (h *ShortLinkHandler) GetPublicNote(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code required"})
+		return
+	}
+
+	h.mu.RLock()
+	info, exists := h.links[code]
+	h.mu.RUnlock()
+
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Link not found"})
+		return
+	}
+
+	// Check if link is public
+	if !info.IsPublic {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This link is not public"})
+		return
+	}
+
+	// Check if link has expired
+	if info.ExpiresAt != nil && info.ExpiresAt.Before(time.Now()) {
+		c.JSON(http.StatusGone, gin.H{"error": "Link has expired"})
+		return
+	}
+
+	// Construct the file path: {storagePath}/{username}/notes/{noteId}.{ext}
+	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
+
+	// Try different extensions
+	var note *model.Note
+	var err error
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath := filepath.Join(notesPath, info.NoteID+ext)
+		data, readErr := os.ReadFile(filePath)
+		if readErr != nil {
+			continue
+		}
+		note, err = model.ParseNoteFromBytes(data, filePath)
+		if err == nil {
+			note.ID = info.NoteID
+			break
+		}
+	}
+
+	if note == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		return
+	}
+
+	// Don't expose password-protected notes publicly
+	if note.Private {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This note is password protected"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":       note.ID,
+		"title":    note.Title,
+		"content":  note.Content,
+		"type":     note.Type,
+		"modified": note.Modified,
+	})
 }

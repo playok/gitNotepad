@@ -1867,9 +1867,25 @@ function applyLayoutState() {
 
     // Apply active tab
     if (layoutState.tabMode) {
-        editorPane.classList.toggle('active', layoutState.activeTab === 'editor');
-        previewPane.classList.toggle('active', layoutState.activeTab === 'preview');
+        // Clear active class from both first
+        editorPane.classList.remove('active');
+        previewPane.classList.remove('active');
+
+        // Add active class to the selected tab
+        if (layoutState.activeTab === 'editor') {
+            editorPane.classList.add('active');
+        } else if (layoutState.activeTab === 'preview') {
+            previewPane.classList.add('active');
+        } else {
+            // Default to editor
+            layoutState.activeTab = 'editor';
+            editorPane.classList.add('active');
+        }
         updateTabBarState();
+    } else {
+        // When exiting tab mode, remove active classes
+        editorPane.classList.remove('active');
+        previewPane.classList.remove('active');
     }
 
     // Update button states
@@ -1922,13 +1938,25 @@ function toggleTabMode() {
 }
 
 function switchTab(tabName) {
+    if (!layoutState.tabMode) return;
+
     layoutState.activeTab = tabName;
 
     const editorPane = document.querySelector('.editor-pane');
     const previewPane = document.getElementById('previewPane');
 
-    editorPane.classList.toggle('active', tabName === 'editor');
-    previewPane.classList.toggle('active', tabName === 'preview');
+    if (!editorPane || !previewPane) return;
+
+    // Remove active from both first
+    editorPane.classList.remove('active');
+    previewPane.classList.remove('active');
+
+    // Add active to the selected tab
+    if (tabName === 'editor') {
+        editorPane.classList.add('active');
+    } else if (tabName === 'preview') {
+        previewPane.classList.add('active');
+    }
 
     updateTabBarState();
     saveLayoutState();
@@ -1940,7 +1968,10 @@ function switchTab(tabName) {
 
     // Refresh CodeMirror when switching to editor tab
     if (tabName === 'editor' && cmEditor) {
-        setTimeout(() => cmEditor.refresh(), 100);
+        // Use requestAnimationFrame for smoother refresh
+        requestAnimationFrame(() => {
+            cmEditor.refresh();
+        });
     }
 }
 

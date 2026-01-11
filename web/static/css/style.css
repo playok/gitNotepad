@@ -1613,22 +1613,25 @@ body {
 
 /* Tab Mode */
 .editor-body.tab-mode .splitter {
-    display: none;
+    display: none !important;
 }
 
 .editor-body.tab-mode .editor-pane,
 .editor-body.tab-mode .preview-pane {
-    display: none;
+    display: none !important;
+    flex: 0 0 0 !important;
 }
 
 .editor-body.tab-mode .editor-pane.active {
-    display: flex;
-    flex: 1 1 100%;
+    display: flex !important;
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
 }
 
 .editor-body.tab-mode .preview-pane.active {
-    display: flex;
-    flex: 1 1 100%;
+    display: flex !important;
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
 }
 
 /* Popout Mode - Hide preview in main window */

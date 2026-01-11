@@ -24,9 +24,11 @@ const i18n = {
 
             // Sidebar
             'sidebar.search': 'Search notes...',
-            'sidebar.newNote': 'New Note',
-            'sidebar.help': 'Help',
+            'sidebar.newNote': 'New Note (Ctrl+N)',
+            'sidebar.help': 'Help (F1)',
             'sidebar.settings': 'Settings',
+            'sidebar.language': 'Language',
+            'sidebar.toggleTheme': 'Toggle theme',
             'sidebar.theme': 'Toggle theme',
             'sidebar.collapse': 'Toggle sidebar',
             'sidebar.listView': 'List View',
@@ -347,9 +349,11 @@ const i18n = {
 
             // Sidebar
             'sidebar.search': '노트 검색...',
-            'sidebar.newNote': '새 노트',
-            'sidebar.help': '도움말',
+            'sidebar.newNote': '새 노트 (Ctrl+N)',
+            'sidebar.help': '도움말 (F1)',
             'sidebar.settings': '설정',
+            'sidebar.language': '언어',
+            'sidebar.toggleTheme': '테마 변경',
             'sidebar.theme': '테마 변경',
             'sidebar.collapse': '사이드바 토글',
             'sidebar.listView': '목록 보기',

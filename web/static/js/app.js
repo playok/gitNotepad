@@ -3358,6 +3358,9 @@ function initMarkdownToolbar() {
     // Initialize table grid selector
     initTableGridSelector();
 
+    // Initialize code language selector
+    initCodeLangSelector();
+
     toolbar.addEventListener('click', (e) => {
         const btn = e.target.closest('.toolbar-btn');
         if (!btn) return;
@@ -3369,16 +3372,29 @@ function initMarkdownToolbar() {
                 toggleTableGridSelector();
                 return;
             }
+            // Code block action is handled by the language selector
+            if (action === 'codeblock') {
+                toggleCodeLangSelector();
+                return;
+            }
             applyMarkdownFormat(action);
         }
     });
 
-    // Close table grid selector when clicking outside
+    // Close selectors when clicking outside
     document.addEventListener('click', (e) => {
+        // Close table grid selector
         const gridSelector = document.getElementById('tableGridSelector');
         const tableBtn = document.getElementById('tableToolbarBtn');
         if (gridSelector && !gridSelector.contains(e.target) && e.target !== tableBtn) {
             gridSelector.classList.remove('visible');
+        }
+
+        // Close code language selector
+        const langSelector = document.getElementById('codeLangSelector');
+        const codeBtn = document.getElementById('codeblockToolbarBtn');
+        if (langSelector && !langSelector.contains(e.target) && e.target !== codeBtn) {
+            langSelector.classList.remove('visible');
         }
     });
 
@@ -3524,6 +3540,106 @@ function updateMarkdownToolbarVisibility() {
         toolbar.classList.remove('hidden');
     } else {
         toolbar.classList.add('hidden');
+    }
+}
+
+// Code Language Selector
+const CODE_LANGUAGES = [
+    // Popular languages (first row)
+    { id: 'javascript', name: 'JavaScript', popular: true },
+    { id: 'typescript', name: 'TypeScript', popular: true },
+    { id: 'python', name: 'Python', popular: true },
+    { id: 'java', name: 'Java', popular: true },
+    // Second row
+    { id: 'c', name: 'C', popular: true },
+    { id: 'cpp', name: 'C++', popular: true },
+    { id: 'csharp', name: 'C#', popular: true },
+    { id: 'go', name: 'Go', popular: true },
+    // Third row
+    { id: 'rust', name: 'Rust', popular: false },
+    { id: 'swift', name: 'Swift', popular: false },
+    { id: 'kotlin', name: 'Kotlin', popular: false },
+    { id: 'php', name: 'PHP', popular: false },
+    // Fourth row
+    { id: 'ruby', name: 'Ruby', popular: false },
+    { id: 'scala', name: 'Scala', popular: false },
+    { id: 'r', name: 'R', popular: false },
+    { id: 'perl', name: 'Perl', popular: false },
+    // Web/Markup
+    { id: 'html', name: 'HTML', popular: false },
+    { id: 'css', name: 'CSS', popular: false },
+    { id: 'xml', name: 'XML', popular: false },
+    { id: 'json', name: 'JSON', popular: false },
+    // Shell/Script
+    { id: 'bash', name: 'Bash', popular: false },
+    { id: 'powershell', name: 'PowerShell', popular: false },
+    { id: 'sql', name: 'SQL', popular: false },
+    { id: 'yaml', name: 'YAML', popular: false },
+    // Other
+    { id: 'markdown', name: 'Markdown', popular: false },
+    { id: 'dockerfile', name: 'Dockerfile', popular: false },
+    { id: 'plaintext', name: 'Plain Text', popular: false },
+    { id: '', name: '(None)', popular: false }
+];
+
+function initCodeLangSelector() {
+    const container = document.getElementById('codeLangContainer');
+    if (!container) return;
+
+    // Create language cells
+    CODE_LANGUAGES.forEach(lang => {
+        const cell = document.createElement('div');
+        cell.className = 'lang-cell' + (lang.popular ? ' popular' : '');
+        cell.dataset.lang = lang.id;
+        cell.textContent = lang.name;
+        cell.addEventListener('click', () => handleLangClick(lang.id));
+        container.appendChild(cell);
+    });
+}
+
+function toggleCodeLangSelector() {
+    const langSelector = document.getElementById('codeLangSelector');
+    if (!langSelector) return;
+
+    // Close table grid selector if open
+    const gridSelector = document.getElementById('tableGridSelector');
+    if (gridSelector) {
+        gridSelector.classList.remove('visible');
+    }
+
+    langSelector.classList.toggle('visible');
+}
+
+function handleLangClick(lang) {
+    if (!cmEditor) return;
+
+    const selectedText = cmEditor.getSelection();
+    let replacement;
+
+    if (selectedText) {
+        replacement = '```' + lang + '\n' + selectedText + '\n```';
+    } else {
+        replacement = '```' + lang + '\ncode\n```';
+    }
+
+    cmEditor.replaceSelection(replacement);
+
+    // Position cursor inside the code block if no text was selected
+    if (!selectedText) {
+        const cursor = cmEditor.getCursor();
+        cmEditor.setSelection(
+            { line: cursor.line - 1, ch: 0 },
+            { line: cursor.line - 1, ch: 4 }
+        );
+    }
+
+    cmEditor.focus();
+    triggerAutoSave();
+
+    // Hide language selector
+    const langSelector = document.getElementById('codeLangSelector');
+    if (langSelector) {
+        langSelector.classList.remove('visible');
     }
 }
 

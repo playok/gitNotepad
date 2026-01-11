@@ -1243,6 +1243,55 @@ body {
     display: inline-block;
 }
 
+/* Code Language Selector */
+.code-lang-selector {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.code-lang-selector.visible {
+    display: block;
+}
+
+.code-lang-selector .lang-grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    min-width: 320px;
+}
+
+.code-lang-selector .lang-cell {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 12px;
+    text-align: center;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.code-lang-selector .lang-cell:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.code-lang-selector .lang-cell.popular {
+    font-weight: 500;
+}
+
 /* AsciiDoc Table Editor Modal */
 .table-editor-modal {
     display: none;

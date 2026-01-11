@@ -223,7 +223,12 @@
                     </div>
                     <div class="toolbar-separator"></div>
                     <div class="toolbar-group">
-                        <button type="button" class="toolbar-btn" data-action="codeblock" data-i18n-title="toolbar.codeblock">&#9641;&#9641;&#9641;</button>
+                        <div class="toolbar-btn-wrapper">
+                            <button type="button" class="toolbar-btn" data-action="codeblock" data-i18n-title="toolbar.codeblock" id="codeblockToolbarBtn">&#9641;&#9641;&#9641;</button>
+                            <div class="code-lang-selector" id="codeLangSelector">
+                                <div class="lang-grid-container" id="codeLangContainer"></div>
+                            </div>
+                        </div>
                         <div class="toolbar-btn-wrapper">
                             <button type="button" class="toolbar-btn" data-action="table" data-i18n-title="toolbar.table" id="tableToolbarBtn">&#9638;</button>
                             <div class="table-grid-selector" id="tableGridSelector">

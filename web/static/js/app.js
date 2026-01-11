@@ -3614,12 +3614,24 @@ function handleLangClick(lang) {
     if (!cmEditor) return;
 
     const selectedText = cmEditor.getSelection();
+    const type = noteType.value;
     let replacement;
 
-    if (selectedText) {
-        replacement = '```' + lang + '\n' + selectedText + '\n```';
+    if (type === 'asciidoc') {
+        // AsciiDoc format: [source,lang]\n----\ncode\n----
+        const sourceAttr = lang ? `[source,${lang}]` : '[source]';
+        if (selectedText) {
+            replacement = `${sourceAttr}\n----\n${selectedText}\n----`;
+        } else {
+            replacement = `${sourceAttr}\n----\ncode\n----`;
+        }
     } else {
-        replacement = '```' + lang + '\ncode\n```';
+        // Markdown format: ```lang\ncode\n```
+        if (selectedText) {
+            replacement = '```' + lang + '\n' + selectedText + '\n```';
+        } else {
+            replacement = '```' + lang + '\ncode\n```';
+        }
     }
 
     cmEditor.replaceSelection(replacement);

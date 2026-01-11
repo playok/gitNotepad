@@ -3700,6 +3700,9 @@ function togglePreview() {
 // AsciiDoctor instance (lazy initialized)
 let asciidoctor = null;
 
+// Asciidoctor memory logger to suppress console warnings
+let asciidoctorLogger = null;
+
 function getAsciidoctor() {
     if (asciidoctor === null) {
         // Try different ways to access Asciidoctor
@@ -3728,6 +3731,12 @@ function getAsciidoctor() {
                 } else if (typeof asciidoctor.create === 'function') {
                     asciidoctor = asciidoctor.create();
                 }
+            }
+
+            // Set up MemoryLogger to suppress console warnings
+            if (asciidoctor && typeof asciidoctor.MemoryLogger !== 'undefined') {
+                asciidoctorLogger = asciidoctor.MemoryLogger.create();
+                asciidoctor.LoggerManager.setLogger(asciidoctorLogger);
             }
         } catch (e) {
             console.error('Error initializing Asciidoctor:', e);

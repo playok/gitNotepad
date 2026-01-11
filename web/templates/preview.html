@@ -403,6 +403,11 @@
                 return escapeHtml(content);
             }
             const asciidoctor = Asciidoctor();
+            // Use MemoryLogger to suppress console warnings
+            if (typeof asciidoctor.MemoryLogger !== 'undefined') {
+                const memoryLogger = asciidoctor.MemoryLogger.create();
+                asciidoctor.LoggerManager.setLogger(memoryLogger);
+            }
             return asciidoctor.convert(content, { safe: 'safe' });
         }
 

@@ -1,25 +1,36 @@
 # Git Notepad Configuration
-# Copy this file to config.yaml and modify as needed
 
 server:
-    port: 8080
-    host: 0.0.0.0
-    base_path: ""
+  port: 8080
+  host: "0.0.0.0"
+  base_path: ""        # nginx 프록시용 (예: "/note")
+
 storage:
-    path: ./data
-    auto_init_git: true
-editor:
-    default_type: markdown
-    auto_save: false
-auth:
-    enabled: true
-    session_timeout: 168
-    admin_username: admin
-    admin_password_hash: ""  # Set on first run via terminal prompt
-database:
-    path: ./data/gitnotepad.db
+  path: "./data"
+  auto_init_git: true
+
 logging:
-    encoding: utf-8
+  encoding: ""         # "utf-8" (기본) 또는 "euc-kr"
+  file: false          # 파일 로깅 활성화
+  dir: "./logs"        # 로그 디렉토리 (일단위 롤링)
+  max_age: 30          # 로그 보관 일수
+
+editor:
+  default_type: "markdown"
+  auto_save: false
+
+auth:
+  enabled: true
+  session_timeout: 168  # 7일
+  admin_username: "admin"
+  admin_password_hash: ""  # SHA-512 해시 (최초 실행 시 설정)
+
+database:
+  path: "./data/gitnotepad.db"
+
 encryption:
-    enabled: false
-    salt: ""  # Auto-generated on first run if encryption enabled
+  enabled: false
+  salt: ""             # PBKDF2 salt (최초 실행 시 자동 생성)
+
+daemon:
+  pid_file: "./gitnotepad.pid"

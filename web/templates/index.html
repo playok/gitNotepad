@@ -70,21 +70,21 @@
                         </div>
                     </div>
                     {{end}}
-                    <button id="sidebarCollapseBtn" class="header-icon-btn" title="Toggle sidebar (Ctrl+B)">
+                    <button id="sidebarCollapseBtn" class="header-icon-btn" title="Toggle sidebar (Ctrl+B)" data-i18n-title="sidebar.collapseShortcut">
                         <span class="collapse-icon">&#9664;</span>
                     </button>
                 </div>
             </div>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Search notes..." data-i18n-placeholder="sidebar.search">
-                <button id="searchClear" class="search-clear" title="Clear search">×</button>
+                <button id="searchClear" class="search-clear" title="Clear search" data-i18n-title="sidebar.clearSearch">×</button>
             </div>
             <div class="folder-actions">
-                <button id="expandAllBtn" class="folder-action-btn" title="Expand All">
+                <button id="expandAllBtn" class="folder-action-btn" title="Expand All" data-i18n-title="sidebar.expandAll">
                     <span class="folder-action-icon">📂</span>
                     <span class="folder-action-text" data-i18n="sidebar.expandAll">Expand All</span>
                 </button>
-                <button id="collapseAllBtn" class="folder-action-btn" title="Collapse All">
+                <button id="collapseAllBtn" class="folder-action-btn" title="Collapse All" data-i18n-title="sidebar.collapseAll">
                     <span class="folder-action-icon">📁</span>
                     <span class="folder-action-text" data-i18n="sidebar.collapseAll">Collapse All</span>
                 </button>
@@ -95,7 +95,7 @@
             <!-- Mini Calendar (Bottom Fixed) -->
             <div class="mini-calendar" id="miniCalendar">
                 <div class="mini-calendar-header">
-                    <button id="miniCalToggle" class="mini-cal-toggle" title="Toggle calendar">&#9660;</button>
+                    <button id="miniCalToggle" class="mini-cal-toggle" title="Toggle calendar" data-i18n-title="calendar.toggle">&#9660;</button>
                     <button id="miniCalPrev" class="mini-cal-nav">&#9664;</button>
                     <span id="miniCalTitle" class="mini-cal-title"></span>
                     <button id="miniCalNext" class="mini-cal-nav">&#9654;</button>
@@ -131,7 +131,7 @@
                         <span class="date-notes-icon">&#128197;</span>
                         <span id="dateNotesPanelTitle"></span>
                     </div>
-                    <button id="dateNotesPanelClose" class="date-notes-close" title="Close">&times;</button>
+                    <button id="dateNotesPanelClose" class="date-notes-close" title="Close" data-i18n-title="common.close">&times;</button>
                 </div>
                 <div id="dateNotesList" class="date-notes-list">
                     <!-- Date notes will be rendered here -->
@@ -159,35 +159,35 @@
                         <span id="saveStatus" class="save-status"></span>
                     </div>
                     <div class="editor-actions">
-                        <select id="noteType" class="note-type-select" title="Note type">
+                        <select id="noteType" class="note-type-select" title="Note type" data-i18n-title="editor.noteType">
                             <option value="markdown">MD</option>
                             <option value="asciidoc">ADOC</option>
                             <option value="txt">TXT</option>
                         </select>
-                        <button id="prettyJsonBtn" class="btn-icon" title="Format JSON (Ctrl+Shift+F)">{&nbsp;}</button>
-                        <button id="syntaxHelpBtn" class="btn-icon" title="Syntax Reference">&#128214;</button>
-                        <button id="uploadBtn" class="btn-icon" title="Upload file">&#128206;</button>
+                        <button id="prettyJsonBtn" class="btn-icon" title="Format JSON (Ctrl+Shift+F)" data-i18n-title="editor.formatJsonShortcut">{&nbsp;}</button>
+                        <button id="syntaxHelpBtn" class="btn-icon" title="Syntax Reference" data-i18n-title="editor.syntaxHelp">&#128214;</button>
+                        <button id="uploadBtn" class="btn-icon" title="Upload file" data-i18n-title="editor.upload">&#128206;</button>
                         <input type="file" id="fileInput" style="display: none;" multiple>
-                        <label class="private-toggle" title="Private note">
+                        <label class="private-toggle" title="Private note" data-i18n-title="editor.privateNote">
                             <input type="checkbox" id="notePrivate">
                             <span class="private-icon">&#128274;</span>
                         </label>
-                        <label class="autosave-toggle" title="Auto-save">
+                        <label class="autosave-toggle" title="Auto-save" data-i18n-title="editor.autoSave">
                             <input type="checkbox" id="autoSaveEnabled">
                             <span class="autosave-icon">&#128260;</span>
                         </label>
-                        <button id="historyBtn" class="btn-icon" title="History">&#128337;</button>
-                        <button id="saveBtn" class="btn-icon" title="Save">&#128190;</button>
-                        <button id="deleteBtn" class="btn-icon btn-icon-danger" title="Delete">&#128465;</button>
+                        <button id="historyBtn" class="btn-icon" title="History" data-i18n-title="editor.history">&#128337;</button>
+                        <button id="saveBtn" class="btn-icon" title="Save" data-i18n-title="editor.save">&#128190;</button>
+                        <button id="deleteBtn" class="btn-icon btn-icon-danger" title="Delete" data-i18n-title="editor.delete">&#128465;</button>
                     </div>
                 </div>
                 <!-- Attachments Section -->
                 <div id="attachmentsSection" class="attachments-section" style="display: none;">
                     <div class="attachments-header">
                         <span class="attachments-icon">&#128206;</span>
-                        <span class="attachments-title">Attachments</span>
+                        <span class="attachments-title" data-i18n="editor.attachments">Attachments</span>
                         <span id="attachmentsCount" class="attachments-count">0</span>
-                        <button id="attachmentsToggle" class="attachments-toggle" title="Toggle attachments">
+                        <button id="attachmentsToggle" class="attachments-toggle" title="Toggle attachments" data-i18n-title="editor.toggleAttachments">
                             <span class="toggle-icon">&#9660;</span>
                         </button>
                     </div>

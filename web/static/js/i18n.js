@@ -31,12 +31,14 @@ const i18n = {
             'sidebar.toggleTheme': 'Toggle theme',
             'sidebar.theme': 'Toggle theme',
             'sidebar.collapse': 'Toggle sidebar',
+            'sidebar.collapseShortcut': 'Toggle sidebar (Ctrl+B)',
             'sidebar.listView': 'List View',
             'sidebar.calendarView': 'Calendar View',
             'sidebar.expandAll': 'Expand All',
             'sidebar.collapseAll': 'Collapse All',
             'sidebar.noNotes': 'No notes yet',
             'sidebar.notes': 'notes',
+            'sidebar.clearSearch': 'Clear search',
 
             // Editor
             'editor.untitled': 'Untitled',
@@ -51,10 +53,18 @@ const i18n = {
             'editor.unsaved': 'Unsaved',
             'editor.upload': 'Upload file',
             'editor.formatJson': 'Format JSON',
+            'editor.formatJsonShortcut': 'Format JSON (Ctrl+Shift+F)',
             'editor.fullscreen': 'Fullscreen',
             'editor.share': 'Share',
             'editor.attachments': 'Attachments',
             'editor.dropFiles': 'Drop files here to attach',
+            'editor.noteType': 'Note type',
+            'editor.syntaxHelp': 'Syntax Reference',
+            'editor.privateNote': 'Private note',
+            'editor.autoSave': 'Auto-save',
+            'editor.save': 'Save',
+            'editor.delete': 'Delete',
+            'editor.toggleAttachments': 'Toggle attachments',
 
             // Markdown Toolbar
             'toolbar.bold': 'Bold (Ctrl+B)',
@@ -85,6 +95,7 @@ const i18n = {
             'calendar.noNotes': 'No notes for this date',
             'calendar.selectDate': 'Select a date',
             'calendar.notesForDate': 'Click on a date to view notes',
+            'calendar.toggle': 'Toggle calendar',
 
             // Months
             'month.january': 'January',
@@ -371,12 +382,14 @@ const i18n = {
             'sidebar.toggleTheme': '테마 변경',
             'sidebar.theme': '테마 변경',
             'sidebar.collapse': '사이드바 토글',
+            'sidebar.collapseShortcut': '사이드바 토글 (Ctrl+B)',
             'sidebar.listView': '목록 보기',
             'sidebar.calendarView': '캘린더 보기',
             'sidebar.expandAll': '모두 펼치기',
             'sidebar.collapseAll': '모두 닫기',
             'sidebar.noNotes': '노트가 없습니다',
             'sidebar.notes': '개의 노트',
+            'sidebar.clearSearch': '검색 지우기',
 
             // Editor
             'editor.untitled': '제목 없음',
@@ -391,10 +404,18 @@ const i18n = {
             'editor.unsaved': '저장 안됨',
             'editor.upload': '파일 업로드',
             'editor.formatJson': 'JSON 정리',
+            'editor.formatJsonShortcut': 'JSON 정리 (Ctrl+Shift+F)',
             'editor.fullscreen': '전체화면',
             'editor.share': '공유',
             'editor.attachments': '첨부파일',
             'editor.dropFiles': '파일을 여기에 드롭하세요',
+            'editor.noteType': '노트 유형',
+            'editor.syntaxHelp': '문법 참조',
+            'editor.privateNote': '비공개 노트',
+            'editor.autoSave': '자동 저장',
+            'editor.save': '저장',
+            'editor.delete': '삭제',
+            'editor.toggleAttachments': '첨부파일 토글',
 
             // Markdown Toolbar
             'toolbar.bold': '굵게 (Ctrl+B)',
@@ -425,6 +446,7 @@ const i18n = {
             'calendar.noNotes': '이 날짜에 노트가 없습니다',
             'calendar.selectDate': '날짜를 선택하세요',
             'calendar.notesForDate': '날짜를 클릭하여 노트를 확인하세요',
+            'calendar.toggle': '캘린더 토글',
 
             // Months
             'month.january': '1월',

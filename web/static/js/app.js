@@ -2342,21 +2342,42 @@ function removeAttachment(index) {
 
     // Check if attachment URL is referenced in content
     const content = getEditorContent();
-    const urlPattern = attachment.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
-    const linkRegex = new RegExp(`!?\\[[^\\]]*\\]\\(${urlPattern}\\)`, 'g');
-    const hasLinkInContent = linkRegex.test(content);
+    const escapedUrl = attachment.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
+
+    // Build patterns for both Markdown and AsciiDoc formats
+    // Markdown: ![...](url) or [...](url) or [...](url?download=true)
+    const mdImagePattern = `!\\[[^\\]]*\\]\\(${escapedUrl}\\)`;
+    const mdLinkPattern = `\\[[^\\]]*\\]\\(${escapedUrl}(\\?download=true)?\\)`;
+    // AsciiDoc: image::url[...] or link:url[...]
+    const adocImagePattern = `image::${escapedUrl}\\[[^\\]]*\\]`;
+    const adocLinkPattern = `link:${escapedUrl}(\\?download=true)?\\[[^\\]]*\\]`;
+
+    const allPatterns = `(${mdImagePattern}|${mdLinkPattern}|${adocImagePattern}|${adocLinkPattern})`;
+    const refRegex = new RegExp(allPatterns, 'g');
+    const matches = content.match(refRegex);
+    const hasRefInContent = matches && matches.length > 0;
 
     let confirmMessage = i18n.t('attachment.removeConfirm') || 'Remove this attachment?';
 
-    if (hasLinkInContent) {
-        const warningMsg = i18n.t('attachment.linkInContentWarning') ||
-            '\n\nWarning: This attachment is referenced in the note content. The link will become broken.';
+    if (hasRefInContent) {
+        const refCount = matches.length;
+        const warningMsg = i18n.t('attachment.linkInContentWarning', { count: refCount }) ||
+            `\n\nThis attachment is referenced ${refCount} time(s) in the note. Remove references too?`;
         confirmMessage += warningMsg;
     }
 
     if (confirm(confirmMessage)) {
+        // Remove references from content if any exist
+        if (hasRefInContent) {
+            let newContent = content.replace(refRegex, '');
+            // Clean up empty lines left by removal (optional: keep single empty line)
+            newContent = newContent.replace(/\n{3,}/g, '\n\n');
+            setEditorContent(newContent);
+        }
+
         currentAttachments.splice(index, 1);
         renderAttachments();
+        updatePreview();
         triggerAutoSave();
     }
 }

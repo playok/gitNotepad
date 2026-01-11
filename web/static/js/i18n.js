@@ -312,7 +312,7 @@ const i18n = {
 
             // Attachment
             'attachment.removeConfirm': 'Remove this attachment?',
-            'attachment.linkInContentWarning': '\n\nWarning: This attachment is referenced in the note content. The link will become broken.',
+            'attachment.linkInContentWarning': '\n\nThis attachment is referenced {count} time(s) in the note. References will also be removed.',
 
             // Date Notes Panel
             'datePanel.empty': 'No notes for this date',
@@ -635,7 +635,7 @@ const i18n = {
 
             // Attachment
             'attachment.removeConfirm': '이 첨부 파일을 삭제하시겠습니까?',
-            'attachment.linkInContentWarning': '\n\n경고: 이 첨부 파일이 본문에서 참조되고 있습니다. 링크가 깨질 수 있습니다.',
+            'attachment.linkInContentWarning': '\n\n본문에서 {count}번 참조되고 있습니다. 참조도 함께 삭제됩니다.',
 
             // Date Notes Panel
             'datePanel.empty': '이 날짜에 노트가 없습니다',

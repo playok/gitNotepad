@@ -147,9 +147,21 @@
         // Initialize marked
         function initMarked() {
             if (typeof marked !== 'undefined') {
+                const renderer = new marked.Renderer();
+                // Open links in new tab
+                renderer.link = function(href, title, text) {
+                    if (typeof href === 'object') {
+                        title = href.title;
+                        text = href.text;
+                        href = href.href;
+                    }
+                    const titleAttr = title ? ` title="${title}"` : '';
+                    return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+                };
                 marked.setOptions({
                     gfm: true,
-                    breaks: true
+                    breaks: true,
+                    renderer: renderer
                 });
             }
         }
@@ -186,6 +198,12 @@
             } else {
                 previewContent.innerHTML = '<pre>' + escapeHtml(content) + '</pre>';
             }
+
+            // Open links in new tab
+            previewContent.querySelectorAll('a[href]').forEach((link) => {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            });
 
             // Apply syntax highlighting
             previewContent.querySelectorAll('pre code').forEach((block) => {

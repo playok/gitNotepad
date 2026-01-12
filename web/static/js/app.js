@@ -1046,6 +1046,18 @@ function initMarked() {
         return `<pre>${langLabel}${copyBtn}<code class="hljs ${langClass}" data-line-count="${lineCount}">${numberedLines}</code></pre>`;
     };
 
+    // Custom renderer for links - open in new tab
+    renderer.link = function(href, title, text) {
+        // Handle object format (newer marked versions)
+        if (typeof href === 'object') {
+            title = href.title;
+            text = href.text;
+            href = href.href;
+        }
+        const titleAttr = title ? ` title="${title}"` : '';
+        return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+    };
+
     marked.setOptions({ renderer: renderer });
 }
 
@@ -5041,6 +5053,12 @@ function updatePreview() {
                         'icons': 'font'
                     }
                 });
+                // Open links in new tab
+                previewContent.querySelectorAll('a[href]').forEach((link) => {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                });
+
                 // Apply syntax highlighting to code blocks
                 // AsciiDoctor generates: <pre class="highlight"><code class="language-xxx" data-lang="xxx">
                 previewContent.querySelectorAll('pre code, pre.highlight code, .listingblock pre code').forEach((block) => {

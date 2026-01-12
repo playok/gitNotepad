@@ -356,6 +356,12 @@
 
                 bodyEl.innerHTML = html;
 
+                // Open links in new tab (for AsciiDoc content)
+                bodyEl.querySelectorAll('a[href]').forEach((link) => {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                });
+
                 // Apply syntax highlighting
                 bodyEl.querySelectorAll('pre code').forEach((block) => {
                     hljs.highlightElement(block);
@@ -391,9 +397,21 @@
                 return escapeHtml(content);
             }
             // Configure marked for GitHub Flavored Markdown
+            const renderer = new marked.Renderer();
+            // Open links in new tab
+            renderer.link = function(href, title, text) {
+                if (typeof href === 'object') {
+                    title = href.title;
+                    text = href.text;
+                    href = href.href;
+                }
+                const titleAttr = title ? ` title="${title}"` : '';
+                return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+            };
             marked.setOptions({
                 gfm: true,
-                breaks: true
+                breaks: true,
+                renderer: renderer
             });
             return marked.parse(content);
         }

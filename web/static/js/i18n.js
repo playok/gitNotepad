@@ -342,6 +342,7 @@ const i18n = {
 
             // Confirm dialogs
             'confirm.unsavedChanges': 'You have unsaved changes. Are you sure you want to close?',
+            'confirm.discardChanges': 'You have unsaved changes. Do you want to discard them?',
 
             // Buttons
             'btn.edit': 'Edit',
@@ -758,6 +759,7 @@ const i18n = {
 
             // Confirm dialogs
             'confirm.unsavedChanges': '저장되지 않은 변경사항이 있습니다. 닫으시겠습니까?',
+            'confirm.discardChanges': '저장되지 않은 변경사항이 있습니다. 변경사항을 취소하시겠습니까?',
 
             // Buttons
             'btn.edit': '편집',

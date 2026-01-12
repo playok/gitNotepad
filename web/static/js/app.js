@@ -449,6 +449,7 @@ function handleKeyboardShortcut(e) {
             if (modal.style.display !== 'none') {
                 // If closing setPasswordModal without setting password, uncheck private toggle
                 if (modal.id === 'setPasswordModal') {
+                    console.log('[Escape] Unchecking notePrivate because setPasswordModal was open');
                     notePrivate.checked = false;
                     setPasswordInput.value = '';
                     confirmPasswordInput.value = '';
@@ -2417,26 +2418,15 @@ function triggerAutoSave() {
 }
 
 async function performAutoSave() {
-    console.log('[performAutoSave] Starting, hasUnsavedChanges:', hasUnsavedChanges);
     // Prevent duplicate saves
-    if (isSaving) {
-        console.log('[performAutoSave] Skipped: isSaving is true');
-        return;
-    }
-    if (!hasUnsavedChanges) {
-        console.log('[performAutoSave] Skipped: no unsaved changes');
-        return;
-    }
+    if (isSaving) return;
+    if (!hasUnsavedChanges) return;
 
     const title = getFullNoteTitle();
-    if (!noteTitle.value.trim()) {
-        console.log('[performAutoSave] Skipped: empty title');
-        return;
-    }
+    if (!noteTitle.value.trim()) return;
 
     // Double-check if content actually changed
     if (!isContentChanged()) {
-        console.log('[performAutoSave] Skipped: content not changed');
         hasUnsavedChanges = false;
         updateSaveStatus('');
         return;
@@ -3553,20 +3543,12 @@ async function verifyPassword() {
 
 async function saveNote() {
     // Prevent duplicate saves
-    if (isSaving) {
-        console.log('[saveNote] Skipped: isSaving is true');
-        return;
-    }
+    if (isSaving) return;
 
     const title = getFullNoteTitle();
     const content = getEditorContent();
     const type = noteType.value;
     const isPrivate = notePrivate.checked;
-
-    console.log('[saveNote] Current values:', { title, contentLen: content.length, type, isPrivate });
-    console.log('[saveNote] Original values:', originalContent);
-    console.log('[saveNote] isContentChanged:', isContentChanged());
-    console.log('[saveNote] currentNote:', currentNote);
 
     if (!noteTitle.value.trim()) {
         alert(i18n.t('msg.enterTitle'));
@@ -3575,7 +3557,6 @@ async function saveNote() {
 
     // Check if content actually changed (skip if setting new password)
     if (!pendingPassword && !isContentChanged()) {
-        console.log('[saveNote] Skipped: content not changed');
         updateSaveStatus('saved');
         setTimeout(() => updateSaveStatus(''), 1000);
         return;
@@ -4047,6 +4028,15 @@ function renderNoteItem(note, container, level, isChild) {
     const editBtn = li.querySelector('.note-edit-btn');
     editBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+
+        // If already editing this note with unsaved changes, ask before reloading
+        if (currentNote && currentNote.id === note.id && hasUnsavedChanges) {
+            const msg = i18n ? i18n.t('confirm.discardChanges') : 'You have unsaved changes. Do you want to discard them?';
+            if (!confirm(msg)) {
+                return; // Stay with current unsaved changes
+            }
+        }
+
         currentPassword = null;
         editNote(note.id);
     });

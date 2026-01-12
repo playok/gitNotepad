@@ -23,6 +23,7 @@ type Attachment struct {
 
 type Note struct {
 	ID          string       `json:"id" yaml:"-"`
+	FolderPath  string       `json:"folder_path" yaml:"folder_path,omitempty"`
 	Title       string       `json:"title" yaml:"title"`
 	Content     string       `json:"content" yaml:"-"`
 	Type        string       `json:"type" yaml:"type"`
@@ -35,6 +36,7 @@ type Note struct {
 }
 
 type NoteMetadata struct {
+	FolderPath  string       `yaml:"folder_path,omitempty"`
 	Title       string       `yaml:"title"`
 	Type        string       `yaml:"type"`
 	Icon        string       `yaml:"icon,omitempty"`
@@ -83,6 +85,7 @@ func (n *Note) GetFilename() string {
 
 func (n *Note) ToFileContent() ([]byte, error) {
 	meta := NoteMetadata{
+		FolderPath:  n.FolderPath,
 		Title:       n.Title,
 		Type:        n.Type,
 		Icon:        n.Icon,
@@ -160,9 +163,23 @@ func ParseNoteFromBytes(data []byte, path string) (*Note, error) {
 	// Remove leading empty lines from content
 	content := strings.TrimLeft(strings.Join(contentLines, "\n"), "\n")
 
+	// Handle backward compatibility: extract folder_path from title if not present
+	folderPath := meta.FolderPath
+	title := meta.Title
+	if folderPath == "" && strings.Contains(title, ":>:") {
+		// Old format: title contains folder path with :>: separator
+		lastSep := strings.LastIndex(title, ":>:")
+		if lastSep != -1 {
+			folderPart := title[:lastSep]
+			title = title[lastSep+3:] // 3 = len(":>:")
+			folderPath = strings.ReplaceAll(folderPart, ":>:", "/")
+		}
+	}
+
 	note := &Note{
 		ID:          id,
-		Title:       meta.Title,
+		FolderPath:  folderPath,
+		Title:       title,
 		Content:     content,
 		Type:        meta.Type,
 		Icon:        meta.Icon,

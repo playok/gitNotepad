@@ -1615,10 +1615,14 @@ async function renameNote(id, newTitle) {
         if (!getResponse.ok) return;
         const fullNote = await getResponse.json();
 
+        // Preserve folder_path when renaming (only change title)
+        const folderPath = fullNote.folder_path !== undefined ? fullNote.folder_path : extractFolderPath(fullNote.title);
+
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                folder_path: folderPath,
                 title: newTitle,
                 content: fullNote.content,
                 type: fullNote.type,
@@ -1643,11 +1647,16 @@ async function duplicateNote(id) {
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`);
         const fullNote = await response.json();
 
+        // Preserve folder_path when duplicating
+        const folderPath = fullNote.folder_path !== undefined ? fullNote.folder_path : extractFolderPath(fullNote.title);
+        const noteName = fullNote.folder_path !== undefined ? fullNote.title : extractNoteName(fullNote.title);
+
         const newResponse = await fetch(basePath + '/api/notes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                title: fullNote.title + ' (Copy)',
+                folder_path: folderPath,
+                title: noteName + ' (Copy)',
                 content: fullNote.content || '',
                 type: fullNote.type,
                 private: false
@@ -1707,17 +1716,43 @@ async function handleDrop(e, targetPath) {
     const note = notes.find(n => n.id === draggedNoteId);
     if (!note) return;
 
-    // Get the note's current name (without folder path)
-    const noteName = extractNoteName(note.title);
+    // Get the note's current name (without folder path - use folder_path if available)
+    const noteName = note.folder_path !== undefined ? note.title : extractNoteName(note.title);
+    const currentFolderPath = note.folder_path !== undefined ? note.folder_path : extractFolderPath(note.title);
 
-    // Build new title with target folder path using :>: separator
-    const newTitle = buildTitleWithFolder(targetPath, noteName);
-
-    if (newTitle !== note.title) {
-        await renameNote(draggedNoteId, newTitle);
+    // Only update if folder changed
+    if (targetPath !== currentFolderPath) {
+        await moveNoteToFolder(draggedNoteId, targetPath, noteName, note);
     }
 
     draggedNoteId = null;
+}
+
+async function moveNoteToFolder(id, folderPath, noteName, note) {
+    try {
+        // Get the full note to preserve content
+        const getResponse = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`);
+        if (!getResponse.ok) return;
+        const fullNote = await getResponse.json();
+
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                folder_path: folderPath,
+                title: noteName,
+                content: fullNote.content,
+                type: fullNote.type,
+                private: fullNote.private
+            })
+        });
+
+        if (response.ok) {
+            await loadNotes();
+        }
+    } catch (error) {
+        console.error('Failed to move note:', error);
+    }
 }
 
 // Full screen toggle for editor panes
@@ -3312,7 +3347,8 @@ async function saveNote() {
     }
 
     const data = {
-        title,
+        folder_path: currentNoteFolderPath,
+        title: noteTitle.value.trim(),
         content,
         type,
         private: isPrivate,
@@ -3714,8 +3750,8 @@ function renderNoteItem(note, container, level, isChild) {
         }
     }
 
-    // Extract note name from title (part after last :>: separator)
-    const displayName = isChild ? extractNoteName(note.title) : note.title;
+    // Use title directly when folder_path is separate, otherwise extract for backward compatibility
+    const displayName = note.folder_path !== undefined ? note.title : (isChild ? extractNoteName(note.title) : note.title);
     const lockIcon = note.private ? '<span class="lock-icon">&#128274;</span>' : '';
     const defaultTypeIcon = note.type === 'markdown' ? '📄' : (note.type === 'asciidoc' ? '📝' : '📃');
     const noteIcon = getCustomIcon('note', note.id) || defaultTypeIcon;
@@ -3850,7 +3886,10 @@ function setNoteTitleAndPath(fullTitle) {
 // Show note in preview-only mode (view mode)
 function showPreviewOnly(note) {
     isViewMode = true;
-    setNoteTitleAndPath(note.title || '');
+    // Use separate folder_path field from API (with fallback to extracting from title for backward compatibility)
+    currentNoteFolderPath = note.folder_path || extractFolderPath(note.title || '');
+    noteFolderPath.textContent = currentNoteFolderPath;
+    noteTitle.value = note.folder_path !== undefined ? (note.title || '') : extractNoteName(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
@@ -3886,7 +3925,10 @@ function showEditMode() {
 
 function showEditor(note) {
     isViewMode = false;
-    setNoteTitleAndPath(note.title || '');
+    // Use separate folder_path field from API (with fallback to extracting from title for backward compatibility)
+    currentNoteFolderPath = note.folder_path || extractFolderPath(note.title || '');
+    noteFolderPath.textContent = currentNoteFolderPath;
+    noteTitle.value = note.folder_path !== undefined ? (note.title || '') : extractNoteName(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
@@ -3897,7 +3939,7 @@ function showEditor(note) {
 
     // Track original content
     originalContent = {
-        title: getFullNoteTitle(),
+        title: note.title || '',
         content: note.content || '',
         type: note.type || 'markdown',
         private: note.private || false
@@ -6715,9 +6757,9 @@ function renderDateNotesList(container, dateNotes) {
         const typeLabel = note.type === 'markdown' ? 'MD' : (note.type === 'asciidoc' ? 'ADOC' : 'TXT');
         const lockIcon = note.private ? ' &#128274;' : '';
 
-        // Extract folder path and note name
-        const noteName = extractNoteName(note.title);
-        const folderPath = extractFolderPath(note.title);
+        // Use folder_path from API (with fallback for backward compatibility)
+        const folderPath = note.folder_path !== undefined ? note.folder_path : extractFolderPath(note.title);
+        const noteName = note.folder_path !== undefined ? note.title : extractNoteName(note.title);
 
         item.innerHTML = `
             <span class="date-note-item-icon">${icon}</span>

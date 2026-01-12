@@ -176,8 +176,11 @@ func extractFolderPath(title string) (folderPath string, noteName string) {
 	return folderPath, noteName
 }
 
-// MigrateFolderSeparator migrates notes from old "/" separator to new ":>:" separator
-// This should be called once at server startup
+// MigrateFolderSeparator migrates notes to use separate folder_path field
+// Converts old formats:
+// 1. title with "/" separator -> folder_path + title
+// 2. title with ":>:" separator -> folder_path + title
+// This should be called once at server startup with -migrate-paths flag
 func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encryptionSalt string) error {
 	// Walk through all user directories in storage path
 	entries, err := os.ReadDir(storagePath)
@@ -220,9 +223,9 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 				return nil
 			}
 
-			// Only process markdown and text files
+			// Only process markdown, text, and asciidoc files
 			ext := filepath.Ext(path)
-			if ext != ".md" && ext != ".txt" {
+			if ext != ".md" && ext != ".txt" && ext != ".adoc" {
 				return nil
 			}
 
@@ -237,13 +240,6 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			}
 			relPath = filepath.ToSlash(relPath)
 
-			// Check if file is in a subfolder
-			dir := filepath.Dir(relPath)
-			if dir == "." {
-				// File is in root, no migration needed
-				return nil
-			}
-
 			// Load the note
 			note, err := model.ParseNoteFromFile(path)
 			if err != nil {
@@ -252,55 +248,48 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 				return nil
 			}
 
-			// Check if title uses old "/" separator that matches the folder structure
-			// e.g., title "folder/subfolder/note name" with file path "folder/subfolder/uuid.md"
-			if !strings.Contains(note.Title, "/") {
-				// No "/" in title - check if already migrated or just doesn't need migration
-				if strings.Contains(note.Title, FolderSeparator) {
-					// Already uses new separator
-					return nil
-				}
-				// No folder separator in title at all
-				return nil
-			}
-
-			// Check if the title starts with the folder path (using old separator)
-			folderPath := filepath.ToSlash(dir)
-			if !strings.HasPrefix(note.Title, folderPath+"/") {
-				// Title has "/" but doesn't match folder structure
-				// This might be a case where only part of the path uses "/"
-				// Try to migrate any "/" to ":>:" in the title
-				if strings.Contains(note.Title, "/") {
-					oldTitle := note.Title
-					// Replace all "/" with ":>:" in the title
-					note.Title = strings.ReplaceAll(note.Title, "/", FolderSeparator)
-
-					// Save the note
-					content, err := note.ToFileContent()
-					if err != nil {
-						fmt.Printf("  Warning (serialize): %s - %v\n", relPath, err)
-						skippedCount++
-						return nil
-					}
-					if err := os.WriteFile(path, content, 0644); err != nil {
-						fmt.Printf("  Warning (save): %s - %v\n", relPath, err)
-						skippedCount++
-						return nil
-					}
-
-					migratedCount++
-					fmt.Printf("  Migrated: %s -> %s\n", oldTitle, note.Title)
-				}
-				return nil
-			}
-
-			// Migrate: replace "/" with ":>:" in the folder path portion of the title
+			// Check if the note needs migration:
+			// 1. Title contains "/" (very old format)
+			// 2. Title contains ":>:" but folder_path is empty (old format needing conversion)
+			needsMigration := false
 			oldTitle := note.Title
-			noteName := note.Title[len(folderPath)+1:] // +1 for the trailing "/"
-			newFolderPart := strings.ReplaceAll(folderPath, "/", FolderSeparator)
-			note.Title = newFolderPart + FolderSeparator + noteName
+			oldFolderPath := note.FolderPath
 
-			// Save the note
+			// Case 1: Title has "/" separator (very old format)
+			if strings.Contains(note.Title, "/") {
+				// Replace "/" with ":>:" in title first
+				note.Title = strings.ReplaceAll(note.Title, "/", FolderSeparator)
+				needsMigration = true
+			}
+
+			// Case 2: Title still has ":>:" separator (needs extraction to folder_path)
+			if strings.Contains(note.Title, FolderSeparator) {
+				// Extract folder_path from title
+				lastSep := strings.LastIndex(note.Title, FolderSeparator)
+				if lastSep != -1 {
+					folderPart := note.Title[:lastSep]
+					noteName := note.Title[lastSep+len(FolderSeparator):]
+					note.FolderPath = strings.ReplaceAll(folderPart, FolderSeparator, "/")
+					note.Title = noteName
+					needsMigration = true
+				}
+			}
+
+			// Case 3: Already has folder_path but check consistency
+			if note.FolderPath != "" && !strings.Contains(note.Title, FolderSeparator) && !strings.Contains(note.Title, "/") {
+				// Already in new format - check if file needs re-saving
+				// Read raw content to check if it has folder_path field
+				rawContent, err := os.ReadFile(path)
+				if err == nil && !strings.Contains(string(rawContent), "folder_path:") {
+					needsMigration = true // Need to save with folder_path field
+				}
+			}
+
+			if !needsMigration {
+				return nil
+			}
+
+			// Save the note with new format
 			content, err := note.ToFileContent()
 			if err != nil {
 				fmt.Printf("  Warning (serialize): %s - %v\n", relPath, err)
@@ -314,7 +303,11 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			}
 
 			migratedCount++
-			fmt.Printf("  Migrated: %s -> %s\n", oldTitle, note.Title)
+			if oldFolderPath != note.FolderPath || oldTitle != note.Title {
+				fmt.Printf("  Migrated: title='%s' -> folder_path='%s', title='%s'\n", oldTitle, note.FolderPath, note.Title)
+			} else {
+				fmt.Printf("  Migrated: %s (added folder_path field)\n", relPath)
+			}
 			return nil
 		})
 
@@ -346,14 +339,15 @@ func (h *NoteHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 }
 
 type NoteListItem struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Type      string    `json:"type"`
-	Icon      string    `json:"icon,omitempty"`
-	Private   bool      `json:"private"`
-	Encrypted bool      `json:"encrypted"`
-	Created   time.Time `json:"created"`
-	Modified  time.Time `json:"modified"`
+	ID         string    `json:"id"`
+	FolderPath string    `json:"folder_path"`
+	Title      string    `json:"title"`
+	Type       string    `json:"type"`
+	Icon       string    `json:"icon,omitempty"`
+	Private    bool      `json:"private"`
+	Encrypted  bool      `json:"encrypted"`
+	Created    time.Time `json:"created"`
+	Modified   time.Time `json:"modified"`
 }
 
 func (h *NoteHandler) List(c *gin.Context) {
@@ -408,14 +402,15 @@ func (h *NoteHandler) List(c *gin.Context) {
 		id := strings.TrimSuffix(relPath, ext)
 
 		notes = append(notes, NoteListItem{
-			ID:        id,
-			Title:     note.Title,
-			Type:      note.Type,
-			Icon:      note.Icon,
-			Private:   note.Private,
-			Encrypted: isEncrypted,
-			Created:   note.Created,
-			Modified:  note.Modified,
+			ID:         id,
+			FolderPath: note.FolderPath,
+			Title:      note.Title,
+			Type:       note.Type,
+			Icon:       note.Icon,
+			Private:    note.Private,
+			Encrypted:  isEncrypted,
+			Created:    note.Created,
+			Modified:   note.Modified,
 		})
 
 		return nil
@@ -483,6 +478,7 @@ func (h *NoteHandler) Get(c *gin.Context) {
 }
 
 type CreateNoteRequest struct {
+	FolderPath  string             `json:"folder_path"`
 	Title       string             `json:"title" binding:"required"`
 	Content     string             `json:"content"`
 	Type        string             `json:"type"`
@@ -505,9 +501,8 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
-	// Parse folder path from title using :>: separator
-	// e.g., "folder:>:subfolder:>:note title" -> folder path: "folder/subfolder"
-	folderPath, _ := extractFolderPath(req.Title)
+	// Use folder path from request directly
+	folderPath := req.FolderPath
 
 	if folderPath != "" {
 		// Validate folder path (prevent path traversal)
@@ -542,6 +537,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	now := time.Now()
 	note := &model.Note{
 		ID:          fullID,
+		FolderPath:  folderPath,
 		Title:       req.Title,
 		Content:     req.Content,
 		Type:        req.Type,
@@ -576,6 +572,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 }
 
 type UpdateNoteRequest struct {
+	FolderPath  string             `json:"folder_path"`
 	Title       string             `json:"title"`
 	Content     string             `json:"content"`
 	Type        string             `json:"type"`
@@ -625,6 +622,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	}
 
 	// Update fields
+	note.FolderPath = req.FolderPath
 	if req.Title != "" {
 		note.Title = req.Title
 	}
@@ -654,17 +652,10 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	// Extract folder path from title using :>: separator
-	titleForPath := req.Title
-	if titleForPath == "" {
-		titleForPath = note.Title
-	}
-	newFolderPath, _ := extractFolderPath(titleForPath)
-
-	// Determine target folder
+	// Determine target folder from folder_path field
 	targetFolder := notesPath
-	if newFolderPath != "" {
-		targetFolder = filepath.Join(notesPath, filepath.FromSlash(newFolderPath))
+	if req.FolderPath != "" {
+		targetFolder = filepath.Join(notesPath, filepath.FromSlash(req.FolderPath))
 		// Create folder if it doesn't exist
 		if err := os.MkdirAll(targetFolder, 0755); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})

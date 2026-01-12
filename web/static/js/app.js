@@ -44,11 +44,11 @@ function buildTitleWithFolder(folderPath, noteName) {
     return folderParts.join(FOLDER_SEPARATOR) + FOLDER_SEPARATOR + noteName;
 }
 
-// Helper to format folder path for display (adds trailing / if path exists)
-// e.g., "folder/subfolder" -> "folder/subfolder /"
+// Helper to format folder path for display
+// e.g., "folder/subfolder" -> "folder/subfolder"
 function formatFolderPathForDisplay(folderPath) {
     if (!folderPath) return '';
-    return folderPath + ' /';
+    return folderPath;
 }
 
 // State

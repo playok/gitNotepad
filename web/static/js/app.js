@@ -133,6 +133,12 @@ const newFolderInput = document.getElementById('newFolderInput');
 const newNoteLocationCancel = document.getElementById('newNoteLocationCancel');
 const newNoteLocationConfirm = document.getElementById('newNoteLocationConfirm');
 
+const moveNoteModal = document.getElementById('moveNoteModal');
+const moveNoteInfo = document.getElementById('moveNoteInfo');
+const moveFolderList = document.getElementById('moveFolderList');
+const moveNoteCancel = document.getElementById('moveNoteCancel');
+const moveNoteConfirm = document.getElementById('moveNoteConfirm');
+
 // Context Menu
 let contextMenu = null;
 let contextTarget = null;
@@ -1334,17 +1340,7 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'move':
-            // Display current path with / for user-friendly format
-            const currentDisplayPath = note.folder_path
-                ? note.folder_path + '/' + note.title
-                : note.title;
-            const promptMsg = i18n ? i18n.t('prompt.enterNewPath') : 'Enter new path (e.g., folder/note):';
-            const userInput = prompt(promptMsg, currentDisplayPath);
-            if (userInput && userInput !== currentDisplayPath) {
-                // Convert user's / to internal :>: format
-                const internalPath = userInput.replace(/\//g, FOLDER_SEPARATOR);
-                await renameNote(contextTarget, internalPath);
-            }
+            showMoveNoteModal(note);
             break;
 
         case 'change-icon':
@@ -4323,6 +4319,165 @@ function initNewNoteLocationModal() {
     });
 }
 
+// Move Note Modal
+let moveTargetNote = null;
+let selectedMoveFolder = '';
+
+function showMoveNoteModal(note) {
+    moveTargetNote = note;
+    selectedMoveFolder = '';
+
+    // Get current folder path
+    const currentFolderPath = note.folder_path || extractFolderPath(note.title || '');
+    const noteName = note.folder_path !== undefined ? note.title : extractNoteName(note.title || '');
+
+    // Show note info
+    moveNoteInfo.textContent = i18n.t('move.movingNote', { name: noteName }) || `Moving: ${noteName}`;
+
+    // Populate folder list
+    populateMoveFolderList(currentFolderPath);
+
+    moveNoteModal.style.display = 'flex';
+}
+
+function populateMoveFolderList(currentFolderPath) {
+    moveFolderList.innerHTML = '';
+
+    // Reset root selection
+    const rootItem = moveNoteModal.querySelector('.move-folder-item[data-path=""]');
+    if (rootItem) {
+        rootItem.classList.remove('selected', 'current');
+        if (currentFolderPath === '') {
+            rootItem.classList.add('current');
+        }
+    }
+
+    // Add folders
+    folders.forEach(folder => {
+        const item = document.createElement('div');
+        item.className = 'move-folder-item';
+        item.dataset.path = folder.path;
+
+        // Mark current folder
+        if (folder.path === currentFolderPath) {
+            item.classList.add('current');
+        }
+
+        const icon = getCustomIcon('folder', folder.path) || '📁';
+        item.innerHTML = `
+            <span class="folder-icon">${icon}</span>
+            <span class="folder-path">${escapeHtml(folder.path)}</span>
+        `;
+
+        item.addEventListener('click', () => {
+            if (item.classList.contains('current')) return;
+            selectMoveFolder(folder.path);
+        });
+
+        moveFolderList.appendChild(item);
+    });
+
+    // Also make root item clickable
+    if (rootItem) {
+        rootItem.onclick = () => {
+            if (rootItem.classList.contains('current')) return;
+            selectMoveFolder('');
+        };
+    }
+}
+
+function selectMoveFolder(folderPath) {
+    selectedMoveFolder = folderPath;
+
+    // Update selection UI
+    moveNoteModal.querySelectorAll('.move-folder-item').forEach(item => {
+        item.classList.remove('selected');
+        if (item.dataset.path === folderPath) {
+            item.classList.add('selected');
+        }
+    });
+}
+
+function initMoveNoteModal() {
+    // Cancel button
+    moveNoteCancel.addEventListener('click', () => {
+        moveNoteModal.style.display = 'none';
+        moveTargetNote = null;
+    });
+
+    // Confirm button
+    moveNoteConfirm.addEventListener('click', async () => {
+        if (!moveTargetNote) return;
+
+        const currentFolderPath = moveTargetNote.folder_path || extractFolderPath(moveTargetNote.title || '');
+
+        // Check if a folder was selected and it's different from current
+        if (selectedMoveFolder === '' && currentFolderPath === '') {
+            // No change - already at root
+            moveNoteModal.style.display = 'none';
+            return;
+        }
+
+        if (selectedMoveFolder === currentFolderPath) {
+            // No change - same folder
+            moveNoteModal.style.display = 'none';
+            return;
+        }
+
+        // Need to select a folder first
+        if (selectedMoveFolder === '' && currentFolderPath !== '') {
+            // Moving to root
+        } else if (selectedMoveFolder === '') {
+            alert(i18n.t('move.pleaseSelectFolder') || 'Please select a folder');
+            return;
+        }
+
+        try {
+            // Get full note data
+            const getResponse = await fetch(`${basePath}/api/notes/${encodeNoteId(moveTargetNote.id)}`);
+            if (!getResponse.ok) {
+                throw new Error('Failed to get note');
+            }
+            const fullNote = await getResponse.json();
+
+            // Get note name (without folder path)
+            const noteName = fullNote.folder_path !== undefined ? fullNote.title : extractNoteName(fullNote.title || '');
+
+            // Update note with new folder path
+            const response = await authFetch(`/api/notes/${encodeNoteId(moveTargetNote.id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folder_path: selectedMoveFolder,
+                    title: noteName,
+                    content: fullNote.content,
+                    type: fullNote.type,
+                    private: fullNote.private
+                })
+            });
+
+            if (response.ok) {
+                await loadNotes();
+                showToast(i18n.t('move.moved') || 'Note moved');
+            }
+        } catch (error) {
+            console.error('Failed to move note:', error);
+            alert(i18n.t('move.failed') || 'Failed to move note');
+        }
+
+        moveNoteModal.style.display = 'none';
+        moveTargetNote = null;
+    });
+
+    // Close on backdrop click
+    moveNoteModal.addEventListener('click', (e) => {
+        if (e.target === moveNoteModal) {
+            moveNoteModal.style.display = 'none';
+            moveTargetNote = null;
+        }
+    });
+}
+
 function createNewNoteInFolder(folderPath) {
     currentNote = null;
     currentPassword = null;
@@ -6238,6 +6393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSettingsModal();
     initSyntaxHelpModal();
     initNewNoteLocationModal();
+    initMoveNoteModal();
 
     // Ensure i18n is applied after modal initialization
     if (typeof i18n !== 'undefined') {

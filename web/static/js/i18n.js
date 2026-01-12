@@ -398,6 +398,15 @@ const i18n = {
             'prompt.enterNewFolderName': 'Enter new folder name:',
             'prompt.enterNewPath': 'Enter new path (e.g., folder/note):',
 
+            // Move
+            'move.title': 'Move Note',
+            'move.root': 'Root (no folder)',
+            'move.move': 'Move',
+            'move.movingNote': 'Moving: {name}',
+            'move.pleaseSelectFolder': 'Please select a folder',
+            'move.moved': 'Note moved',
+            'move.failed': 'Failed to move note',
+
             // Confirm
             'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
             'confirm.decryptNote': 'Remove encryption from this note? The file will be stored in plain text.',
@@ -834,6 +843,15 @@ const i18n = {
             'prompt.enterFolderName': '폴더 이름을 입력하세요:',
             'prompt.enterNewFolderName': '새 폴더 이름을 입력하세요:',
             'prompt.enterNewPath': '새 경로를 입력하세요 (예: 폴더/노트):',
+
+            // Move
+            'move.title': '노트 이동',
+            'move.root': '루트 (폴더 없음)',
+            'move.move': '이동',
+            'move.movingNote': '이동할 노트: {name}',
+            'move.pleaseSelectFolder': '폴더를 선택해주세요',
+            'move.moved': '노트가 이동되었습니다',
+            'move.failed': '노트 이동에 실패했습니다',
 
             // Confirm
             'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',

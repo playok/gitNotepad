@@ -327,6 +327,25 @@
                 </div>
             </div>
 
+            <!-- Move Note Modal -->
+            <div id="moveNoteModal" class="modal" style="display: none;">
+                <div class="modal-content modal-small">
+                    <h3 data-i18n="move.title">Move Note</h3>
+                    <p id="moveNoteInfo" class="move-note-info"></p>
+                    <div class="move-folder-list-container">
+                        <div class="move-folder-item" data-path="">
+                            <span class="folder-icon">📄</span>
+                            <span data-i18n="move.root">Root (no folder)</span>
+                        </div>
+                        <div id="moveFolderList" class="move-folder-list"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="moveNoteCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="moveNoteConfirm" class="btn btn-primary" data-i18n="move.move">Move</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- History Modal -->
             <div id="historyModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">

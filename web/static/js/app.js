@@ -2704,16 +2704,14 @@ function setupEventListeners() {
     });
     versionRestore.addEventListener('click', restoreVersion);
 
-    // Keyboard shortcuts - Ctrl+S only in editor area
+    // Keyboard shortcuts - Ctrl+S only in editor (not preview)
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            // Only save when focus is in editor area (CodeMirror or title input)
-            const editorPane = document.querySelector('.editor-pane');
-            const activeElement = document.activeElement;
-            const isInEditorPane = editorPane && editorPane.contains(activeElement);
+            // Only save when CodeMirror editor has focus or title input is focused
             const hasCmFocus = cmEditor && cmEditor.hasFocus();
+            const isTitleFocused = document.activeElement === noteTitle;
 
-            if (isInEditorPane || hasCmFocus) {
+            if (hasCmFocus || isTitleFocused) {
                 e.preventDefault();
                 saveNote();
             }

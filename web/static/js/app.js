@@ -2704,11 +2704,19 @@ function setupEventListeners() {
     });
     versionRestore.addEventListener('click', restoreVersion);
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts - Ctrl+S only in editor area
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            saveNote();
+            // Only save when focus is in editor area (CodeMirror or title input)
+            const editorPane = document.querySelector('.editor-pane');
+            const activeElement = document.activeElement;
+            const isInEditorPane = editorPane && editorPane.contains(activeElement);
+            const hasCmFocus = cmEditor && cmEditor.hasFocus();
+
+            if (isInEditorPane || hasCmFocus) {
+                e.preventDefault();
+                saveNote();
+            }
         }
     });
 

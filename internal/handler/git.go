@@ -55,6 +55,14 @@ func (h *GitHandler) getUserStoragePath(c *gin.Context) string {
 	return userPath
 }
 
+// getNotesPath returns the user-specific notes directory
+func (h *GitHandler) getNotesPath(c *gin.Context) string {
+	userPath := h.getUserStoragePath(c)
+	notesPath := filepath.Join(userPath, "notes")
+	os.MkdirAll(notesPath, 0755)
+	return notesPath
+}
+
 // getUserRepo returns a git repository for the user's storage path
 func (h *GitHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 	storagePath := h.getUserStoragePath(c)
@@ -71,15 +79,15 @@ func (h *GitHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 
 func (h *GitHandler) History(c *gin.Context) {
 	id := decodeGitNoteID(c.Param("id"))
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	// Find the note file
 	var filePath string
 	var note *model.Note
 	var err error
 
-	for _, ext := range []string{".md", ".txt"} {
-		filePath = filepath.Join(storagePath, id+ext)
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath = filepath.Join(notesPath, id+ext)
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break
@@ -119,7 +127,7 @@ func (h *GitHandler) History(c *gin.Context) {
 func (h *GitHandler) Version(c *gin.Context) {
 	id := decodeGitNoteID(c.Param("id"))
 	commit := c.Param("commit")
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
 	// Get user-specific repo
 	userRepo, err := h.getUserRepo(c)
@@ -132,8 +140,8 @@ func (h *GitHandler) Version(c *gin.Context) {
 	var filePath string
 	var note *model.Note
 
-	for _, ext := range []string{".md", ".txt"} {
-		filePath = filepath.Join(storagePath, id+ext)
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath = filepath.Join(notesPath, id+ext)
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break
@@ -142,8 +150,8 @@ func (h *GitHandler) Version(c *gin.Context) {
 
 	if note == nil {
 		// Try to find by checking if file exists in git history
-		for _, ext := range []string{".md", ".txt"} {
-			testPath := filepath.Join(storagePath, id+ext)
+		for _, ext := range []string{".md", ".txt", ".adoc"} {
+			testPath := filepath.Join(notesPath, id+ext)
 			content, err := userRepo.GetFileAtCommit(testPath, commit)
 			if err == nil && len(content) > 0 {
 				filePath = testPath
@@ -210,10 +218,10 @@ func parseVersionContent(content string) string {
 
 // GetFilePath returns the full path to a note file
 func (h *GitHandler) GetFilePath(c *gin.Context, id string) string {
-	storagePath := h.getUserStoragePath(c)
+	notesPath := h.getNotesPath(c)
 
-	for _, ext := range []string{".md", ".txt"} {
-		filePath := filepath.Join(storagePath, id+ext)
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath := filepath.Join(notesPath, id+ext)
 		if _, err := os.Stat(filePath); err == nil {
 			return filePath
 		}

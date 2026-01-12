@@ -5372,24 +5372,38 @@ async function loadUsersList() {
         const users = await response.json();
 
         usersList.innerHTML = users.map(user => `
-            <div class="user-item" data-user-id="${user.id}">
-                <div class="user-item-info">
-                    <div class="user-item-avatar">&#128100;</div>
-                    <div class="user-item-details">
-                        <span class="user-item-name">
-                            ${escapeHtml(user.username)}
-                            ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
-                        </span>
-                        <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+            <div class="user-item-wrapper" data-user-id="${user.id}">
+                <div class="user-item">
+                    <div class="user-item-info">
+                        <div class="user-item-avatar">&#128100;</div>
+                        <div class="user-item-details">
+                            <span class="user-item-name">
+                                ${escapeHtml(user.username)}
+                                ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
+                            </span>
+                            <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="user-item-actions">
+                        <button class="btn-icon-sm" title="Change Password" onclick="togglePasswordForm(${user.id}, 'admin')">
+                            &#128273;
+                        </button>
+                        <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
+                            &#128465;
+                        </button>
                     </div>
                 </div>
-                <div class="user-item-actions">
-                    <button class="btn-icon-sm" title="Change Password" onclick="changeUserPassword(${user.id}, '${escapeHtml(user.username)}')">
-                        &#128273;
-                    </button>
-                    <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
-                        &#128465;
-                    </button>
+                <div class="user-password-form" id="passwordForm-admin-${user.id}" style="display: none;">
+                    <div class="password-form-row">
+                        <input type="password" id="newPassword-admin-${user.id}" placeholder="New password (min 6 chars)" class="password-input">
+                    </div>
+                    <div class="password-form-row">
+                        <input type="password" id="confirmPassword-admin-${user.id}" placeholder="Re-type password" class="password-input">
+                    </div>
+                    <div class="password-form-row password-form-actions">
+                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'admin')">Save</button>
+                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'admin')">Cancel</button>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -5422,12 +5436,52 @@ async function deleteUser(userId, username) {
     }
 }
 
-async function changeUserPassword(userId, username) {
-    const newPassword = prompt(`Enter new password for "${username}" (min 6 characters):`);
-    if (!newPassword) return;
+function togglePasswordForm(userId, context = 'admin') {
+    const form = document.getElementById(`passwordForm-${context}-${userId}`);
+    if (!form) return;
+
+    const isVisible = form.style.display !== 'none';
+
+    // Hide all other password forms first
+    document.querySelectorAll('.user-password-form').forEach(f => {
+        f.style.display = 'none';
+    });
+
+    if (!isVisible) {
+        form.style.display = 'block';
+        // Clear inputs
+        const newPwdInput = document.getElementById(`newPassword-${context}-${userId}`);
+        const confirmPwdInput = document.getElementById(`confirmPassword-${context}-${userId}`);
+        if (newPwdInput) newPwdInput.value = '';
+        if (confirmPwdInput) confirmPwdInput.value = '';
+        if (newPwdInput) newPwdInput.focus();
+    }
+}
+
+async function submitPasswordChange(userId, context = 'admin') {
+    const newPasswordInput = document.getElementById(`newPassword-${context}-${userId}`);
+    const confirmPasswordInput = document.getElementById(`confirmPassword-${context}-${userId}`);
+
+    if (!newPasswordInput || !confirmPasswordInput) return;
+
+    const newPassword = newPasswordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+
+    if (!newPassword) {
+        alert('Please enter a new password');
+        newPasswordInput.focus();
+        return;
+    }
 
     if (newPassword.length < 6) {
         alert('Password must be at least 6 characters');
+        newPasswordInput.focus();
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        confirmPasswordInput.focus();
         return;
     }
 
@@ -5445,6 +5499,7 @@ async function changeUserPassword(userId, username) {
         }
 
         alert('Password updated successfully');
+        togglePasswordForm(userId, context);
     } catch (err) {
         console.error('Error updating password:', err);
         alert('Failed to update password');
@@ -5790,24 +5845,38 @@ async function loadSettingsUsersList() {
         const users = await response.json();
 
         usersList.innerHTML = users.map(user => `
-            <div class="user-item" data-user-id="${user.id}">
-                <div class="user-item-info">
-                    <div class="user-item-avatar">&#128100;</div>
-                    <div class="user-item-details">
-                        <span class="user-item-name">
-                            ${escapeHtml(user.username)}
-                            ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
-                        </span>
-                        <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+            <div class="user-item-wrapper" data-user-id="${user.id}">
+                <div class="user-item">
+                    <div class="user-item-info">
+                        <div class="user-item-avatar">&#128100;</div>
+                        <div class="user-item-details">
+                            <span class="user-item-name">
+                                ${escapeHtml(user.username)}
+                                ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
+                            </span>
+                            <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="user-item-actions">
+                        <button class="btn-icon-sm" title="Change Password" onclick="togglePasswordForm(${user.id}, 'settings')">
+                            &#128273;
+                        </button>
+                        <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
+                            &#128465;
+                        </button>
                     </div>
                 </div>
-                <div class="user-item-actions">
-                    <button class="btn-icon-sm" title="Change Password" onclick="changeUserPassword(${user.id}, '${escapeHtml(user.username)}')">
-                        &#128273;
-                    </button>
-                    <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
-                        &#128465;
-                    </button>
+                <div class="user-password-form" id="passwordForm-settings-${user.id}" style="display: none;">
+                    <div class="password-form-row">
+                        <input type="password" id="newPassword-settings-${user.id}" placeholder="New password (min 6 chars)" class="password-input">
+                    </div>
+                    <div class="password-form-row">
+                        <input type="password" id="confirmPassword-settings-${user.id}" placeholder="Re-type password" class="password-input">
+                    </div>
+                    <div class="password-form-row password-form-actions">
+                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'settings')">Save</button>
+                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'settings')">Cancel</button>
+                    </div>
                 </div>
             </div>
         `).join('');

@@ -275,6 +275,25 @@ daemon:
 - **GoReleaser**: `.goreleaser.yaml`로 멀티 플랫폼 릴리즈 자동화
 - **지원 플랫폼**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64, arm64)
 
+## API 호출 가이드라인 (프론트엔드)
+
+nginx 리버스 프록시 환경 지원을 위해 모든 API 호출은 `basePath`를 포함해야 함.
+
+### 권장 방식
+```javascript
+// authFetch 사용 시 - /api로 시작하면 basePath 자동 추가
+const response = await authFetch('/api/notes');
+const response = await authFetch('/api/admin/users', { method: 'POST', ... });
+
+// 일반 fetch 사용 시 - basePath 명시 필수
+const response = await fetch(basePath + '/api/notes');
+const response = await fetch(`${basePath}/api/notes/${id}`);
+```
+
+### authFetch vs fetch
+- **authFetch**: 인증이 필요한 API (401 시 로그인 페이지로 리다이렉트, basePath 자동 추가)
+- **fetch**: 인증 불필요 또는 커스텀 에러 처리 필요 시 (basePath 직접 추가 필요)
+
 ## 보안
 
 - bcrypt 비밀번호 해싱 (cost 10)

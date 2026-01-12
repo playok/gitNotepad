@@ -5227,8 +5227,11 @@ document.addEventListener('DOMContentLoaded', initSplitter);
 // ============================================
 
 // Wrapper for fetch that handles 401 responses
+// Automatically prepends basePath for relative API paths
 async function authFetch(url, options = {}) {
-    const response = await fetch(url, options);
+    // Auto-prepend basePath for relative paths starting with /api
+    const fullUrl = url.startsWith('/api') ? basePath + url : url;
+    const response = await fetch(fullUrl, options);
 
     if (response.status === 401) {
         // Redirect to login page on authentication failure

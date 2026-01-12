@@ -2546,6 +2546,48 @@ body {
         width: 100%;
         justify-content: flex-end;
     }
+
+    /* Larger touch targets on mobile/tablet */
+    .btn-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .editor-actions {
+        gap: 2px;
+    }
+}
+
+/* Touch device improvements */
+@media (pointer: coarse) {
+    .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    .btn-icon:active {
+        transform: scale(0.92);
+        background-color: var(--bg-tertiary);
+    }
+
+    /* Ensure buttons are clearly tappable */
+    .editor-actions .btn-icon {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Disable hover effects on touch devices */
+    .btn-icon:hover {
+        background-color: transparent;
+    }
+
+    .btn-icon:active {
+        background-color: var(--bg-tertiary);
+    }
 }
 
 /* Smooth theme transition */

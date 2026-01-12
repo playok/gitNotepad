@@ -2614,8 +2614,12 @@ function setupEventListeners() {
     }
     updateSearchClearButton();
 
-    // Save
+    // Save - add both click and touchend for better tablet support
     saveBtn.addEventListener('click', saveNote);
+    saveBtn.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent ghost click
+        saveNote();
+    });
 
     // Delete
     deleteBtn.addEventListener('click', deleteNote);

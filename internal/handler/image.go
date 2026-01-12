@@ -230,6 +230,68 @@ func (h *ImageHandler) Serve(c *gin.Context) {
 	c.File(filePath)
 }
 
+// deleteMetadata removes image metadata from disk for a user
+func (h *ImageHandler) deleteMetadata(username, uuidName string) error {
+	imageMetadata.Lock()
+	defer imageMetadata.Unlock()
+
+	if imageMetadata.cache[username] != nil {
+		delete(imageMetadata.cache[username], uuidName)
+	}
+
+	// Save to file
+	metaPath := h.getMetadataPath(username)
+	if imageMetadata.cache[username] == nil || len(imageMetadata.cache[username]) == 0 {
+		// Remove metadata file if empty
+		os.Remove(metaPath)
+		return nil
+	}
+
+	data, err := json.MarshalIndent(imageMetadata.cache[username], "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(metaPath, data, 0644)
+}
+
+// Delete removes an uploaded image
+func (h *ImageHandler) Delete(c *gin.Context) {
+	filename := c.Param("filename")
+
+	// Security: prevent path traversal
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid filename"})
+		return
+	}
+
+	// Get user-specific files directory
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	filePath := filepath.Join(h.storagePath, user.Username, "files", filename)
+
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+		return
+	}
+
+	// Delete the file
+	if err := os.Remove(filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image"})
+		return
+	}
+
+	// Delete metadata
+	h.deleteMetadata(user.Username, filename)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Image deleted"})
+}
+
 // ServeLegacy serves files from the legacy global files directory
 func (h *ImageHandler) ServeLegacy(c *gin.Context) {
 	filename := c.Param("filename")

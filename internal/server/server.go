@@ -237,9 +237,11 @@ func (s *Server) setupRoutes() {
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)
+			api.DELETE("/images/:filename", imageHandler.Delete)
 
 			// File routes
 			api.POST("/files", fileHandler.Upload)
+			api.DELETE("/files/:filename", fileHandler.Delete)
 
 			// Stats and data management
 			api.GET("/stats", statsHandler.GetStats)
@@ -316,9 +318,11 @@ func (s *Server) setupRoutes() {
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)
+			api.DELETE("/images/:filename", imageHandler.Delete)
 
 			// File routes
 			api.POST("/files", fileHandler.Upload)
+			api.DELETE("/files/:filename", fileHandler.Delete)
 
 			// Stats and data management
 			api.GET("/stats", statsHandler.GetStats)

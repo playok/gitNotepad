@@ -3251,10 +3251,37 @@ function removeAttachment(index) {
             setEditorContent(newContent);
         }
 
+        // Delete file from server
+        deleteAttachmentFile(attachment.url);
+
         currentAttachments.splice(index, 1);
         renderAttachments();
         updatePreview();
         triggerAutoSave();
+    }
+}
+
+async function deleteAttachmentFile(url) {
+    try {
+        // Extract filename from URL (format: /u/{username}/files/{filename} or /u/{username}/images/{filename})
+        const urlParts = url.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const type = urlParts[urlParts.length - 2]; // 'files' or 'images'
+
+        if (!filename || (type !== 'files' && type !== 'images')) {
+            console.warn('Cannot delete attachment: invalid URL format', url);
+            return;
+        }
+
+        // Determine the correct endpoint
+        const endpoint = type === 'images' ? `/api/images/${filename}` : `/api/files/${filename}`;
+
+        const response = await authFetch(endpoint, { method: 'DELETE' });
+        if (!response.ok) {
+            console.warn('Failed to delete attachment file:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error deleting attachment file:', error);
     }
 }
 

@@ -2165,6 +2165,37 @@ body {
     margin: 0;
 }
 
+/* Diff legend */
+.diff-legend {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.diff-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diff-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+.diff-legend-color.removed {
+    background: rgba(255, 100, 100, 0.3);
+    border: 1px solid rgba(255, 100, 100, 0.5);
+}
+
+.diff-legend-color.added {
+    background: rgba(100, 255, 100, 0.3);
+    border: 1px solid rgba(100, 255, 100, 0.5);
+}
+
 /* 3-way diff layout */
 .version-3way-container {
     display: flex;

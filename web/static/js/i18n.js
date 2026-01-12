@@ -149,6 +149,10 @@ const i18n = {
             'history.oldVersion': 'Old Version',
             'history.newVersion': 'Current',
 
+            // Diff
+            'diff.removed': 'Removed',
+            'diff.added': 'Added',
+
             // Password
             'password.enter': 'Enter Password',
             'password.set': 'Set Password',
@@ -569,6 +573,10 @@ const i18n = {
             'history.viewDiff': '비교',
             'history.oldVersion': '이전 버전',
             'history.newVersion': '현재',
+
+            // Diff
+            'diff.removed': '삭제됨',
+            'diff.added': '추가됨',
 
             // Password
             'password.enter': '비밀번호 입력',

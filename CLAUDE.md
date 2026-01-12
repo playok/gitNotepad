@@ -195,7 +195,7 @@ daemon:
 ## 주요 기능
 
 - Markdown/AsciiDoc/텍스트 노트 편집 (CodeMirror 5)
-- Git 기반 버전 관리 (자동 커밋)
+- Git 기반 버전 관리 (자동 커밋, 3-way diff 비교)
 - 다중 사용자 인증 (SQLite)
 - **관리자 비밀번호**: 최초 실행 시 터미널에서 입력, SHA-512 해시로 config.yaml에 저장
 - **파일 암호화**: AES-256-GCM으로 노트 파일 암호화 (선택적), PBKDF2 키 파생
@@ -210,12 +210,14 @@ daemon:
 - **AsciiDoc 테이블 에디터**: 드래그로 셀 선택, 병합/해제, span 문법 자동 생성
 - **KaTeX 수식 렌더링**: LaTeX 문법 지원 ($...$, $$...$$)
 - **캘린더 뷰**: 사이드바 미니 캘린더, 날짜별 노트 관리, Daily 폴더 자동 생성
-- **폴더 관리**: 드래그 앤 드롭, 폴더 펼치기/닫기, 아이콘 변경
+- **폴더 관리**: 드래그 앤 드롭, 폴더 펼치기/닫기, 아이콘 변경, 노트 이동 모달
+- **새 노트 위치 선택**: 노트 생성 시 폴더 선택 모달
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
 - **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
 - **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
+- **태블릿 지원**: 터치 디바이스 최적화 (44px 최소 터치 영역)
 
 ## 핵심 모듈
 
@@ -264,6 +266,10 @@ daemon:
   - 캘린더 뷰: `initMiniCalendar()`, `renderMiniCalendar()`, Daily 폴더 자동 생성
   - 드래그 앤 드롭: 캘린더 날짜 이동, 폴더 드래그 앤 드롭
   - 자동 저장: `autoSaveEnabled` 플래그, `isSaving` 중복 저장 방지
+  - 버전 히스토리: `showHistory()`, `selectVersion()`, `loadVersionDiff()` - 3-way diff
+  - 노트 이동: `showMoveNoteModal()`, `populateMoveFolderList()`, `selectMoveFolder()`
+  - 새 노트 위치: `showNewNoteLocationModal()`, `populateFolderSelectionList()`
+  - 폴더 경로 표시: `formatFolderPathForDisplay()` - `:>:` → `/` 변환
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
   - Settings 다이얼로그, 툴바, 테이블 에디터 번역 키 포함
 - **handler/file.go**, **handler/image.go**: 파일 메타데이터 저장
@@ -323,6 +329,17 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - localStorage에 설정 저장
 - i18n 툴팁 지원
 
+### 버전 히스토리 (3-way diff)
+- 3패널 레이아웃: 버전 목록 + 이전 버전 + 현재 버전
+- 색상 범례: 삭제된 라인 (빨강), 추가된 라인 (초록)
+- 스크롤 동기화: 양쪽 diff 패널 동시 스크롤
+- jsdiff 라이브러리 기반 라인별 비교
+
+### 노트 이동 모달
+- 폴더 선택 UI로 노트 이동 (텍스트 입력 대신)
+- 루트 및 기존 폴더 목록 표시
+- 현재 위치 표시 (이동할 노트 정보)
+
 ## 폴더 관리
 
 ### 기능
@@ -331,7 +348,8 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - 트리 구조로 폴더/노트 표시
 
 ### 폴더 구분자
-- `:>:`를 폴더 구분자로 사용 (예: `folder:>:note title`)
+- `:>:`를 내부 폴더 구분자로 사용 (예: `folder:>:note title`)
+- UI에서는 `/`로 표시 (사용자 친화적)
 - `/`는 일반 문자로 사용 가능 (예: `2024/01/15 메모`, `A/B 테스트`)
 - 제목 입력 시 `/` 키를 누르면 자동으로 `:>:`로 변환됨
 - 예시:
@@ -342,8 +360,11 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - **파일 이동**: Update 핸들러에서 타이틀의 폴더 경로 추출 후 파일 이동
 - **경로 정규화**: Windows/Unix 경로 호환성 (`filepath.ToSlash()`)
 - **폴더 구분자**: `extractFolderPath()`, `buildTitleWithFolder()` 함수로 처리
+- **폴더 경로 표시**: `formatFolderPathForDisplay()` - `:>:`를 `/`로 변환하여 표시
 - **중복 저장 방지**: `isSaving` 플래그로 자동 저장과 수동 저장 충돌 방지
 - **트리 렌더링**: `renderTreeLevel()`에서 `isChild` 플래그로 들여쓰기 표시
+- **노트 이동 모달**: `showMoveNoteModal()`, `populateMoveFolderList()`
+- **새 노트 위치 선택**: `showNewNoteLocationModal()`, `populateFolderSelectionList()`
 
 ### 폴더 구분자 마이그레이션
 기존 `/` 구분자에서 `:>:` 구분자로 자동 마이그레이션 지원:

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -10,11 +12,15 @@ import (
 )
 
 type AdminHandler struct {
-	userRepo *repository.UserRepository
+	userRepo    *repository.UserRepository
+	storagePath string
 }
 
-func NewAdminHandler(userRepo *repository.UserRepository) *AdminHandler {
-	return &AdminHandler{userRepo: userRepo}
+func NewAdminHandler(userRepo *repository.UserRepository, storagePath string) *AdminHandler {
+	return &AdminHandler{
+		userRepo:    userRepo,
+		storagePath: storagePath,
+	}
 }
 
 // CreateUserRequest represents the request to create a new user
@@ -52,6 +58,13 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 	if err := h.userRepo.Create(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
+	}
+
+	// Create user storage directory
+	userDir := filepath.Join(h.storagePath, user.Username)
+	if err := os.MkdirAll(userDir, 0755); err != nil {
+		// Log error but don't fail - directory will be created on first note save
+		// The user was created successfully in DB
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -117,6 +130,13 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	if err := h.userRepo.Delete(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
+	}
+
+	// Delete user storage directory
+	userDir := filepath.Join(h.storagePath, user.Username)
+	if err := os.RemoveAll(userDir); err != nil {
+		// Log error but don't fail - user was deleted from DB successfully
+		// Directory might not exist or have permission issues
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})

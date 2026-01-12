@@ -119,7 +119,7 @@ func (s *Server) setupRoutes() {
 	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config, s.config.Server.BasePath)
 	imageHandler := handler.NewImageHandler(s.config.Storage.Path, s.config.Server.BasePath)
 	fileHandler := handler.NewFileHandler(s.config.Storage.Path, s.config.Server.BasePath)
-	adminHandler := handler.NewAdminHandler(userRepo)
+	adminHandler := handler.NewAdminHandler(userRepo, s.config.Storage.Path)
 	statsHandler := handler.NewStatsHandler(s.config)
 	folderIconHandler := handler.NewFolderIconHandler(s.db)
 

@@ -76,6 +76,7 @@ gitnotepad --help                      # 도움말
 gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
 gitnotepad -config my.yaml             # 설정 파일 지정
 gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
+gitnotepad -migrate-paths              # 폴더 구분자 마이그레이션 수동 실행
 ```
 
 **데몬 명령어:**
@@ -343,6 +344,14 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - **폴더 구분자**: `extractFolderPath()`, `buildTitleWithFolder()` 함수로 처리
 - **중복 저장 방지**: `isSaving` 플래그로 자동 저장과 수동 저장 충돌 방지
 - **트리 렌더링**: `renderTreeLevel()`에서 `isChild` 플래그로 들여쓰기 표시
+
+### 폴더 구분자 마이그레이션
+기존 `/` 구분자에서 `:>:` 구분자로 자동 마이그레이션 지원:
+- **자동 실행**: 서버 시작 시 `MigrateFolderSeparator()` 함수가 자동 실행
+- **수동 실행**: `gitnotepad -migrate-paths` 옵션으로 수동 마이그레이션 가능
+- **마이그레이션 조건**: 노트 제목이 폴더 구조와 일치하는 경우에만 변환
+  - 예: `folder/note.md` 파일의 제목이 `folder/note`인 경우 → `folder:>:note`로 변환
+- **구현**: `handler/note.go`의 `MigrateFolderSeparator()` 함수
 
 ## 캘린더 뷰
 

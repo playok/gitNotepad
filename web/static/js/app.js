@@ -5379,42 +5379,42 @@ async function loadUsersList() {
                         <div class="user-item-details">
                             <span class="user-item-name">
                                 ${escapeHtml(user.username)}
-                                ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
+                                ${user.is_admin ? `<span class="user-item-badge">${i18n.t('admin.admin')}</span>` : ''}
                             </span>
-                            <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+                            <span class="user-item-meta">${i18n.t('admin.created')}: ${new Date(user.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
                     <div class="user-item-actions">
-                        <button class="btn-icon-sm" title="Change Password" onclick="togglePasswordForm(${user.id}, 'admin')">
+                        <button class="btn-icon-sm" title="${i18n.t('admin.changePassword')}" onclick="togglePasswordForm(${user.id}, 'admin')">
                             &#128273;
                         </button>
-                        <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
+                        <button class="btn-icon-sm btn-danger" title="${i18n.t('admin.deleteUser')}" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
                             &#128465;
                         </button>
                     </div>
                 </div>
                 <div class="user-password-form" id="passwordForm-admin-${user.id}" style="display: none;">
                     <div class="password-form-row">
-                        <input type="password" id="newPassword-admin-${user.id}" placeholder="New password (min 6 chars)" class="password-input">
+                        <input type="password" id="newPassword-admin-${user.id}" placeholder="${i18n.t('admin.newPassword')}" class="password-input">
                     </div>
                     <div class="password-form-row">
-                        <input type="password" id="confirmPassword-admin-${user.id}" placeholder="Re-type password" class="password-input">
+                        <input type="password" id="confirmPassword-admin-${user.id}" placeholder="${i18n.t('admin.retypePassword')}" class="password-input">
                     </div>
                     <div class="password-form-row password-form-actions">
-                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'admin')">Save</button>
-                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'admin')">Cancel</button>
+                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'admin')">${i18n.t('common.save')}</button>
+                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'admin')">${i18n.t('common.cancel')}</button>
                     </div>
                 </div>
             </div>
         `).join('');
     } catch (err) {
         console.error('Error loading users:', err);
-        usersList.innerHTML = '<div class="user-item">Failed to load users</div>';
+        usersList.innerHTML = `<div class="user-item">${i18n.t('admin.failedToLoadUsers')}</div>`;
     }
 }
 
 async function deleteUser(userId, username) {
-    if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+    if (!confirm(i18n.t('admin.confirmDeleteUser', { username }))) {
         return;
     }
 
@@ -5425,14 +5425,15 @@ async function deleteUser(userId, username) {
 
         if (!response.ok) {
             const data = await response.json();
-            alert(data.error || 'Failed to delete user');
+            alert(data.error || i18n.t('admin.failedToDeleteUser'));
             return;
         }
 
         await loadUsersList();
+        await loadSettingsUsersList();
     } catch (err) {
         console.error('Error deleting user:', err);
-        alert('Failed to delete user');
+        alert(i18n.t('admin.failedToDeleteUser'));
     }
 }
 
@@ -5468,19 +5469,19 @@ async function submitPasswordChange(userId, context = 'admin') {
     const confirmPassword = confirmPasswordInput.value;
 
     if (!newPassword) {
-        alert('Please enter a new password');
+        alert(i18n.t('admin.enterNewPassword'));
         newPasswordInput.focus();
         return;
     }
 
     if (newPassword.length < 6) {
-        alert('Password must be at least 6 characters');
+        alert(i18n.t('admin.passwordMinLength'));
         newPasswordInput.focus();
         return;
     }
 
     if (newPassword !== confirmPassword) {
-        alert('Passwords do not match');
+        alert(i18n.t('admin.passwordMismatch'));
         confirmPasswordInput.focus();
         return;
     }
@@ -5494,15 +5495,15 @@ async function submitPasswordChange(userId, context = 'admin') {
 
         if (!response.ok) {
             const data = await response.json();
-            alert(data.error || 'Failed to update password');
+            alert(data.error || i18n.t('admin.failedToUpdatePassword'));
             return;
         }
 
-        alert('Password updated successfully');
+        alert(i18n.t('admin.passwordUpdated'));
         togglePasswordForm(userId, context);
     } catch (err) {
         console.error('Error updating password:', err);
-        alert('Failed to update password');
+        alert(i18n.t('admin.failedToUpdatePassword'));
     }
 }
 
@@ -5535,7 +5536,7 @@ function initAddUserModal() {
         const isAdmin = document.getElementById('newIsAdmin').checked;
 
         if (!username || !password) {
-            alert('Please fill in all required fields');
+            alert(i18n.t('admin.fillRequiredFields'));
             return;
         }
 
@@ -5552,15 +5553,16 @@ function initAddUserModal() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || 'Failed to create user');
+                alert(data.error || i18n.t('admin.failedToCreateUser'));
                 return;
             }
 
             addUserModal.style.display = 'none';
             await loadUsersList();
+            await loadSettingsUsersList();
         } catch (err) {
             console.error('Error creating user:', err);
-            alert('Failed to create user');
+            alert(i18n.t('admin.failedToCreateUser'));
         }
     });
 }
@@ -5836,7 +5838,7 @@ async function loadSettingsUsersList() {
     const usersList = document.getElementById('settingsUsersList');
     if (!usersList) return;
 
-    usersList.innerHTML = '<div class="loading-spinner">Loading users...</div>';
+    usersList.innerHTML = `<div class="loading-spinner">${i18n.t('common.loading')}</div>`;
 
     try {
         const response = await authFetch(basePath + '/api/admin/users');
@@ -5852,37 +5854,37 @@ async function loadSettingsUsersList() {
                         <div class="user-item-details">
                             <span class="user-item-name">
                                 ${escapeHtml(user.username)}
-                                ${user.is_admin ? '<span class="user-item-badge">Admin</span>' : ''}
+                                ${user.is_admin ? `<span class="user-item-badge">${i18n.t('admin.admin')}</span>` : ''}
                             </span>
-                            <span class="user-item-meta">Created: ${new Date(user.created_at).toLocaleDateString()}</span>
+                            <span class="user-item-meta">${i18n.t('admin.created')}: ${new Date(user.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
                     <div class="user-item-actions">
-                        <button class="btn-icon-sm" title="Change Password" onclick="togglePasswordForm(${user.id}, 'settings')">
+                        <button class="btn-icon-sm" title="${i18n.t('admin.changePassword')}" onclick="togglePasswordForm(${user.id}, 'settings')">
                             &#128273;
                         </button>
-                        <button class="btn-icon-sm btn-danger" title="Delete User" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
+                        <button class="btn-icon-sm btn-danger" title="${i18n.t('admin.deleteUser')}" onclick="deleteUser(${user.id}, '${escapeHtml(user.username)}')">
                             &#128465;
                         </button>
                     </div>
                 </div>
                 <div class="user-password-form" id="passwordForm-settings-${user.id}" style="display: none;">
                     <div class="password-form-row">
-                        <input type="password" id="newPassword-settings-${user.id}" placeholder="New password (min 6 chars)" class="password-input">
+                        <input type="password" id="newPassword-settings-${user.id}" placeholder="${i18n.t('admin.newPassword')}" class="password-input">
                     </div>
                     <div class="password-form-row">
-                        <input type="password" id="confirmPassword-settings-${user.id}" placeholder="Re-type password" class="password-input">
+                        <input type="password" id="confirmPassword-settings-${user.id}" placeholder="${i18n.t('admin.retypePassword')}" class="password-input">
                     </div>
                     <div class="password-form-row password-form-actions">
-                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'settings')">Save</button>
-                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'settings')">Cancel</button>
+                        <button class="btn-sm btn-primary" onclick="submitPasswordChange(${user.id}, 'settings')">${i18n.t('common.save')}</button>
+                        <button class="btn-sm" onclick="togglePasswordForm(${user.id}, 'settings')">${i18n.t('common.cancel')}</button>
                     </div>
                 </div>
             </div>
         `).join('');
     } catch (err) {
         console.error('Error loading users:', err);
-        usersList.innerHTML = '<div class="error-message">Failed to load users</div>';
+        usersList.innerHTML = `<div class="error-message">${i18n.t('admin.failedToLoadUsers')}</div>`;
     }
 }
 

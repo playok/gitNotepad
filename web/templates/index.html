@@ -576,14 +576,14 @@ WARNING: Warn</code></pre>
             <div id="adminUsersModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">
                     <div class="modal-header">
-                        <h3>User Management</h3>
-                        <button id="addUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+                        <h3 data-i18n="admin.userManagement">User Management</h3>
+                        <button id="addUserBtn" class="btn btn-primary btn-sm">+ <span data-i18n="admin.addUser">Add User</span></button>
                     </div>
                     <div id="usersList" class="users-list">
                         <!-- Users will be loaded here -->
                     </div>
                     <div class="modal-actions">
-                        <button id="adminUsersClose" class="btn btn-secondary">Close</button>
+                        <button id="adminUsersClose" class="btn btn-secondary" data-i18n="common.close">Close</button>
                     </div>
                 </div>
             </div>
@@ -591,25 +591,25 @@ WARNING: Warn</code></pre>
             <!-- Add User Modal -->
             <div id="addUserModal" class="modal" style="display: none;">
                 <div class="modal-content">
-                    <h3>Add New User</h3>
+                    <h3 data-i18n="admin.addNewUser">Add New User</h3>
                     <form id="addUserForm">
                         <div class="form-group">
-                            <label for="newUsername">Username</label>
-                            <input type="text" id="newUsername" placeholder="Username" required minlength="3" maxlength="32">
+                            <label for="newUsername" data-i18n="admin.username">Username</label>
+                            <input type="text" id="newUsername" data-i18n-placeholder="admin.usernamePlaceholder" placeholder="Username" required minlength="3" maxlength="32">
                         </div>
                         <div class="form-group">
-                            <label for="newPassword">Password</label>
-                            <input type="password" id="newPassword" placeholder="Password" required minlength="6">
+                            <label for="newPassword" data-i18n="admin.password">Password</label>
+                            <input type="password" id="newPassword" data-i18n-placeholder="admin.passwordPlaceholder" placeholder="Password" required minlength="6">
                         </div>
                         <div class="form-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="newIsAdmin">
-                                <span>Administrator</span>
+                                <span data-i18n="admin.administrator">Administrator</span>
                             </label>
                         </div>
                         <div class="modal-actions">
-                            <button type="button" id="addUserCancel" class="btn btn-secondary">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create User</button>
+                            <button type="button" id="addUserCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="admin.createUser">Create User</button>
                         </div>
                     </form>
                 </div>

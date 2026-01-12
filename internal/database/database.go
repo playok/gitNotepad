@@ -70,6 +70,18 @@ func (db *DB) Migrate() error {
 			UNIQUE(user_id, folder_path)
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_folder_icons_user ON folder_icons(user_id)`,
+		// Folder order table
+		`CREATE TABLE IF NOT EXISTS folder_order (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			parent_path TEXT NOT NULL DEFAULT '',
+			order_json TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			UNIQUE(user_id, parent_path)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_folder_order_user ON folder_order(user_id)`,
 	}
 
 	for _, migration := range migrations {

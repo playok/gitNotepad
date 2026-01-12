@@ -213,7 +213,7 @@ function initCodeMirror() {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     initMarked();
     initCodeMirror();
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMarkdownToolbar();
     initLocaleSelector();
     initFontSize();
-    loadFolderOrder();
+    await loadFolderOrder();
     // Load notes (includes folder icons)
     loadNotes().then(() => {
         handleHashNavigation();
@@ -1633,7 +1633,6 @@ async function renameFolder(oldPath, newName) {
 
         if (notesInFolder.length === 0) {
             // Empty folder - just update folderOrder if exists
-            const folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
             const parentPath = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
             const oldName = oldPath.split('/').pop();
             const newPath = parentPath ? `${parentPath}/${newName}` : newName;
@@ -1643,6 +1642,7 @@ async function renameFolder(oldPath, newName) {
                 const idx = folderOrder[parentPath].indexOf(oldName);
                 if (idx !== -1) {
                     folderOrder[parentPath][idx] = newName;
+                    await saveFolderOrderForParent(parentPath, folderOrder[parentPath]);
                 }
             }
 
@@ -1653,7 +1653,6 @@ async function renameFolder(oldPath, newName) {
                 localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
             }
 
-            localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
             await loadNotes();
             const msg = i18n ? i18n.t('msg.folderRenamed') : 'Folder renamed';
             showToast(msg);
@@ -1696,15 +1695,14 @@ async function renameFolder(oldPath, newName) {
         }
 
         // Update folder order
-        const folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
         const oldName = oldPath.split('/').pop();
         if (folderOrder[parentPath]) {
             const idx = folderOrder[parentPath].indexOf(oldName);
             if (idx !== -1) {
                 folderOrder[parentPath][idx] = newName;
+                await saveFolderOrderForParent(parentPath, folderOrder[parentPath]);
             }
         }
-        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
 
         // Update expanded folders
         const newExpandedFolders = {};
@@ -1732,12 +1730,42 @@ async function renameFolder(oldPath, newName) {
 // Folder order management
 let folderOrder = {};
 
-function loadFolderOrder() {
-    folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
+async function loadFolderOrder() {
+    try {
+        const response = await authFetch('/api/folder-order');
+        if (response.ok) {
+            folderOrder = await response.json();
+        } else {
+            folderOrder = {};
+        }
+    } catch (error) {
+        console.error('Failed to load folder order:', error);
+        folderOrder = {};
+    }
 }
 
-function saveFolderOrder() {
-    localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+async function saveFolderOrder() {
+    try {
+        await authFetch('/api/folder-order/all', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: folderOrder })
+        });
+    } catch (error) {
+        console.error('Failed to save folder order:', error);
+    }
+}
+
+async function saveFolderOrderForParent(parentPath, order) {
+    try {
+        await authFetch('/api/folder-order', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parent_path: parentPath, order: order })
+        });
+    } catch (error) {
+        console.error('Failed to save folder order for parent:', error);
+    }
 }
 
 function getSiblingsAtSameLevel(folderPath) {
@@ -1781,7 +1809,7 @@ async function moveFolderOrder(folderPath, direction) {
     [folderOrder[parentPath][currentIndex], folderOrder[parentPath][newIndex]] =
     [folderOrder[parentPath][newIndex], folderOrder[parentPath][currentIndex]];
 
-    saveFolderOrder();
+    await saveFolderOrderForParent(parentPath, folderOrder[parentPath]);
     renderNoteTree();
 
     const msg = i18n ? i18n.t('msg.folderMoved') : 'Folder order changed';

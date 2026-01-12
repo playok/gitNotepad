@@ -122,6 +122,7 @@ func (s *Server) setupRoutes() {
 	adminHandler := handler.NewAdminHandler(userRepo, s.config.Storage.Path)
 	statsHandler := handler.NewStatsHandler(s.config)
 	folderIconHandler := handler.NewFolderIconHandler(s.db)
+	folderOrderHandler := handler.NewFolderOrderHandler(s.db)
 
 	// Load embedded templates
 	tmpl := template.Must(template.New("").ParseFS(web.Templates, "templates/*.html"))
@@ -167,6 +168,9 @@ func (s *Server) setupRoutes() {
 	// Folder icons GET - public with optional auth (to avoid 401 errors in browser console)
 	base.GET("/api/folder-icons", authMiddleware.OptionalAuth(), folderIconHandler.List)
 
+	// Folder order GET - public with optional auth
+	base.GET("/api/folder-order", authMiddleware.OptionalAuth(), folderOrderHandler.Get)
+
 	// Protected routes (require authentication)
 	if s.config.Auth.Enabled {
 		// Main page - require auth
@@ -211,6 +215,11 @@ func (s *Server) setupRoutes() {
 			// Folder icons (GET is public with optional auth, POST/DELETE require auth)
 			api.POST("/folder-icons", folderIconHandler.Set)
 			api.DELETE("/folder-icons", folderIconHandler.Delete)
+
+			// Folder order (GET is public with optional auth, PUT/DELETE require auth)
+			api.PUT("/folder-order", folderOrderHandler.Set)
+			api.PUT("/folder-order/all", folderOrderHandler.SaveAll)
+			api.DELETE("/folder-order", folderOrderHandler.Delete)
 
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)
@@ -282,6 +291,11 @@ func (s *Server) setupRoutes() {
 			// Folder icons (GET is already registered as public)
 			api.POST("/folder-icons", folderIconHandler.Set)
 			api.DELETE("/folder-icons", folderIconHandler.Delete)
+
+			// Folder order (GET is already registered as public)
+			api.PUT("/folder-order", folderOrderHandler.Set)
+			api.PUT("/folder-order/all", folderOrderHandler.SaveAll)
+			api.DELETE("/folder-order", folderOrderHandler.Delete)
 
 			// Git history
 			api.GET("/notes/:id/history", gitHandler.History)

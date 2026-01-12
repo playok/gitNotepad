@@ -396,10 +396,14 @@ function handleKeyboardShortcut(e) {
         }
 
         switch (e.key.toLowerCase()) {
-            case 's': // Save
-                e.preventDefault();
-                if (editor.style.display !== 'none') {
-                    saveNote();
+            case 's': // Save - only in editor area
+                {
+                    const hasCmFocus = cmEditor && cmEditor.hasFocus();
+                    const isTitleFocused = document.activeElement === noteTitle;
+                    if (hasCmFocus || isTitleFocused) {
+                        e.preventDefault();
+                        saveNote();
+                    }
                 }
                 break;
 
@@ -2703,20 +2707,6 @@ function setupEventListeners() {
         versionModal.style.display = 'none';
     });
     versionRestore.addEventListener('click', restoreVersion);
-
-    // Keyboard shortcuts - Ctrl+S only in editor (not preview)
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            // Only save when CodeMirror editor has focus or title input is focused
-            const hasCmFocus = cmEditor && cmEditor.hasFocus();
-            const isTitleFocused = document.activeElement === noteTitle;
-
-            if (hasCmFocus || isTitleFocused) {
-                e.preventDefault();
-                saveNote();
-            }
-        }
-    });
 
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {

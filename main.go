@@ -12,6 +12,7 @@ import (
 	"github.com/user/gitnotepad/internal/database"
 	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/encryption"
+	"github.com/user/gitnotepad/internal/handler"
 	"github.com/user/gitnotepad/internal/repository"
 	"github.com/user/gitnotepad/internal/server"
 	"golang.org/x/crypto/bcrypt"
@@ -73,6 +74,8 @@ Options:
         Show nginx reverse proxy configuration
   -reset-password string
         Reset password for specified username
+  -migrate-paths
+        Migrate note paths from old separator (/) to new separator (:>:)
   -help
         Show this help message
 
@@ -87,6 +90,7 @@ Examples:
   gitnotepad stop               # Stop daemon
   gitnotepad status             # Check daemon status
   gitnotepad -config my.yaml    # Use custom config
+  gitnotepad -migrate-paths     # Manually run path migration
 `
 
 func main() {
@@ -109,6 +113,7 @@ func main() {
 	configPath := flag.String("config", "config.yaml", "Path to config file")
 	showNginx := flag.Bool("nginx", false, "Show nginx reverse proxy configuration")
 	resetPassword := flag.String("reset-password", "", "Reset password for specified username")
+	migratePaths := flag.Bool("migrate-paths", false, "Migrate note paths from old separator (/) to new separator (:>:)")
 	daemonChild := flag.Bool("daemon-child", false, "Internal flag for daemon child process")
 	flag.Parse()
 
@@ -131,6 +136,12 @@ func main() {
 	// Handle password reset
 	if *resetPassword != "" {
 		handlePasswordReset(*configPath, *resetPassword)
+		return
+	}
+
+	// Handle path migration
+	if *migratePaths {
+		handlePathMigration(*configPath)
 		return
 	}
 
@@ -373,4 +384,31 @@ func needsInitialSetup(configPath string) bool {
 	}
 
 	return false
+}
+
+// handlePathMigration runs the folder separator migration manually
+func handlePathMigration(configPath string) {
+	// Load config
+	var cfg *config.Config
+
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
+		cfg = config.Default()
+	} else {
+		var loadErr error
+		cfg, loadErr = config.Load(configPath)
+		if loadErr != nil {
+			log.Fatalf("Failed to load config: %v", loadErr)
+		}
+	}
+
+	fmt.Println("Running folder separator migration...")
+	fmt.Printf("Storage path: %s\n", cfg.Storage.Path)
+	fmt.Println("Migrating from '/' separator to ':>:' separator...")
+	fmt.Println()
+
+	if err := handler.MigrateFolderSeparator(cfg.Storage.Path, cfg.Encryption.Enabled, cfg.Encryption.Salt); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
+	fmt.Println("Migration completed successfully.")
 }

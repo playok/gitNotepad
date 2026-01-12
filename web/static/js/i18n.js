@@ -64,6 +64,7 @@ const i18n = {
             'editor.autoSave': 'Auto-save',
             'editor.save': 'Save',
             'editor.delete': 'Delete',
+            'editor.closeNote': 'Close note',
             'editor.toggleAttachments': 'Toggle attachments',
 
             // Markdown Toolbar
@@ -339,6 +340,9 @@ const i18n = {
             'msg.folderMoved': 'Folder order changed',
             'msg.insertFileContent': 'Would you like to insert the file content into the note?',
 
+            // Confirm dialogs
+            'confirm.unsavedChanges': 'You have unsaved changes. Are you sure you want to close?',
+
             // Buttons
             'btn.edit': 'Edit',
 
@@ -476,6 +480,7 @@ const i18n = {
             'editor.autoSave': '자동 저장',
             'editor.save': '저장',
             'editor.delete': '삭제',
+            'editor.closeNote': '노트 닫기',
             'editor.toggleAttachments': '첨부파일 토글',
 
             // Markdown Toolbar
@@ -750,6 +755,9 @@ const i18n = {
             'msg.folderRenamed': '폴더 이름이 변경되었습니다',
             'msg.folderMoved': '폴더 순서가 변경되었습니다',
             'msg.insertFileContent': '파일 내용을 노트에 삽입하시겠습니까?',
+
+            // Confirm dialogs
+            'confirm.unsavedChanges': '저장되지 않은 변경사항이 있습니다. 닫으시겠습니까?',
 
             // Buttons
             'btn.edit': '편집',

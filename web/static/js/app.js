@@ -91,6 +91,7 @@ const previewPane = document.getElementById('previewPane');
 const previewContent = document.getElementById('previewContent');
 const saveBtn = document.getElementById('saveBtn');
 const deleteBtn = document.getElementById('deleteBtn');
+const closeNoteBtn = document.getElementById('closeNoteBtn');
 const prettyJsonBtn = document.getElementById('prettyJsonBtn');
 const syntaxHelpBtn = document.getElementById('syntaxHelpBtn');
 const historyBtn = document.getElementById('historyBtn');
@@ -2622,6 +2623,11 @@ function setupEventListeners() {
     // Delete
     deleteBtn.addEventListener('click', deleteNote);
 
+    // Close note
+    if (closeNoteBtn) {
+        closeNoteBtn.addEventListener('click', closeNote);
+    }
+
     // History
     historyBtn.addEventListener('click', showHistory);
 
@@ -4092,6 +4098,40 @@ function createNewNote() {
 
     showEditorPane();
     noteTitle.focus();
+}
+
+function closeNote() {
+    // Check for unsaved changes
+    if (hasUnsavedChanges) {
+        const msg = i18n ? i18n.t('confirm.unsavedChanges') : 'You have unsaved changes. Are you sure you want to close?';
+        if (!confirm(msg)) {
+            return;
+        }
+    }
+
+    // Reset state
+    currentNote = null;
+    currentPassword = null;
+    isViewMode = false;
+    currentNoteFolderPath = '';
+    noteFolderPath.textContent = '';
+    noteTitle.value = '';
+    setEditorContent('');
+    noteType.value = 'markdown';
+    notePrivate.checked = false;
+    previewContent.innerHTML = '';
+    currentAttachments = [];
+    renderAttachments();
+    hasUnsavedChanges = false;
+    updateSaveStatus('');
+
+    // Clear URL hash
+    if (window.location.hash) {
+        history.pushState('', document.title, window.location.pathname + window.location.search);
+    }
+
+    // Hide editor and show empty state
+    hideEditor();
 }
 
 // Helper functions for folder path and title parsing

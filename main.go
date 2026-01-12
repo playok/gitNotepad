@@ -25,23 +25,21 @@ Nginx Reverse Proxy Configuration
 To run Git Notepad behind nginx at a sub-path (e.g., /note):
 
 1. Edit config.yaml:
-   ┌─────────────────────────────────────┐
-   │ server:                             │
-   │   port: 8080                        │
-   │   host: "127.0.0.1"                 │
-   │   base_path: "/note"                │
-   └─────────────────────────────────────┘
+
+   server:
+     port: 8080
+     host: "127.0.0.1"
+     base_path: "/note"
 
 2. Add to nginx.conf:
-   ┌─────────────────────────────────────────────────────────────┐
-   │ location /note {                                            │
-   │     proxy_pass http://127.0.0.1:8080;                       │
-   │     proxy_set_header Host $host;                            │
-   │     proxy_set_header X-Real-IP $remote_addr;                │
-   │     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; │
-   │     proxy_set_header X-Forwarded-Proto $scheme;             │
-   │ }                                                           │
-   └─────────────────────────────────────────────────────────────┘
+
+   location /note {
+       proxy_pass http://127.0.0.1:8080;
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+   }
 
 3. Reload nginx:
    $ nginx -s reload

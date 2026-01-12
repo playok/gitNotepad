@@ -40,6 +40,17 @@ const i18n = {
             'sidebar.notes': 'notes',
             'sidebar.clearSearch': 'Clear search',
 
+            // New Note Location
+            'newNote.selectLocation': 'Select Location',
+            'newNote.createAtRoot': 'Create at root',
+            'newNote.selectFolder': 'Select existing folder',
+            'newNote.createFolder': 'Create new folder',
+            'newNote.selectFolderHeader': 'Select a folder:',
+            'newNote.newFolderName': 'New folder name:',
+            'newNote.noFolders': 'No folders available',
+            'newNote.pleaseSelectFolder': 'Please select a folder',
+            'newNote.pleaseEnterFolderName': 'Please enter a folder name',
+
             // Editor
             'editor.untitled': 'Untitled',
             'editor.title': 'Note title',
@@ -464,6 +475,17 @@ const i18n = {
             'sidebar.noNotes': '노트가 없습니다',
             'sidebar.notes': '개의 노트',
             'sidebar.clearSearch': '검색 지우기',
+
+            // New Note Location
+            'newNote.selectLocation': '위치 선택',
+            'newNote.createAtRoot': '루트에 생성',
+            'newNote.selectFolder': '기존 폴더 선택',
+            'newNote.createFolder': '새 폴더 생성',
+            'newNote.selectFolderHeader': '폴더를 선택하세요:',
+            'newNote.newFolderName': '새 폴더 이름:',
+            'newNote.noFolders': '폴더가 없습니다',
+            'newNote.pleaseSelectFolder': '폴더를 선택해주세요',
+            'newNote.pleaseEnterFolderName': '폴더 이름을 입력해주세요',
 
             // Editor
             'editor.untitled': '제목 없음',

@@ -118,6 +118,14 @@ const versionHash = document.getElementById('versionHash');
 const versionRestore = document.getElementById('versionRestore');
 const versionClose = document.getElementById('versionClose');
 
+const newNoteLocationModal = document.getElementById('newNoteLocationModal');
+const folderSelectionArea = document.getElementById('folderSelectionArea');
+const folderSelectionList = document.getElementById('folderSelectionList');
+const newFolderArea = document.getElementById('newFolderArea');
+const newFolderInput = document.getElementById('newFolderInput');
+const newNoteLocationCancel = document.getElementById('newNoteLocationCancel');
+const newNoteLocationConfirm = document.getElementById('newNoteLocationConfirm');
+
 // Context Menu
 let contextMenu = null;
 let contextTarget = null;
@@ -4185,14 +4193,126 @@ function updateSearchClearButton() {
     }
 }
 
+// State for new note location selection
+let selectedNewNoteLocation = 'root';
+let selectedFolderPath = '';
+
 function createNewNote() {
+    // Show location selection modal
+    showNewNoteLocationModal();
+}
+
+function showNewNoteLocationModal() {
+    // Reset state
+    selectedNewNoteLocation = 'root';
+    selectedFolderPath = '';
+
+    // Reset UI
+    const options = newNoteLocationModal.querySelectorAll('.location-option');
+    options.forEach(opt => opt.classList.remove('selected'));
+    options[0].classList.add('selected'); // Select "root" by default
+
+    folderSelectionArea.style.display = 'none';
+    newFolderArea.style.display = 'none';
+    newFolderInput.value = '';
+
+    // Populate folder list
+    populateFolderSelectionList();
+
+    newNoteLocationModal.style.display = 'flex';
+}
+
+function populateFolderSelectionList() {
+    folderSelectionList.innerHTML = '';
+
+    if (folders.length === 0) {
+        folderSelectionList.innerHTML = `<div style="padding: 12px; color: var(--text-muted); text-align: center;">${i18n.t('newNote.noFolders')}</div>`;
+        return;
+    }
+
+    folders.forEach(folder => {
+        const item = document.createElement('div');
+        item.className = 'folder-selection-item';
+        item.dataset.path = folder.path;
+        item.innerHTML = `<span>📁</span><span>${escapeHtml(folder.path)}</span>`;
+        item.addEventListener('click', () => {
+            folderSelectionList.querySelectorAll('.folder-selection-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedFolderPath = folder.path;
+        });
+        folderSelectionList.appendChild(item);
+    });
+}
+
+function initNewNoteLocationModal() {
+    // Option click handlers
+    const options = newNoteLocationModal.querySelectorAll('.location-option');
+    options.forEach(opt => {
+        opt.addEventListener('click', () => {
+            options.forEach(o => o.classList.remove('selected'));
+            opt.classList.add('selected');
+            selectedNewNoteLocation = opt.dataset.location;
+
+            // Show/hide relevant areas
+            folderSelectionArea.style.display = selectedNewNoteLocation === 'existing' ? 'block' : 'none';
+            newFolderArea.style.display = selectedNewNoteLocation === 'new' ? 'block' : 'none';
+
+            if (selectedNewNoteLocation === 'new') {
+                newFolderInput.focus();
+            }
+        });
+    });
+
+    // Cancel button
+    newNoteLocationCancel.addEventListener('click', () => {
+        newNoteLocationModal.style.display = 'none';
+    });
+
+    // Confirm button
+    newNoteLocationConfirm.addEventListener('click', () => {
+        let folderPath = '';
+
+        if (selectedNewNoteLocation === 'existing') {
+            folderPath = selectedFolderPath;
+            if (!folderPath) {
+                alert(i18n.t('newNote.pleaseSelectFolder'));
+                return;
+            }
+        } else if (selectedNewNoteLocation === 'new') {
+            folderPath = newFolderInput.value.trim();
+            if (!folderPath) {
+                alert(i18n.t('newNote.pleaseEnterFolderName'));
+                return;
+            }
+        }
+
+        newNoteLocationModal.style.display = 'none';
+        createNewNoteInFolder(folderPath);
+    });
+
+    // Close on backdrop click
+    newNoteLocationModal.addEventListener('click', (e) => {
+        if (e.target === newNoteLocationModal) {
+            newNoteLocationModal.style.display = 'none';
+        }
+    });
+
+    // Enter key on new folder input
+    newFolderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            newNoteLocationConfirm.click();
+        }
+    });
+}
+
+function createNewNoteInFolder(folderPath) {
     currentNote = null;
     currentPassword = null;
     isViewMode = false; // New notes are created in edit mode
 
-    // Clear folder path and title
-    currentNoteFolderPath = '';
-    noteFolderPath.textContent = '';
+    // Set folder path
+    currentNoteFolderPath = folderPath;
+    noteFolderPath.textContent = folderPath ? folderPath + ' /' : '';
     noteTitle.value = '';
 
     setEditorContent('');
@@ -6099,6 +6219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminModals();
     initSettingsModal();
     initSyntaxHelpModal();
+    initNewNoteLocationModal();
 
     // Ensure i18n is applied after modal initialization
     if (typeof i18n !== 'undefined') {

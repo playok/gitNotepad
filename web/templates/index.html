@@ -294,6 +294,39 @@
                 </div>
             </div>
 
+            <!-- New Note Location Modal -->
+            <div id="newNoteLocationModal" class="modal" style="display: none;">
+                <div class="modal-content modal-small">
+                    <h3 data-i18n="newNote.selectLocation">Select Location</h3>
+                    <div class="new-note-location-options">
+                        <div class="location-option" data-location="root">
+                            <span class="location-icon">📄</span>
+                            <span data-i18n="newNote.createAtRoot">Create at root</span>
+                        </div>
+                        <div class="location-option" data-location="existing">
+                            <span class="location-icon">📁</span>
+                            <span data-i18n="newNote.selectFolder">Select existing folder</span>
+                        </div>
+                        <div class="location-option" data-location="new">
+                            <span class="location-icon">➕</span>
+                            <span data-i18n="newNote.createFolder">Create new folder</span>
+                        </div>
+                    </div>
+                    <div id="folderSelectionArea" class="folder-selection-area" style="display: none;">
+                        <div class="folder-selection-header" data-i18n="newNote.selectFolderHeader">Select a folder:</div>
+                        <div id="folderSelectionList" class="folder-selection-list"></div>
+                    </div>
+                    <div id="newFolderArea" class="new-folder-area" style="display: none;">
+                        <label data-i18n="newNote.newFolderName">New folder name:</label>
+                        <input type="text" id="newFolderInput" class="new-folder-input" placeholder="folder/subfolder">
+                    </div>
+                    <div class="modal-actions">
+                        <button id="newNoteLocationCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="newNoteLocationConfirm" class="btn btn-primary" data-i18n="common.confirm">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- History Modal -->
             <div id="historyModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">

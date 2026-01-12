@@ -2,9 +2,11 @@
 const basePath = window.BASE_PATH || '';
 
 // Helper to encode note IDs for URLs (handles folder paths with slashes)
-// Uses base64 encoding to avoid issues with slashes in URLs
+// Uses URL-safe base64 encoding (+ → -, / → _) to avoid issues with slashes in URLs
 function encodeNoteId(id) {
-    return btoa(unescape(encodeURIComponent(id)));
+    const base64 = btoa(unescape(encodeURIComponent(id)));
+    // Convert to URL-safe base64
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 // State

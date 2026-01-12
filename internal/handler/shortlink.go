@@ -148,10 +148,16 @@ type GenerateRequest struct {
 }
 
 // decodeNoteIDParam base64-decodes the note ID from path parameter
+// Supports both standard and URL-safe base64 encoding
 func decodeNoteIDParam(id string) string {
-	decoded, err := base64.StdEncoding.DecodeString(id)
+	// Try URL-safe base64 first (used by new frontend)
+	decoded, err := base64.RawURLEncoding.DecodeString(id)
 	if err != nil {
-		return id // Return original if decode fails (for backwards compatibility)
+		// Fallback to standard base64 (for backwards compatibility)
+		decoded, err = base64.StdEncoding.DecodeString(id)
+		if err != nil {
+			return id // Return original if decode fails
+		}
 	}
 	return string(decoded)
 }

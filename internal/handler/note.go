@@ -563,9 +563,12 @@ func (h *NoteHandler) Create(c *gin.Context) {
 
 	// Git commit - use user-specific repo
 	if userRepo, err := h.getUserRepo(c); err == nil {
+		fmt.Printf("[Note] Create: getUserRepo success, committing to: %s\n", userRepo.GetPath())
 		if err := userRepo.AddAndCommit(filePath, fmt.Sprintf("Create note: %s", note.Title)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			fmt.Printf("[Note] Create: Git commit error: %v\n", err)
 		}
+	} else {
+		fmt.Printf("[Note] Create: getUserRepo error: %v\n", err)
 	}
 
 	c.JSON(http.StatusCreated, note)
@@ -669,6 +672,11 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 	// Git operations with user repo
 	userRepo, repoErr := h.getUserRepo(c)
+	if repoErr != nil {
+		fmt.Printf("[Note] getUserRepo error: %v\n", repoErr)
+	} else {
+		fmt.Printf("[Note] getUserRepo success, repo path: %s\n", userRepo.GetPath())
+	}
 
 	if filePath != newFilePath {
 		os.Remove(filePath)

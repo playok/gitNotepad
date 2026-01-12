@@ -19,6 +19,13 @@ import (
 	"golang.org/x/term"
 )
 
+// Build-time variables (set via ldflags)
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 func nginxHelp(port int, basePath string) string {
 	if basePath == "" {
 		basePath = "/note"
@@ -236,6 +243,9 @@ func main() {
 		}
 		log.Printf("Config saved to %s", *configPath)
 	}
+
+	// Set version info before creating server
+	server.SetVersion(version, commit, date)
 
 	srv, err := server.NewWithAdminPassword(cfg, adminPassword)
 	if err != nil {

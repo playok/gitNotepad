@@ -244,6 +244,12 @@ const i18n = {
             'settings.deleteAll': 'Delete All',
             'settings.selectExpiryDate': 'Select expiry date',
             'settings.selectFutureDate': 'Please select a future date',
+            'settings.about': 'About',
+            'settings.aboutApp': 'About Git Notepad',
+            'settings.version': 'Version',
+            'settings.commit': 'Commit',
+            'settings.buildDate': 'Build Date',
+            'settings.appDescription': 'A web-based note application with Git version control.',
 
             // Syntax Help
             'syntax.title': 'Syntax Reference',
@@ -644,6 +650,12 @@ const i18n = {
             'settings.deleteAll': '모두 삭제',
             'settings.selectExpiryDate': '만료일 선택',
             'settings.selectFutureDate': '미래 날짜를 선택해주세요',
+            'settings.about': '정보',
+            'settings.aboutApp': 'Git Notepad 정보',
+            'settings.version': '버전',
+            'settings.commit': '커밋',
+            'settings.buildDate': '빌드 날짜',
+            'settings.appDescription': 'Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.',
 
             // Syntax Help
             'syntax.title': '문법 참조',

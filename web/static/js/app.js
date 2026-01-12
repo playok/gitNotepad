@@ -5700,6 +5700,8 @@ function initSettingsTabs() {
                 loadSharedLinks();
             } else if (tabName === 'stats') {
                 loadUsageStats();
+            } else if (tabName === 'about') {
+                loadAboutInfo();
             }
         });
     });
@@ -6383,6 +6385,36 @@ function renderRecentActivity(activities) {
             </div>
         `;
     }).join('');
+}
+
+// About Info
+async function loadAboutInfo() {
+    try {
+        const response = await fetch(basePath + '/api/config');
+        if (!response.ok) throw new Error('Failed to load config');
+
+        const config = await response.json();
+        const version = config.version || {};
+
+        // Update version info
+        const versionEl = document.getElementById('aboutVersion');
+        const commitEl = document.getElementById('aboutCommit');
+        const buildDateEl = document.getElementById('aboutBuildDate');
+
+        if (versionEl) versionEl.textContent = version.Version || 'dev';
+        if (commitEl) commitEl.textContent = version.Commit ? version.Commit.substring(0, 7) : 'unknown';
+        if (buildDateEl) buildDateEl.textContent = version.Date || 'unknown';
+    } catch (err) {
+        console.error('Error loading about info:', err);
+        // Show placeholder values
+        const versionEl = document.getElementById('aboutVersion');
+        const commitEl = document.getElementById('aboutCommit');
+        const buildDateEl = document.getElementById('aboutBuildDate');
+
+        if (versionEl) versionEl.textContent = 'dev';
+        if (commitEl) commitEl.textContent = 'unknown';
+        if (buildDateEl) buildDateEl.textContent = 'unknown';
+    }
 }
 
 // ============================================

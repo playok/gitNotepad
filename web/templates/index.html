@@ -641,6 +641,9 @@ WARNING: Warn</code></pre>
                             <button class="settings-tab" data-tab="stats">
                                 <span>&#128202;</span> <span data-i18n="settings.usage">Usage</span>
                             </button>
+                            <button class="settings-tab" data-tab="about">
+                                <span>&#9432;</span> <span data-i18n="settings.about">About</span>
+                            </button>
                         </div>
                         <div class="settings-content">
                             <!-- General Tab -->
@@ -806,6 +809,39 @@ WARNING: Warn</code></pre>
                                     <h5>Recent Activity</h5>
                                     <div class="recent-activity" id="recentActivity">
                                         <!-- Recent activity will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- About Tab -->
+                            <div class="settings-panel" id="settingsAbout">
+                                <h4 data-i18n="settings.aboutApp">About Git Notepad</h4>
+                                <div class="settings-section">
+                                    <div class="about-logo">
+                                        <span class="about-icon">&#128221;</span>
+                                        <span class="about-title">Git Notepad</span>
+                                    </div>
+                                    <div class="about-version-info">
+                                        <div class="about-item">
+                                            <span class="about-label" data-i18n="settings.version">Version</span>
+                                            <span class="about-value" id="aboutVersion">-</span>
+                                        </div>
+                                        <div class="about-item">
+                                            <span class="about-label" data-i18n="settings.commit">Commit</span>
+                                            <span class="about-value" id="aboutCommit">-</span>
+                                        </div>
+                                        <div class="about-item">
+                                            <span class="about-label" data-i18n="settings.buildDate">Build Date</span>
+                                            <span class="about-value" id="aboutBuildDate">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="about-description" data-i18n="settings.appDescription">
+                                        A web-based note application with Git version control.
+                                    </div>
+                                    <div class="about-links">
+                                        <a href="https://github.com/user/gitnotepad" target="_blank" class="about-link">
+                                            <span>&#128279;</span> GitHub
+                                        </a>
                                     </div>
                                 </div>
                             </div>

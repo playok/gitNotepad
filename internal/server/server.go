@@ -17,10 +17,31 @@ import (
 )
 
 type Server struct {
-	config *config.Config
-	router *gin.Engine
-	repo   *git.Repository
-	db     *database.DB
+	config  *config.Config
+	router  *gin.Engine
+	repo    *git.Repository
+	db      *database.DB
+	version string
+}
+
+// VersionInfo holds build version information
+type VersionInfo struct {
+	Version string
+	Commit  string
+	Date    string
+}
+
+// appVersion stores the current version (set via SetVersion)
+var appVersion = VersionInfo{Version: "dev", Commit: "unknown", Date: "unknown"}
+
+// SetVersion sets the application version info (call before creating server)
+func SetVersion(version, commit, date string) {
+	appVersion = VersionInfo{Version: version, Commit: commit, Date: date}
+}
+
+// GetVersion returns the current version info
+func GetVersion() VersionInfo {
+	return appVersion
 }
 
 // NewWithAdminPassword creates a new server with an optional admin password for first-time seeding
@@ -139,6 +160,7 @@ func (s *Server) setupRoutes() {
 		c.JSON(200, gin.H{
 			"editor":   s.config.Editor,
 			"basePath": basePath,
+			"version":  appVersion,
 		})
 	})
 

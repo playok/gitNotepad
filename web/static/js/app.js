@@ -5299,7 +5299,7 @@ async function loadUsersList() {
     if (!usersList) return;
 
     try {
-        const response = await authFetch('/api/admin/users');
+        const response = await authFetch(basePath + '/api/admin/users');
         if (!response.ok) throw new Error('Failed to load users');
 
         const users = await response.json();
@@ -5338,7 +5338,7 @@ async function deleteUser(userId, username) {
     }
 
     try {
-        const response = await authFetch(`/api/admin/users/${userId}`, {
+        const response = await authFetch(`${basePath}/api/admin/users/${userId}`, {
             method: 'DELETE'
         });
 
@@ -5365,7 +5365,7 @@ async function changeUserPassword(userId, username) {
     }
 
     try {
-        const response = await authFetch(`/api/admin/users/${userId}/password`, {
+        const response = await authFetch(`${basePath}/api/admin/users/${userId}/password`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: newPassword })
@@ -5418,7 +5418,7 @@ function initAddUserModal() {
         }
 
         try {
-            const response = await authFetch('/api/admin/users', {
+            const response = await authFetch(basePath + '/api/admin/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -5717,7 +5717,7 @@ async function loadSettingsUsersList() {
     usersList.innerHTML = '<div class="loading-spinner">Loading users...</div>';
 
     try {
-        const response = await authFetch('/api/admin/users');
+        const response = await authFetch(basePath + '/api/admin/users');
         if (!response.ok) throw new Error('Failed to load users');
 
         const users = await response.json();
@@ -6043,7 +6043,7 @@ async function exportNotes() {
     }
 
     try {
-        const response = await authFetch('/api/notes/export');
+        const response = await authFetch(basePath + '/api/notes/export');
         if (!response.ok) throw new Error('Export failed');
 
         const blob = await response.blob();
@@ -6091,7 +6091,7 @@ async function handleImportFile(e) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await authFetch('/api/notes/import', {
+        const response = await authFetch(basePath + '/api/notes/import', {
             method: 'POST',
             body: formData
         });
@@ -6131,7 +6131,7 @@ async function deleteAllNotes() {
     }
 
     try {
-        const response = await authFetch('/api/notes', {
+        const response = await authFetch(basePath + '/api/notes', {
             method: 'DELETE'
         });
 
@@ -6160,7 +6160,7 @@ async function deleteAllNotes() {
 // Usage Statistics
 async function loadUsageStats() {
     try {
-        const response = await authFetch('/api/stats');
+        const response = await authFetch(basePath + '/api/stats');
         if (!response.ok) throw new Error('Failed to load stats');
 
         const stats = await response.json();

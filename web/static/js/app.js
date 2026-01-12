@@ -4220,6 +4220,9 @@ function showEditMode() {
         cmEditor.focus();
     }
     updateNoteListSelection(currentNote.id);
+
+    // Scroll to top on mobile/tablet to ensure toolbar is visible
+    scrollEditorToTop();
 }
 
 function showEditor(note) {
@@ -4248,6 +4251,9 @@ function showEditor(note) {
     updateSaveStatus('');
     updatePreview();
     showEditorPane();
+
+    // Scroll to top on mobile/tablet to ensure toolbar is visible
+    scrollEditorToTop();
 }
 
 function showEditorPane() {
@@ -4307,6 +4313,29 @@ function showPreviewPane() {
 function hideEditor() {
     emptyState.style.display = 'flex';
     editor.style.display = 'none';
+}
+
+// Scroll editor container to top - fixes mobile/tablet issue where toolbar is hidden after switching to edit mode
+function scrollEditorToTop() {
+    // Scroll the editor element to top
+    if (editor) {
+        editor.scrollTop = 0;
+    }
+
+    // Also scroll the main content area
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.scrollTop = 0;
+    }
+
+    // Scroll window to top for full page scroll
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Ensure editor header is visible
+    const editorHeader = document.querySelector('.editor-header');
+    if (editorHeader) {
+        editorHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function togglePreview() {

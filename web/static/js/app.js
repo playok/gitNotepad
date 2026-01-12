@@ -233,6 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNotes().then(() => {
         handleHashNavigation();
         renderMiniCalendar();
+        // Re-apply i18n after dynamic content is loaded
+        if (typeof i18n !== 'undefined') {
+            i18n.updateUI();
+        }
     });
     setupEventListeners();
 
@@ -243,6 +247,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('localeChanged', () => {
         renderMiniCalendar();
     });
+
+    // Ensure i18n is applied after all initialization
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
 });
 
 // Sidebar Toggle
@@ -2147,15 +2156,26 @@ function triggerAutoSave() {
 }
 
 async function performAutoSave() {
+    console.log('[performAutoSave] Starting, hasUnsavedChanges:', hasUnsavedChanges);
     // Prevent duplicate saves
-    if (isSaving) return;
-    if (!hasUnsavedChanges) return;
+    if (isSaving) {
+        console.log('[performAutoSave] Skipped: isSaving is true');
+        return;
+    }
+    if (!hasUnsavedChanges) {
+        console.log('[performAutoSave] Skipped: no unsaved changes');
+        return;
+    }
 
     const title = getFullNoteTitle();
-    if (!noteTitle.value.trim()) return;
+    if (!noteTitle.value.trim()) {
+        console.log('[performAutoSave] Skipped: empty title');
+        return;
+    }
 
     // Double-check if content actually changed
     if (!isContentChanged()) {
+        console.log('[performAutoSave] Skipped: content not changed');
         hasUnsavedChanges = false;
         updateSaveStatus('');
         return;
@@ -3248,12 +3268,20 @@ async function verifyPassword() {
 
 async function saveNote() {
     // Prevent duplicate saves
-    if (isSaving) return;
+    if (isSaving) {
+        console.log('[saveNote] Skipped: isSaving is true');
+        return;
+    }
 
     const title = getFullNoteTitle();
     const content = getEditorContent();
     const type = noteType.value;
     const isPrivate = notePrivate.checked;
+
+    console.log('[saveNote] Current values:', { title, contentLen: content.length, type, isPrivate });
+    console.log('[saveNote] Original values:', originalContent);
+    console.log('[saveNote] isContentChanged:', isContentChanged());
+    console.log('[saveNote] currentNote:', currentNote);
 
     if (!noteTitle.value.trim()) {
         alert(i18n.t('msg.enterTitle'));
@@ -3262,6 +3290,7 @@ async function saveNote() {
 
     // Check if content actually changed (skip if setting new password)
     if (!pendingPassword && !isContentChanged()) {
+        console.log('[saveNote] Skipped: content not changed');
         updateSaveStatus('saved');
         setTimeout(() => updateSaveStatus(''), 1000);
         return;
@@ -5605,6 +5634,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminModals();
     initSettingsModal();
     initSyntaxHelpModal();
+
+    // Ensure i18n is applied after modal initialization
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
 });
 
 // ============================================

@@ -2901,17 +2901,34 @@ async function loadNote(id) {
         }
 
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers });
+
+        // Check response status before parsing JSON
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Try to parse response to check if locked
+                try {
+                    const data = await response.json();
+                    if (data.locked) {
+                        pendingNoteId = id;
+                        passwordModal.style.display = 'flex';
+                        passwordInput.focus();
+                        return;
+                    }
+                } catch (e) {
+                    // JSON parse failed, show generic error
+                }
+                alert(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+
         const note = await response.json();
 
         if (note.locked) {
             pendingNoteId = id;
             passwordModal.style.display = 'flex';
             passwordInput.focus();
-            return;
-        }
-
-        if (response.status === 401) {
-            alert('Invalid password');
             return;
         }
 
@@ -2925,6 +2942,8 @@ async function loadNote(id) {
         }
     } catch (error) {
         console.error('Failed to load note:', error);
+        const errorMsg = i18n ? i18n.t('msg.loadFailed') || 'Failed to load note' : 'Failed to load note';
+        alert(errorMsg);
     }
 }
 
@@ -2937,17 +2956,34 @@ async function editNote(id) {
         }
 
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers });
+
+        // Check response status before parsing JSON
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Try to parse response to check if locked
+                try {
+                    const data = await response.json();
+                    if (data.locked) {
+                        pendingNoteId = id;
+                        passwordModal.style.display = 'flex';
+                        passwordInput.focus();
+                        return;
+                    }
+                } catch (e) {
+                    // JSON parse failed, show generic error
+                }
+                alert(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
+                return;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+
         const note = await response.json();
 
         if (note.locked) {
             pendingNoteId = id;
             passwordModal.style.display = 'flex';
             passwordInput.focus();
-            return;
-        }
-
-        if (response.status === 401) {
-            alert('Invalid password');
             return;
         }
 
@@ -2961,6 +2997,8 @@ async function editNote(id) {
         }
     } catch (error) {
         console.error('Failed to load note:', error);
+        const errorMsg = i18n ? i18n.t('msg.loadFailed') || 'Failed to load note' : 'Failed to load note';
+        alert(errorMsg);
     }
 }
 
@@ -6301,15 +6339,17 @@ function showDateNotesPanel(dateKey) {
     document.getElementById('editor').style.display = 'none';
 }
 
-function hideDateNotesPanel() {
+function hideDateNotesPanel(restoreView = true) {
     const panel = document.getElementById('dateNotesPanel');
     panel.style.display = 'none';
 
-    // Show appropriate view
-    if (currentNote) {
-        document.getElementById('editor').style.display = 'flex';
-    } else {
-        document.getElementById('emptyState').style.display = 'flex';
+    // Only restore previous view if requested (not when loading a note)
+    if (restoreView) {
+        if (currentNote) {
+            document.getElementById('editor').style.display = 'flex';
+        } else {
+            document.getElementById('emptyState').style.display = 'flex';
+        }
     }
 }
 
@@ -6351,7 +6391,7 @@ function renderDateNotesList(container, dateNotes) {
         `;
 
         item.addEventListener('click', () => {
-            hideDateNotesPanel();
+            hideDateNotesPanel(false); // Don't restore view, loadNote will handle it
             miniCalSelectedDate = null;
             renderMiniCalendar();
             loadNote(note.id);

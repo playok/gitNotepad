@@ -1996,6 +1996,15 @@ body {
     overflow-y: auto;
 }
 
+.modal-content.modal-fullwidth {
+    max-width: 95vw;
+    width: 95vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 .modal-content h3 {
     margin-bottom: 0.5rem;
     color: var(--text-primary);
@@ -2141,6 +2150,105 @@ body {
     border: 1px solid var(--border);
     color: var(--text-secondary);
     line-height: 1.6;
+}
+
+/* Version modal header */
+.version-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.version-modal-header h3 {
+    margin: 0;
+}
+
+/* 3-way diff layout */
+.version-3way-container {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.version-list-panel {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.version-list-header {
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.version-history-list {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+}
+
+.version-history-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.version-history-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.version-history-item.active {
+    background: var(--accent);
+    color: white;
+}
+
+.version-history-item.active .version-item-hash,
+.version-history-item.active .version-item-message,
+.version-history-item.active .version-item-date {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.version-item-hash {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 2px;
+}
+
+.version-item-message {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.version-item-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.version-hash-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
 }
 
 /* Side-by-side diff styles */

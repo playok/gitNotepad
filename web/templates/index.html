@@ -307,20 +307,20 @@
                 </div>
             </div>
 
-            <!-- Version View Modal -->
+            <!-- Version View Modal (3-way diff) -->
             <div id="versionModal" class="modal" style="display: none;">
-                <div class="modal-content modal-xlarge">
-                    <div class="version-header">
-                        <h3><span data-i18n="history.version">Version</span>: <span id="versionHash"></span></h3>
-                        <div class="version-tabs">
-                            <button class="version-tab" data-view="content" data-i18n="history.viewContent">Content</button>
-                            <button class="version-tab active" data-view="diff" data-i18n="history.viewDiff">Diff</button>
-                        </div>
+                <div class="modal-content modal-fullwidth">
+                    <div class="version-modal-header">
+                        <h3 data-i18n="history.title">Version History</h3>
+                        <button id="versionClose" class="modal-close-btn">&times;</button>
                     </div>
-                    <div id="versionContent" class="version-content" style="display: none;"></div>
-                    <div id="versionDiff" class="version-diff-container">
+                    <div class="version-3way-container">
+                        <div class="version-list-panel">
+                            <div class="version-list-header" data-i18n="history.title">Version History</div>
+                            <div id="versionHistoryList" class="version-history-list"></div>
+                        </div>
                         <div class="diff-panel diff-old">
-                            <div class="diff-panel-header" data-i18n="history.oldVersion">Old Version</div>
+                            <div class="diff-panel-header"><span data-i18n="history.oldVersion">Old Version</span> <span id="versionHash" class="version-hash-badge"></span></div>
                             <div class="diff-panel-content" id="diffOldContent"></div>
                         </div>
                         <div class="diff-panel diff-new">
@@ -330,7 +330,6 @@
                     </div>
                     <div class="modal-actions">
                         <button id="versionRestore" class="btn btn-primary" data-i18n="history.restoreVersion">Restore this version</button>
-                        <button id="versionClose" class="btn btn-secondary" data-i18n="common.close">Close</button>
                     </div>
                 </div>
             </div>

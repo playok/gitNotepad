@@ -115,7 +115,6 @@ const historyClose = document.getElementById('historyClose');
 
 const versionModal = document.getElementById('versionModal');
 const versionHash = document.getElementById('versionHash');
-const versionContent = document.getElementById('versionContent');
 const versionRestore = document.getElementById('versionRestore');
 const versionClose = document.getElementById('versionClose');
 
@@ -3661,6 +3660,8 @@ async function deleteNote() {
     }
 }
 
+let currentHistoryCommits = [];
+
 async function showHistory() {
     if (!currentNote || !currentNote.id) return;
 
@@ -3669,39 +3670,88 @@ async function showHistory() {
         headers['X-Note-Password'] = currentPassword;
     }
 
+    const versionHistoryList = document.getElementById('versionHistoryList');
+
     try {
         const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/history`, { headers });
         const data = await response.json();
 
         if (!response.ok) {
             console.error('History API error:', data.error);
-            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || i18n.t('history.loadFailed')}</p>`;
-            historyModal.style.display = 'flex';
+            if (versionHistoryList) {
+                versionHistoryList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || i18n.t('history.loadFailed')}</p>`;
+            }
+            versionModal.style.display = 'flex';
             return;
         }
 
-        const commits = Array.isArray(data) ? data : [];
-        historyList.innerHTML = '';
+        currentHistoryCommits = Array.isArray(data) ? data : [];
 
-        if (commits.length === 0) {
-            historyList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${i18n.t('history.noHistory')}</p>`;
-        } else {
-            commits.forEach(commit => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `
-                    <div class="commit-hash">${commit.hash.substring(0, 8)}</div>
-                    <div class="commit-message">${escapeHtml(commit.message)}</div>
-                    <div class="commit-date">${formatDate(commit.date)}</div>
-                `;
-                item.addEventListener('click', () => showVersion(commit.hash));
-                historyList.appendChild(item);
-            });
+        if (versionHistoryList) {
+            versionHistoryList.innerHTML = '';
+
+            if (currentHistoryCommits.length === 0) {
+                versionHistoryList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${i18n.t('history.noHistory')}</p>`;
+            } else {
+                currentHistoryCommits.forEach((commit, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'version-history-item';
+                    item.dataset.hash = commit.hash;
+                    item.innerHTML = `
+                        <div class="version-item-hash">${commit.hash.substring(0, 8)}</div>
+                        <div class="version-item-message">${escapeHtml(commit.message)}</div>
+                        <div class="version-item-date">${formatDate(commit.date)}</div>
+                    `;
+                    item.addEventListener('click', () => selectVersion(commit.hash));
+                    versionHistoryList.appendChild(item);
+                });
+
+                // Auto-select first version
+                if (currentHistoryCommits.length > 0) {
+                    selectVersion(currentHistoryCommits[0].hash);
+                }
+            }
         }
 
-        historyModal.style.display = 'flex';
+        versionModal.style.display = 'flex';
     } catch (error) {
         console.error('Failed to load history:', error);
+    }
+}
+
+async function selectVersion(hash) {
+    const versionHistoryList = document.getElementById('versionHistoryList');
+    if (versionHistoryList) {
+        // Update active state in list
+        versionHistoryList.querySelectorAll('.version-history-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.hash === hash);
+        });
+    }
+
+    // Load version content and update diff
+    await loadVersionDiff(hash);
+}
+
+async function loadVersionDiff(hash) {
+    if (!currentNote || !currentNote.id) return;
+
+    const headers = {};
+    if (currentPassword) {
+        headers['X-Note-Password'] = currentPassword;
+    }
+
+    try {
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/version/${hash}`, { headers });
+        const data = await response.json();
+
+        currentVersionHash = hash;
+        currentVersionContent = data.content;
+        versionHash.textContent = hash.substring(0, 8);
+
+        // Calculate and render diff
+        renderVersionDiff(data.content, getEditorContent());
+    } catch (error) {
+        console.error('Failed to load version:', error);
     }
 }
 
@@ -3785,44 +3835,6 @@ function initSyntaxHelpModal() {
 let currentVersionHash = null;
 let currentVersionContent = null;
 
-async function showVersion(hash) {
-    if (!currentNote || !currentNote.id) return;
-
-    const headers = {};
-    if (currentPassword) {
-        headers['X-Note-Password'] = currentPassword;
-    }
-
-    try {
-        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(currentNote.id)}/version/${hash}`, { headers });
-        const data = await response.json();
-
-        currentVersionHash = hash;
-        currentVersionContent = data.content;
-        versionHash.textContent = hash.substring(0, 8);
-        versionContent.textContent = data.content;
-
-        // Calculate and render diff
-        renderVersionDiff(data.content, getEditorContent());
-
-        // Default to diff tab
-        const versionTabs = document.querySelectorAll('.version-tab');
-        const versionContentEl = document.getElementById('versionContent');
-        const versionDiffEl = document.getElementById('versionDiff');
-
-        versionTabs.forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.view === 'diff');
-        });
-        versionContentEl.style.display = 'none';
-        versionDiffEl.style.display = 'flex';
-
-        historyModal.style.display = 'none';
-        versionModal.style.display = 'flex';
-    } catch (error) {
-        console.error('Failed to load version:', error);
-    }
-}
-
 function renderVersionDiff(oldContent, newContent) {
     const diffOldEl = document.getElementById('diffOldContent');
     const diffNewEl = document.getElementById('diffNewContent');
@@ -3894,32 +3906,12 @@ function syncDiffScroll(el1, el2) {
     });
 }
 
-function initVersionTabs() {
-    const versionTabs = document.querySelectorAll('.version-tab');
-    const versionContentEl = document.getElementById('versionContent');
-    const versionDiffEl = document.getElementById('versionDiff');
-
-    versionTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const view = tab.dataset.view;
-
-            versionTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            if (view === 'content') {
-                versionContentEl.style.display = 'block';
-                versionDiffEl.style.display = 'none';
-            } else {
-                versionContentEl.style.display = 'none';
-                versionDiffEl.style.display = 'flex';
-            }
-        });
-    });
-}
-
 function restoreVersion() {
-    const content = currentVersionContent || versionContent.textContent;
-    setEditorContent(content);
+    if (!currentVersionContent) {
+        console.error('No version content to restore');
+        return;
+    }
+    setEditorContent(currentVersionContent);
     updatePreview();
     versionModal.style.display = 'none';
     triggerAutoSave();
@@ -6107,7 +6099,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminModals();
     initSettingsModal();
     initSyntaxHelpModal();
-    initVersionTabs();
 
     // Ensure i18n is applied after modal initialization
     if (typeof i18n !== 'undefined') {

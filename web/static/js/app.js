@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMarkdownToolbar();
     initLocaleSelector();
     initFontSize();
+    loadFolderOrder();
     // Load notes (includes folder icons)
     loadNotes().then(() => {
         handleHashNavigation();
@@ -1174,8 +1175,18 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="new-subfolder">
             <span class="context-icon">&#128193;</span> <span data-i18n="context.newSubfolder">New Subfolder</span>
         </div>
+        <div class="context-menu-item" data-action="rename-folder">
+            <span class="context-icon">&#9998;</span> <span data-i18n="context.renameFolder">Rename Folder</span>
+        </div>
         <div class="context-menu-item" data-action="change-folder-icon">
             <span class="context-icon">&#127912;</span> <span data-i18n="context.changeIcon">Change Icon</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="move-folder-up">
+            <span class="context-icon">&#9650;</span> <span data-i18n="context.moveFolderUp">Move Up</span>
+        </div>
+        <div class="context-menu-item" data-action="move-folder-down">
+            <span class="context-icon">&#9660;</span> <span data-i18n="context.moveFolderDown">Move Down</span>
         </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="expand-folder">
@@ -1487,6 +1498,23 @@ async function handleFolderContextMenuAction(e) {
             collapseFolderAll(currentFolderPath);
             break;
 
+        case 'rename-folder':
+            const renamePrompt = i18n ? i18n.t('prompt.enterNewFolderName') : 'Enter new folder name:';
+            const currentFolderName = currentFolderPath.split('/').pop();
+            const newFolderName = prompt(renamePrompt, currentFolderName);
+            if (newFolderName && newFolderName !== currentFolderName) {
+                await renameFolder(currentFolderPath, newFolderName);
+            }
+            break;
+
+        case 'move-folder-up':
+            await moveFolderOrder(currentFolderPath, -1);
+            break;
+
+        case 'move-folder-down':
+            await moveFolderOrder(currentFolderPath, 1);
+            break;
+
         case 'delete-folder':
             const confirmMsg = i18n ? i18n.t('confirm.deleteFolder') : 'Delete this folder? (Must be empty)';
             if (confirm(confirmMsg)) {
@@ -1593,6 +1621,171 @@ async function deleteFolder(path) {
     } catch (error) {
         console.error('Failed to delete folder:', error);
     }
+}
+
+async function renameFolder(oldPath, newName) {
+    try {
+        // Get all notes in this folder and subfolders
+        const notesInFolder = notes.filter(note => {
+            const notePath = note.folder_path || extractFolderPath(note.title);
+            return notePath === oldPath || notePath.startsWith(oldPath + '/');
+        });
+
+        if (notesInFolder.length === 0) {
+            // Empty folder - just update folderOrder if exists
+            const folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
+            const parentPath = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
+            const oldName = oldPath.split('/').pop();
+            const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+
+            // Update folder order
+            if (folderOrder[parentPath]) {
+                const idx = folderOrder[parentPath].indexOf(oldName);
+                if (idx !== -1) {
+                    folderOrder[parentPath][idx] = newName;
+                }
+            }
+
+            // Update expanded folders
+            if (expandedFolders[oldPath] !== undefined) {
+                expandedFolders[newPath] = expandedFolders[oldPath];
+                delete expandedFolders[oldPath];
+                localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+            }
+
+            localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+            await loadNotes();
+            const msg = i18n ? i18n.t('msg.folderRenamed') : 'Folder renamed';
+            showToast(msg);
+            return;
+        }
+
+        // Calculate new path
+        const parentPath = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
+        const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+
+        // Update all notes with new folder path
+        for (const note of notesInFolder) {
+            const noteFolderPath = note.folder_path || extractFolderPath(note.title);
+            let newFolderPath;
+
+            if (noteFolderPath === oldPath) {
+                newFolderPath = newPath;
+            } else {
+                // Subfolder - replace the old path prefix with new path
+                newFolderPath = newPath + noteFolderPath.substring(oldPath.length);
+            }
+
+            // Get full note to preserve content
+            const getResponse = await authFetch(`/api/notes/${encodeNoteId(note.id)}`);
+            if (!getResponse.ok) continue;
+            const fullNote = await getResponse.json();
+
+            // Update note with new folder path
+            await authFetch(`/api/notes/${encodeNoteId(note.id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folder_path: newFolderPath,
+                    title: fullNote.title,
+                    content: fullNote.content,
+                    type: fullNote.type,
+                    private: fullNote.private
+                })
+            });
+        }
+
+        // Update folder order
+        const folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
+        const oldName = oldPath.split('/').pop();
+        if (folderOrder[parentPath]) {
+            const idx = folderOrder[parentPath].indexOf(oldName);
+            if (idx !== -1) {
+                folderOrder[parentPath][idx] = newName;
+            }
+        }
+        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+
+        // Update expanded folders
+        const newExpandedFolders = {};
+        for (const [path, expanded] of Object.entries(expandedFolders)) {
+            if (path === oldPath) {
+                newExpandedFolders[newPath] = expanded;
+            } else if (path.startsWith(oldPath + '/')) {
+                newExpandedFolders[newPath + path.substring(oldPath.length)] = expanded;
+            } else {
+                newExpandedFolders[path] = expanded;
+            }
+        }
+        expandedFolders = newExpandedFolders;
+        localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+
+        await loadNotes();
+        const msg = i18n ? i18n.t('msg.folderRenamed') : 'Folder renamed';
+        showToast(msg);
+    } catch (error) {
+        console.error('Failed to rename folder:', error);
+        alert('Failed to rename folder');
+    }
+}
+
+// Folder order management
+let folderOrder = {};
+
+function loadFolderOrder() {
+    folderOrder = JSON.parse(localStorage.getItem('folderOrder') || '{}');
+}
+
+function saveFolderOrder() {
+    localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+}
+
+function getSiblingsAtSameLevel(folderPath) {
+    const parentPath = folderPath.includes('/') ? folderPath.substring(0, folderPath.lastIndexOf('/')) : '';
+    const folderName = folderPath.split('/').pop();
+
+    // Get all folders at the same level (same parent)
+    const siblings = folders.filter(f => {
+        const fParent = f.path.includes('/') ? f.path.substring(0, f.path.lastIndexOf('/')) : '';
+        return fParent === parentPath;
+    }).map(f => f.path.split('/').pop());
+
+    return { parentPath, folderName, siblings };
+}
+
+async function moveFolderOrder(folderPath, direction) {
+    const { parentPath, folderName, siblings } = getSiblingsAtSameLevel(folderPath);
+
+    if (siblings.length <= 1) return; // Nothing to reorder
+
+    // Initialize order for this parent if not exists
+    if (!folderOrder[parentPath]) {
+        // Use current order from folders array
+        folderOrder[parentPath] = [...siblings].sort();
+    }
+
+    // Ensure all siblings are in the order array
+    siblings.forEach(s => {
+        if (!folderOrder[parentPath].includes(s)) {
+            folderOrder[parentPath].push(s);
+        }
+    });
+
+    const currentIndex = folderOrder[parentPath].indexOf(folderName);
+    if (currentIndex === -1) return;
+
+    const newIndex = currentIndex + direction;
+    if (newIndex < 0 || newIndex >= folderOrder[parentPath].length) return;
+
+    // Swap positions
+    [folderOrder[parentPath][currentIndex], folderOrder[parentPath][newIndex]] =
+    [folderOrder[parentPath][newIndex], folderOrder[parentPath][currentIndex]];
+
+    saveFolderOrder();
+    renderNoteTree();
+
+    const msg = i18n ? i18n.t('msg.folderMoved') : 'Folder order changed';
+    showToast(msg);
 }
 
 function showToast(message) {
@@ -3659,12 +3852,27 @@ function renderNoteTree() {
 }
 
 function renderTreeLevel(tree, container, level, path) {
+    const parentPath = path || '';
+    const order = folderOrder[parentPath] || [];
+
     const entries = Object.entries(tree).sort((a, b) => {
         // Folders first, then notes
         const aIsFolder = a[1]._isFolder || Object.keys(a[1]._children).length > 0;
         const bIsFolder = b[1]._isFolder || Object.keys(b[1]._children).length > 0;
         if (aIsFolder && !bIsFolder) return -1;
         if (!aIsFolder && bIsFolder) return 1;
+
+        // If both are folders and have custom order, use it
+        if (aIsFolder && bIsFolder && order.length > 0) {
+            const aIdx = order.indexOf(a[0]);
+            const bIdx = order.indexOf(b[0]);
+            if (aIdx !== -1 && bIdx !== -1) {
+                return aIdx - bIdx;
+            }
+            if (aIdx !== -1) return -1;
+            if (bIdx !== -1) return 1;
+        }
+
         return a[0].localeCompare(b[0]);
     });
 

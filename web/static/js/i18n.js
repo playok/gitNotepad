@@ -335,6 +335,8 @@ const i18n = {
             'msg.passwordChanged': 'Password changed successfully',
             'msg.folderCreated': 'Folder created',
             'msg.folderDeleted': 'Folder deleted',
+            'msg.folderRenamed': 'Folder renamed',
+            'msg.folderMoved': 'Folder order changed',
             'msg.insertFileContent': 'Would you like to insert the file content into the note?',
 
             // Buttons
@@ -358,6 +360,9 @@ const i18n = {
             'context.expandAll': 'Expand All',
             'context.collapse': 'Collapse',
             'context.collapseAll': 'Collapse All',
+            'context.renameFolder': 'Rename Folder',
+            'context.moveFolderUp': 'Move Up',
+            'context.moveFolderDown': 'Move Down',
             'context.deleteFolder': 'Delete Folder',
 
             // Icon Picker
@@ -366,6 +371,7 @@ const i18n = {
 
             // Prompts
             'prompt.enterFolderName': 'Enter folder name:',
+            'prompt.enterNewFolderName': 'Enter new folder name:',
 
             // Confirm
             'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
@@ -741,6 +747,8 @@ const i18n = {
             'msg.passwordChanged': '비밀번호가 변경되었습니다',
             'msg.folderCreated': '폴더가 생성되었습니다',
             'msg.folderDeleted': '폴더가 삭제되었습니다',
+            'msg.folderRenamed': '폴더 이름이 변경되었습니다',
+            'msg.folderMoved': '폴더 순서가 변경되었습니다',
             'msg.insertFileContent': '파일 내용을 노트에 삽입하시겠습니까?',
 
             // Buttons
@@ -764,6 +772,9 @@ const i18n = {
             'context.expandAll': '모두 펼치기',
             'context.collapse': '닫기',
             'context.collapseAll': '모두 닫기',
+            'context.renameFolder': '폴더 이름 변경',
+            'context.moveFolderUp': '위로 이동',
+            'context.moveFolderDown': '아래로 이동',
             'context.deleteFolder': '폴더 삭제',
 
             // Icon Picker
@@ -772,6 +783,7 @@ const i18n = {
 
             // Prompts
             'prompt.enterFolderName': '폴더 이름을 입력하세요:',
+            'prompt.enterNewFolderName': '새 폴더 이름을 입력하세요:',
 
             // Confirm
             'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',

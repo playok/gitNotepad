@@ -62,6 +62,10 @@ func New(cfg *config.Config) (*Server, error) {
 }
 
 func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Server, error) {
+	// Run migration for folder separator change (/ -> :>:)
+	if err := handler.MigrateFolderSeparator(cfg.Storage.Path, cfg.Encryption.Enabled, cfg.Encryption.Salt); err != nil {
+		fmt.Printf("Warning: folder separator migration failed: %v\n", err)
+	}
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()

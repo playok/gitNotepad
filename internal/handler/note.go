@@ -176,6 +176,117 @@ func extractFolderPath(title string) (folderPath string, noteName string) {
 	return folderPath, noteName
 }
 
+// MigrateFolderSeparator migrates notes from old "/" separator to new ":>:" separator
+// This should be called once at server startup
+func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encryptionSalt string) error {
+	// Walk through all user directories in storage path
+	entries, err := os.ReadDir(storagePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // No data directory yet
+		}
+		return err
+	}
+
+	migratedCount := 0
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Skip special directories
+		if entry.Name() == ".git" || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+
+		userDir := filepath.Join(storagePath, entry.Name())
+
+		// Walk through all note files in user directory
+		err := filepath.WalkDir(userDir, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+
+			if d.IsDir() {
+				// Skip .git directories
+				if d.Name() == ".git" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			// Only process markdown and text files
+			ext := filepath.Ext(path)
+			if ext != ".md" && ext != ".txt" {
+				return nil
+			}
+
+			// Get relative path from user directory
+			relPath, err := filepath.Rel(userDir, path)
+			if err != nil {
+				return nil
+			}
+			relPath = filepath.ToSlash(relPath)
+
+			// Check if file is in a subfolder
+			dir := filepath.Dir(relPath)
+			if dir == "." {
+				return nil // File is in root, no migration needed
+			}
+
+			// Load the note
+			note, err := model.ParseNoteFromFile(path)
+			if err != nil {
+				return nil // Skip files that can't be loaded
+			}
+
+			// Check if title uses old "/" separator that matches the folder structure
+			// e.g., title "folder/subfolder/note name" with file path "folder/subfolder/uuid.md"
+			if !strings.Contains(note.Title, "/") {
+				return nil // No "/" in title, no migration needed
+			}
+
+			// Check if the title starts with the folder path (using old separator)
+			folderPath := filepath.ToSlash(dir)
+			if !strings.HasPrefix(note.Title, folderPath+"/") {
+				return nil // Title doesn't match folder structure, might be intentional "/"
+			}
+
+			// Migrate: replace "/" with ":>:" in the folder path portion of the title
+			oldTitle := note.Title
+			noteName := note.Title[len(folderPath)+1:] // +1 for the trailing "/"
+			newFolderPart := strings.ReplaceAll(folderPath, "/", FolderSeparator)
+			note.Title = newFolderPart + FolderSeparator + noteName
+
+			// Save the note
+			content, err := note.ToFileContent()
+			if err != nil {
+				fmt.Printf("Migration warning: failed to serialize %s: %v\n", path, err)
+				return nil
+			}
+			if err := os.WriteFile(path, content, 0644); err != nil {
+				fmt.Printf("Migration warning: failed to save %s: %v\n", path, err)
+				return nil
+			}
+
+			migratedCount++
+			fmt.Printf("Migrated note: %s -> %s\n", oldTitle, note.Title)
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("Migration warning: error walking %s: %v\n", userDir, err)
+		}
+	}
+
+	if migratedCount > 0 {
+		fmt.Printf("Migration complete: %d notes migrated to new folder separator\n", migratedCount)
+	}
+
+	return nil
+}
+
 // getUserRepo returns a git repository for the user's storage path
 func (h *NoteHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 	storagePath := h.getUserStoragePath(c)

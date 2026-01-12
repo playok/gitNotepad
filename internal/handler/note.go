@@ -587,8 +587,10 @@ type UpdateNoteRequest struct {
 }
 
 func (h *NoteHandler) Update(c *gin.Context) {
+	fmt.Println("[Note] Update handler called")
 	id := decodeNoteID(c.Param("id"))
 	notesPath := h.getNotesPath(c)
+	fmt.Printf("[Note] Update: id=%s, notesPath=%s\n", id, notesPath)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note

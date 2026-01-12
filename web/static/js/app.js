@@ -5577,6 +5577,9 @@ function setPassword() {
     setPasswordModal.style.display = 'none';
     setPasswordInput.value = '';
     confirmPasswordInput.value = '';
+
+    // Auto-save after setting password
+    saveNote();
 }
 
 // Utility Functions

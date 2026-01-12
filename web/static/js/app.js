@@ -9,38 +9,39 @@ function encodeNoteId(id) {
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// Helper to unescape slashes for display (\/ → /)
-// Used when displaying note titles that may contain escaped slashes
-function unescapeSlashesForDisplay(str) {
-    return str ? str.replace(/\\\//g, '/') : str;
-}
+// Folder separator used in note titles to indicate folder paths
+// e.g., "folder:>:subfolder:>:note title" creates folder/subfolder/note
+const FOLDER_SEPARATOR = ':>:';
 
-// Helper to find the last unescaped slash index in a string
-// Returns -1 if no unescaped slash is found
-// Escaped slash is represented as '\/'
-function findLastUnescapedSlash(str) {
-    if (!str) return -1;
-    for (let i = str.length - 1; i >= 0; i--) {
-        if (str[i] === '/') {
-            // Check if this slash is escaped (preceded by \)
-            if (i > 0 && str[i - 1] === '\\') {
-                continue; // This is an escaped slash, skip it
-            }
-            return i;
-        }
-    }
-    return -1;
-}
-
-// Helper to extract note name from title (handles escaped slashes)
-// e.g., "folder/A\/B test" -> "A\/B test" (the part after last unescaped /)
+// Helper to extract note name from title (part after last folder separator)
+// e.g., "folder:>:subfolder:>:note title" -> "note title"
 function extractNoteName(title) {
     if (!title) return title;
-    const lastSlash = findLastUnescapedSlash(title);
-    if (lastSlash === -1) {
+    const lastSep = title.lastIndexOf(FOLDER_SEPARATOR);
+    if (lastSep === -1) {
         return title; // No folder path, return whole title
     }
-    return title.substring(lastSlash + 1);
+    return title.substring(lastSep + FOLDER_SEPARATOR.length);
+}
+
+// Helper to extract folder path from title (converts :>: to / for display)
+// e.g., "folder:>:subfolder:>:note title" -> "folder/subfolder"
+function extractFolderPath(title) {
+    if (!title) return '';
+    const lastSep = title.lastIndexOf(FOLDER_SEPARATOR);
+    if (lastSep === -1) {
+        return ''; // No folder path
+    }
+    const folderPart = title.substring(0, lastSep);
+    return folderPart.split(FOLDER_SEPARATOR).join('/');
+}
+
+// Helper to build title with folder path
+// e.g., ("folder/subfolder", "note title") -> "folder:>:subfolder:>:note title"
+function buildTitleWithFolder(folderPath, noteName) {
+    if (!folderPath) return noteName;
+    const folderParts = folderPath.split('/').filter(p => p);
+    return folderParts.join(FOLDER_SEPARATOR) + FOLDER_SEPARATOR + noteName;
 }
 
 // State
@@ -1293,7 +1294,7 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'move':
-            const newPath = prompt('Enter new path (use / for folders):', note.title);
+            const newPath = prompt('Enter new path (use :>: for folders, e.g., folder:>:note):', note.title);
             if (newPath && newPath !== note.title) {
                 await renameNote(contextTarget, newPath);
             }
@@ -1309,13 +1310,13 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'delete':
-            if (confirm(`Delete "${unescapeSlashesForDisplay(note.title)}"?`)) {
+            if (confirm(`Delete "${extractNoteName(note.title)}"?`)) {
                 await deleteNoteById(contextTarget);
             }
             break;
 
         case 'decrypt':
-            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${unescapeSlashesForDisplay(note.title)}"?`)) {
+            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${extractNoteName(note.title)}"?`)) {
                 await decryptNote(contextTarget);
             }
             break;
@@ -1697,11 +1698,11 @@ async function handleDrop(e, targetPath) {
     const note = notes.find(n => n.id === draggedNoteId);
     if (!note) return;
 
-    // Get the note's current name (without path, handles escaped slashes)
+    // Get the note's current name (without folder path)
     const noteName = extractNoteName(note.title);
 
-    // Build new title with target path
-    const newTitle = targetPath ? `${targetPath}/${noteName}` : noteName;
+    // Build new title with target folder path using :>: separator
+    const newTitle = buildTitleWithFolder(targetPath, noteName);
 
     if (newTitle !== note.title) {
         await renameNote(draggedNoteId, newTitle);
@@ -2356,6 +2357,20 @@ function setupEventListeners() {
 
     // Title change - trigger auto-save
     noteTitle.addEventListener('input', triggerAutoSave);
+
+    // Auto-replace / with :>: in title for folder separator
+    noteTitle.addEventListener('keydown', (e) => {
+        if (e.key === '/') {
+            e.preventDefault();
+            const input = e.target;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const value = input.value;
+            input.value = value.substring(0, start) + FOLDER_SEPARATOR + value.substring(end);
+            input.selectionStart = input.selectionEnd = start + FOLDER_SEPARATOR.length;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
 
     // Type change - toggle preview and trigger auto-save
     noteType.addEventListener('change', () => {
@@ -3670,9 +3685,8 @@ function renderNoteItem(note, container, level, isChild) {
         }
     }
 
-    // Extract note name first (handles escaped slashes), then unescape for display
-    const noteName = isChild ? extractNoteName(note.title) : note.title;
-    const displayName = unescapeSlashesForDisplay(noteName);
+    // Extract note name from title (part after last :>: separator)
+    const displayName = isChild ? extractNoteName(note.title) : note.title;
     const lockIcon = note.private ? '<span class="lock-icon">&#128274;</span>' : '';
     const defaultTypeIcon = note.type === 'markdown' ? '📄' : (note.type === 'asciidoc' ? '📝' : '📃');
     const noteIcon = getCustomIcon('note', note.id) || defaultTypeIcon;
@@ -3784,23 +3798,17 @@ function createNewNote() {
 }
 
 // Helper functions for folder path and title parsing
+// Parses title with :>: separator into folder path (with /) and note name
 function parseNoteTitle(fullTitle) {
-    const lastSlash = fullTitle.lastIndexOf('/');
-    if (lastSlash === -1) {
-        return { folderPath: '', title: fullTitle };
-    }
-    return {
-        folderPath: fullTitle.substring(0, lastSlash),
-        title: fullTitle.substring(lastSlash + 1)
-    };
+    const folderPath = extractFolderPath(fullTitle);
+    const title = extractNoteName(fullTitle);
+    return { folderPath, title };
 }
 
 function getFullNoteTitle() {
     const title = noteTitle.value.trim();
-    if (currentNoteFolderPath) {
-        return currentNoteFolderPath + '/' + title;
-    }
-    return title;
+    // Use :>: separator to build full title with folder path
+    return buildTitleWithFolder(currentNoteFolderPath, title);
 }
 
 function setNoteTitleAndPath(fullTitle) {
@@ -6571,9 +6579,8 @@ function renderDateNotesList(container, dateNotes) {
         const lockIcon = note.private ? ' &#128274;' : '';
 
         // Extract folder path and note name
-        const parts = note.title.split('/');
-        const noteName = parts.pop();
-        const folderPath = parts.join('/');
+        const noteName = extractNoteName(note.title);
+        const folderPath = extractFolderPath(note.title);
 
         item.innerHTML = `
             <span class="date-note-item-icon">${icon}</span>

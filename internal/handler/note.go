@@ -157,32 +157,23 @@ func decodeNoteID(id string) string {
 	return string(decoded)
 }
 
-// findLastUnescapedSlash finds the index of the last unescaped '/' in a string
-// Returns -1 if no unescaped slash is found
-// Escaped slash is represented as '\/'
-func findLastUnescapedSlash(s string) int {
-	lastIndex := -1
-	for i := len(s) - 1; i >= 0; i-- {
-		if s[i] == '/' {
-			// Check if this slash is escaped (preceded by \)
-			if i > 0 && s[i-1] == '\\' {
-				continue // This is an escaped slash, skip it
-			}
-			lastIndex = i
-			break
-		}
+// FolderSeparator is the delimiter used in note titles to indicate folder paths
+// e.g., "folder:>:subfolder:>:note title" creates folder/subfolder/note
+const FolderSeparator = ":>:"
+
+// extractFolderPath extracts the folder path from a note title
+// Returns folder path (with / for filesystem) and the note name
+// e.g., "folder:>:subfolder:>:note" -> ("folder/subfolder", "note")
+func extractFolderPath(title string) (folderPath string, noteName string) {
+	lastSep := strings.LastIndex(title, FolderSeparator)
+	if lastSep == -1 {
+		return "", title // No folder path
 	}
-	return lastIndex
-}
-
-// unescapeSlashes converts '\/' to '/' in a string
-func unescapeSlashes(s string) string {
-	return strings.ReplaceAll(s, "\\/", "/")
-}
-
-// escapeSlashes converts '/' to '\/' in a string (for display purposes)
-func escapeSlashes(s string) string {
-	return strings.ReplaceAll(s, "/", "\\/")
+	folderPart := title[:lastSep]
+	noteName = title[lastSep+len(FolderSeparator):]
+	// Convert folder separator to filesystem path separator
+	folderPath = strings.ReplaceAll(folderPart, FolderSeparator, "/")
+	return folderPath, noteName
 }
 
 // getUserRepo returns a git repository for the user's storage path
@@ -359,14 +350,11 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
-	// Parse folder path from title (e.g., "folder/subfolder/note title")
-	// Supports escaped slashes (\/) in title which are not treated as folder separators
-	var folderPath string
-	if lastSlash := findLastUnescapedSlash(req.Title); lastSlash != -1 {
-		folderPath = req.Title[:lastSlash]
-		// Unescape slashes in folder path for filesystem operations
-		folderPath = unescapeSlashes(folderPath)
+	// Parse folder path from title using :>: separator
+	// e.g., "folder:>:subfolder:>:note title" -> folder path: "folder/subfolder"
+	folderPath, _ := extractFolderPath(req.Title)
 
+	if folderPath != "" {
 		// Validate folder path (prevent path traversal)
 		if strings.Contains(folderPath, "..") {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
@@ -399,7 +387,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	now := time.Now()
 	note := &model.Note{
 		ID:          fullID,
-		Title:       req.Title, // Keep escaped slashes (\/) for round-trip editing
+		Title:       req.Title,
 		Content:     req.Content,
 		Type:        req.Type,
 		Private:     req.Private,
@@ -483,7 +471,6 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 	// Update fields
 	if req.Title != "" {
-		// Keep escaped slashes (\/) for round-trip editing
 		note.Title = req.Title
 	}
 	note.Content = req.Content
@@ -512,18 +499,12 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		}
 	}
 
-	// Extract folder path from title (e.g., "folder/subfolder/notename" -> "folder/subfolder")
-	// Uses the original request title to properly handle escaped slashes (\/)
-	var newFolderPath string
+	// Extract folder path from title using :>: separator
 	titleForPath := req.Title
 	if titleForPath == "" {
 		titleForPath = note.Title
 	}
-	if lastSlash := findLastUnescapedSlash(titleForPath); lastSlash != -1 {
-		newFolderPath = titleForPath[:lastSlash]
-		// Unescape slashes in folder path for filesystem operations
-		newFolderPath = unescapeSlashes(newFolderPath)
-	}
+	newFolderPath, _ := extractFolderPath(titleForPath)
 
 	// Determine target folder
 	targetFolder := notesPath

@@ -329,16 +329,18 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - 폴더 내에서 새 노트 생성
 - 트리 구조로 폴더/노트 표시
 
-### 제목에서 슬래시 사용
-- `/`는 폴더 구분자로 사용됨 (예: `folder/note title`)
-- 제목에 리터럴 슬래시를 사용하려면 `\/`로 이스케이프
-  - 입력: `A\/B 테스트` → 표시: `A/B 테스트` (폴더 없음)
-  - 입력: `folder/A\/B test` → 폴더 `folder`, 노트 이름 `A/B test`
+### 폴더 구분자
+- `:>:`를 폴더 구분자로 사용 (예: `folder:>:note title`)
+- `/`는 일반 문자로 사용 가능 (예: `2024/01/15 메모`, `A/B 테스트`)
+- 제목 입력 시 `/` 키를 누르면 자동으로 `:>:`로 변환됨
+- 예시:
+  - `folder:>:subfolder:>:note` → 폴더 `folder/subfolder`, 노트 `note`
+  - `A/B 테스트` → 루트에 저장, 제목 그대로 `A/B 테스트`
 
 ### 구현 세부사항
 - **파일 이동**: Update 핸들러에서 타이틀의 폴더 경로 추출 후 파일 이동
 - **경로 정규화**: Windows/Unix 경로 호환성 (`filepath.ToSlash()`)
-- **이스케이프 슬래시**: `findLastUnescapedSlash()`, `unescapeSlashes()` 함수로 처리
+- **폴더 구분자**: `extractFolderPath()`, `buildTitleWithFolder()` 함수로 처리
 - **중복 저장 방지**: `isSaving` 플래그로 자동 저장과 수동 저장 충돌 방지
 - **트리 렌더링**: `renderTreeLevel()`에서 `isChild` 플래그로 들여쓰기 표시
 

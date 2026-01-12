@@ -18,23 +18,27 @@ import (
 	"golang.org/x/term"
 )
 
-const nginxHelp = `
+func nginxHelp(port int, basePath string) string {
+	if basePath == "" {
+		basePath = "/note"
+	}
+	return fmt.Sprintf(`
 Nginx Reverse Proxy Configuration
 ==================================
 
-To run Git Notepad behind nginx at a sub-path (e.g., /note):
+To run Git Notepad behind nginx at a sub-path (e.g., %s):
 
 1. Edit config.yaml:
 
    server:
-     port: 8080
+     port: %d
      host: "127.0.0.1"
-     base_path: "/note"
+     base_path: "%s"
 
 2. Add to nginx.conf:
 
-   location /note {
-       proxy_pass http://127.0.0.1:8080;
+   location %s {
+       proxy_pass http://127.0.0.1:%d;
        proxy_set_header Host $host;
        proxy_set_header X-Real-IP $remote_addr;
        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -44,8 +48,9 @@ To run Git Notepad behind nginx at a sub-path (e.g., /note):
 3. Reload nginx:
    $ nginx -s reload
 
-4. Access at: http://your-domain/note
-`
+4. Access at: http://your-domain%s
+`, basePath, port, basePath, basePath, port, basePath)
+}
 
 const usageHelp = `
 Git Notepad - Web-based note application with Git version control
@@ -108,7 +113,18 @@ func main() {
 	flag.Parse()
 
 	if *showNginx {
-		fmt.Print(nginxHelp)
+		// Load config to get actual port and base_path
+		var cfg *config.Config
+		if _, err := os.Stat(*configPath); os.IsNotExist(err) {
+			cfg = config.Default()
+		} else {
+			var loadErr error
+			cfg, loadErr = config.Load(*configPath)
+			if loadErr != nil {
+				cfg = config.Default()
+			}
+		}
+		fmt.Print(nginxHelp(cfg.Server.Port, cfg.Server.BasePath))
 		return
 	}
 

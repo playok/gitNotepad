@@ -183,12 +183,15 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 	entries, err := os.ReadDir(storagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
+			fmt.Println("No data directory found, skipping migration.")
 			return nil // No data directory yet
 		}
 		return err
 	}
 
 	migratedCount := 0
+	scannedCount := 0
+	skippedCount := 0
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -201,6 +204,7 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 		}
 
 		userDir := filepath.Join(storagePath, entry.Name())
+		fmt.Printf("Scanning user directory: %s\n", entry.Name())
 
 		// Walk through all note files in user directory
 		err := filepath.WalkDir(userDir, func(path string, d fs.DirEntry, walkErr error) error {
@@ -222,9 +226,13 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 				return nil
 			}
 
+			scannedCount++
+
 			// Get relative path from user directory
 			relPath, err := filepath.Rel(userDir, path)
 			if err != nil {
+				fmt.Printf("  Skip (rel path error): %s\n", path)
+				skippedCount++
 				return nil
 			}
 			relPath = filepath.ToSlash(relPath)
@@ -232,25 +240,58 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			// Check if file is in a subfolder
 			dir := filepath.Dir(relPath)
 			if dir == "." {
-				return nil // File is in root, no migration needed
+				// File is in root, no migration needed
+				return nil
 			}
 
 			// Load the note
 			note, err := model.ParseNoteFromFile(path)
 			if err != nil {
-				return nil // Skip files that can't be loaded
+				fmt.Printf("  Skip (parse error): %s - %v\n", relPath, err)
+				skippedCount++
+				return nil
 			}
 
 			// Check if title uses old "/" separator that matches the folder structure
 			// e.g., title "folder/subfolder/note name" with file path "folder/subfolder/uuid.md"
 			if !strings.Contains(note.Title, "/") {
-				return nil // No "/" in title, no migration needed
+				// No "/" in title - check if already migrated or just doesn't need migration
+				if strings.Contains(note.Title, FolderSeparator) {
+					// Already uses new separator
+					return nil
+				}
+				// No folder separator in title at all
+				return nil
 			}
 
 			// Check if the title starts with the folder path (using old separator)
 			folderPath := filepath.ToSlash(dir)
 			if !strings.HasPrefix(note.Title, folderPath+"/") {
-				return nil // Title doesn't match folder structure, might be intentional "/"
+				// Title has "/" but doesn't match folder structure
+				// This might be a case where only part of the path uses "/"
+				// Try to migrate any "/" to ":>:" in the title
+				if strings.Contains(note.Title, "/") {
+					oldTitle := note.Title
+					// Replace all "/" with ":>:" in the title
+					note.Title = strings.ReplaceAll(note.Title, "/", FolderSeparator)
+
+					// Save the note
+					content, err := note.ToFileContent()
+					if err != nil {
+						fmt.Printf("  Warning (serialize): %s - %v\n", relPath, err)
+						skippedCount++
+						return nil
+					}
+					if err := os.WriteFile(path, content, 0644); err != nil {
+						fmt.Printf("  Warning (save): %s - %v\n", relPath, err)
+						skippedCount++
+						return nil
+					}
+
+					migratedCount++
+					fmt.Printf("  Migrated: %s -> %s\n", oldTitle, note.Title)
+				}
+				return nil
 			}
 
 			// Migrate: replace "/" with ":>:" in the folder path portion of the title
@@ -262,27 +303,30 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			// Save the note
 			content, err := note.ToFileContent()
 			if err != nil {
-				fmt.Printf("Migration warning: failed to serialize %s: %v\n", path, err)
+				fmt.Printf("  Warning (serialize): %s - %v\n", relPath, err)
+				skippedCount++
 				return nil
 			}
 			if err := os.WriteFile(path, content, 0644); err != nil {
-				fmt.Printf("Migration warning: failed to save %s: %v\n", path, err)
+				fmt.Printf("  Warning (save): %s - %v\n", relPath, err)
+				skippedCount++
 				return nil
 			}
 
 			migratedCount++
-			fmt.Printf("Migrated note: %s -> %s\n", oldTitle, note.Title)
+			fmt.Printf("  Migrated: %s -> %s\n", oldTitle, note.Title)
 			return nil
 		})
 
 		if err != nil {
-			fmt.Printf("Migration warning: error walking %s: %v\n", userDir, err)
+			fmt.Printf("Warning: error walking %s: %v\n", userDir, err)
 		}
 	}
 
-	if migratedCount > 0 {
-		fmt.Printf("Migration complete: %d notes migrated to new folder separator\n", migratedCount)
-	}
+	fmt.Printf("\nMigration summary:\n")
+	fmt.Printf("  Scanned: %d files\n", scannedCount)
+	fmt.Printf("  Migrated: %d files\n", migratedCount)
+	fmt.Printf("  Skipped: %d files\n", skippedCount)
 
 	return nil
 }

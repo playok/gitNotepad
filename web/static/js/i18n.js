@@ -96,6 +96,13 @@ const i18n = {
             'calendar.selectDate': 'Select a date',
             'calendar.notesForDate': 'Click on a date to view notes',
             'calendar.toggle': 'Toggle calendar',
+            'calendar.sun': 'S',
+            'calendar.mon': 'M',
+            'calendar.tue': 'T',
+            'calendar.wed': 'W',
+            'calendar.thu': 'T',
+            'calendar.fri': 'F',
+            'calendar.sat': 'S',
 
             // Layout
             'layout.direction': 'Toggle Layout (Horizontal/Vertical)',
@@ -468,6 +475,13 @@ const i18n = {
             'calendar.selectDate': '날짜를 선택하세요',
             'calendar.notesForDate': '날짜를 클릭하여 노트를 확인하세요',
             'calendar.toggle': '캘린더 토글',
+            'calendar.sun': '일',
+            'calendar.mon': '월',
+            'calendar.tue': '화',
+            'calendar.wed': '수',
+            'calendar.thu': '목',
+            'calendar.fri': '금',
+            'calendar.sat': '토',
 
             // Layout
             'layout.direction': '레이아웃 전환 (가로/세로)',

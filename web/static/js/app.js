@@ -6329,9 +6329,10 @@ function renderMiniCalendar() {
     const year = miniCalCurrentDate.getFullYear();
     const month = miniCalCurrentDate.getMonth();
 
-    // Update title
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    miniCalTitle.textContent = `${monthNames[month]} ${year}`;
+    // Update title with i18n
+    const locale = localStorage.getItem('locale') || 'en';
+    const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
+    miniCalTitle.textContent = miniCalCurrentDate.toLocaleDateString(dateLocale, { year: 'numeric', month: 'short' });
 
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);

@@ -44,6 +44,13 @@ function buildTitleWithFolder(folderPath, noteName) {
     return folderParts.join(FOLDER_SEPARATOR) + FOLDER_SEPARATOR + noteName;
 }
 
+// Helper to format folder path for display (adds trailing / if path exists)
+// e.g., "folder/subfolder" -> "folder/subfolder /"
+function formatFolderPathForDisplay(folderPath) {
+    if (!folderPath) return '';
+    return folderPath + ' /';
+}
+
 // State
 let currentNote = null;
 let currentPassword = null;
@@ -1327,9 +1334,16 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'move':
-            const newPath = prompt('Enter new path (use :>: for folders, e.g., folder:>:note):', note.title);
-            if (newPath && newPath !== note.title) {
-                await renameNote(contextTarget, newPath);
+            // Display current path with / for user-friendly format
+            const currentDisplayPath = note.folder_path
+                ? note.folder_path + '/' + note.title
+                : note.title;
+            const promptMsg = i18n ? i18n.t('prompt.enterNewPath') : 'Enter new path (e.g., folder/note):';
+            const userInput = prompt(promptMsg, currentDisplayPath);
+            if (userInput && userInput !== currentDisplayPath) {
+                // Convert user's / to internal :>: format
+                const internalPath = userInput.replace(/\//g, FOLDER_SEPARATOR);
+                await renameNote(contextTarget, internalPath);
             }
             break;
 
@@ -1462,7 +1476,7 @@ async function handleFolderContextMenuAction(e) {
             currentPassword = null;
             isViewMode = false; // New notes are created in edit mode
             currentNoteFolderPath = currentFolderPath;
-            noteFolderPath.textContent = currentFolderPath;
+            noteFolderPath.textContent = formatFolderPathForDisplay(currentFolderPath);
             noteTitle.value = '';
             setEditorContent('');
             noteType.value = 'markdown';
@@ -4316,7 +4330,7 @@ function createNewNoteInFolder(folderPath) {
 
     // Set folder path
     currentNoteFolderPath = folderPath;
-    noteFolderPath.textContent = folderPath ? folderPath + ' /' : '';
+    noteFolderPath.textContent = formatFolderPathForDisplay(folderPath);
     noteTitle.value = '';
 
     setEditorContent('');
@@ -4394,7 +4408,7 @@ function getFullNoteTitle() {
 function setNoteTitleAndPath(fullTitle) {
     const { folderPath, title } = parseNoteTitle(fullTitle || '');
     currentNoteFolderPath = folderPath;
-    noteFolderPath.textContent = folderPath;
+    noteFolderPath.textContent = formatFolderPathForDisplay(folderPath);
     noteTitle.value = title;
 }
 
@@ -4403,7 +4417,7 @@ function showPreviewOnly(note) {
     isViewMode = true;
     // Use separate folder_path field from API (with fallback to extracting from title for backward compatibility)
     currentNoteFolderPath = note.folder_path || extractFolderPath(note.title || '');
-    noteFolderPath.textContent = currentNoteFolderPath;
+    noteFolderPath.textContent = formatFolderPathForDisplay(currentNoteFolderPath);
     noteTitle.value = note.folder_path !== undefined ? (note.title || '') : extractNoteName(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
@@ -4445,7 +4459,7 @@ function showEditor(note) {
     isViewMode = false;
     // Use separate folder_path field from API (with fallback to extracting from title for backward compatibility)
     currentNoteFolderPath = note.folder_path || extractFolderPath(note.title || '');
-    noteFolderPath.textContent = currentNoteFolderPath;
+    noteFolderPath.textContent = formatFolderPathForDisplay(currentNoteFolderPath);
     noteTitle.value = note.folder_path !== undefined ? (note.title || '') : extractNoteName(note.title || '');
     setEditorContent(note.content || '');
     noteType.value = note.type || 'markdown';
@@ -7386,7 +7400,7 @@ async function createNoteForDate(date) {
     currentPassword = null;
     isViewMode = false; // New notes are created in edit mode
     currentNoteFolderPath = folderPath;
-    noteFolderPath.textContent = folderPath + '/';
+    noteFolderPath.textContent = formatFolderPathForDisplay(folderPath);
     noteTitle.value = `${dateStr} `;
     setEditorContent('');
     noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';

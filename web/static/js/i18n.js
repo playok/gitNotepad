@@ -396,6 +396,7 @@ const i18n = {
             // Prompts
             'prompt.enterFolderName': 'Enter folder name:',
             'prompt.enterNewFolderName': 'Enter new folder name:',
+            'prompt.enterNewPath': 'Enter new path (e.g., folder/note):',
 
             // Confirm
             'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
@@ -832,6 +833,7 @@ const i18n = {
             // Prompts
             'prompt.enterFolderName': '폴더 이름을 입력하세요:',
             'prompt.enterNewFolderName': '새 폴더 이름을 입력하세요:',
+            'prompt.enterNewPath': '새 경로를 입력하세요 (예: 폴더/노트):',
 
             // Confirm
             'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',

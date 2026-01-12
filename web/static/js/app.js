@@ -2573,10 +2573,132 @@ function hideDropOverlay(overlay) {
     overlay.classList.remove('visible');
 }
 
+// Check if file is a text/code file that can be inserted as content
+function isTextOrCodeFile(fileName, mimeType) {
+    const textExtensions = [
+        // Data formats
+        'json', 'yaml', 'yml', 'xml', 'csv', 'tsv', 'toml', 'ini', 'conf', 'cfg',
+        // Web
+        'html', 'htm', 'css', 'scss', 'sass', 'less', 'js', 'jsx', 'ts', 'tsx', 'vue', 'svelte',
+        // Programming languages
+        'java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'cs', 'go', 'rs', 'swift', 'kt', 'kts',
+        'py', 'rb', 'php', 'pl', 'pm', 'lua', 'r', 'scala', 'groovy', 'clj', 'cljs',
+        'hs', 'ml', 'fs', 'fsx', 'ex', 'exs', 'erl', 'hrl',
+        // Shell/Script
+        'sh', 'bash', 'zsh', 'fish', 'ps1', 'psm1', 'bat', 'cmd',
+        // Config/Build
+        'dockerfile', 'makefile', 'cmake', 'gradle', 'sbt',
+        // Markup/Doc
+        'md', 'markdown', 'rst', 'adoc', 'asciidoc', 'tex', 'latex',
+        // SQL
+        'sql', 'mysql', 'pgsql', 'sqlite',
+        // Other
+        'txt', 'log', 'diff', 'patch', 'env', 'gitignore', 'editorconfig'
+    ];
+
+    const ext = fileName.split('.').pop().toLowerCase();
+
+    // Check by extension
+    if (textExtensions.includes(ext)) {
+        return true;
+    }
+
+    // Check by MIME type
+    if (mimeType) {
+        if (mimeType.startsWith('text/') ||
+            mimeType === 'application/json' ||
+            mimeType === 'application/xml' ||
+            mimeType === 'application/javascript' ||
+            mimeType === 'application/x-yaml' ||
+            mimeType === 'application/x-sh') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Get code language identifier from file extension
+function getCodeLanguage(fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+
+    const languageMap = {
+        // Data formats
+        'json': 'json', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
+        'csv': 'csv', 'toml': 'toml', 'ini': 'ini',
+        // Web
+        'html': 'html', 'htm': 'html', 'css': 'css', 'scss': 'scss',
+        'sass': 'sass', 'less': 'less', 'js': 'javascript', 'jsx': 'jsx',
+        'ts': 'typescript', 'tsx': 'tsx', 'vue': 'vue', 'svelte': 'svelte',
+        // Programming
+        'java': 'java', 'c': 'c', 'cpp': 'cpp', 'cc': 'cpp', 'cxx': 'cpp',
+        'h': 'c', 'hpp': 'cpp', 'cs': 'csharp', 'go': 'go', 'rs': 'rust',
+        'swift': 'swift', 'kt': 'kotlin', 'kts': 'kotlin',
+        'py': 'python', 'rb': 'ruby', 'php': 'php', 'pl': 'perl',
+        'lua': 'lua', 'r': 'r', 'scala': 'scala', 'groovy': 'groovy',
+        'clj': 'clojure', 'cljs': 'clojure', 'hs': 'haskell',
+        'ml': 'ocaml', 'fs': 'fsharp', 'ex': 'elixir', 'exs': 'elixir',
+        'erl': 'erlang',
+        // Shell
+        'sh': 'bash', 'bash': 'bash', 'zsh': 'zsh', 'fish': 'fish',
+        'ps1': 'powershell', 'psm1': 'powershell', 'bat': 'batch', 'cmd': 'batch',
+        // Config
+        'dockerfile': 'dockerfile', 'makefile': 'makefile',
+        // Markup
+        'md': 'markdown', 'markdown': 'markdown', 'rst': 'rst',
+        'adoc': 'asciidoc', 'asciidoc': 'asciidoc', 'tex': 'latex',
+        // SQL
+        'sql': 'sql', 'mysql': 'sql', 'pgsql': 'sql',
+        // Other
+        'diff': 'diff', 'patch': 'diff'
+    };
+
+    return languageMap[ext] || '';
+}
+
+// Read file content as text
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsText(file);
+    });
+}
+
+// Insert file content as code block
+function insertFileContentAsCodeBlock(fileName, content, noteType) {
+    const lang = getCodeLanguage(fileName);
+    let codeBlock;
+
+    if (noteType === 'asciidoc') {
+        // AsciiDoc format
+        codeBlock = `[source,${lang || 'text'}]\n----\n${content}\n----\n`;
+    } else {
+        // Markdown format (default)
+        codeBlock = '```' + lang + '\n' + content + '\n```\n';
+    }
+
+    insertAtCursor(codeBlock);
+    updatePreview();
+    triggerAutoSave();
+}
+
 async function uploadAndAttachFile(file) {
     const isImage = file.type.startsWith('image/');
     const fileName = file.name;
     const fileSize = file.size;
+    const isTextFile = isTextOrCodeFile(fileName, file.type);
+
+    // For text/code files, read content before upload for potential insertion
+    let fileContent = null;
+    if (isTextFile && !isImage) {
+        try {
+            fileContent = await readFileAsText(file);
+        } catch (e) {
+            console.error('Failed to read file content:', e);
+        }
+    }
 
     try {
         const formData = new FormData();
@@ -2607,12 +2729,24 @@ async function uploadAndAttachFile(file) {
             if (isImage) {
                 insertAttachmentToContent(attachment);
             }
+            // For text/code files, ask if user wants to insert content
+            else if (isTextFile && fileContent !== null) {
+                const confirmMsg = i18n
+                    ? i18n.t('msg.insertFileContent') || 'Would you like to insert the file content into the note?'
+                    : 'Would you like to insert the file content into the note?';
+
+                if (confirm(confirmMsg)) {
+                    insertFileContentAsCodeBlock(fileName, fileContent, noteType.value);
+                }
+            }
         } else {
-            alert('Failed to upload file');
+            const errorMsg = i18n ? i18n.t('msg.uploadFailed') || 'Failed to upload file' : 'Failed to upload file';
+            alert(errorMsg);
         }
     } catch (error) {
         console.error('File upload failed:', error);
-        alert('Failed to upload file');
+        const errorMsg = i18n ? i18n.t('msg.uploadFailed') || 'Failed to upload file' : 'Failed to upload file';
+        alert(errorMsg);
     }
 }
 

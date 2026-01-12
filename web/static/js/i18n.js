@@ -301,6 +301,7 @@ const i18n = {
             'msg.passwordChanged': 'Password changed successfully',
             'msg.folderCreated': 'Folder created',
             'msg.folderDeleted': 'Folder deleted',
+            'msg.insertFileContent': 'Would you like to insert the file content into the note?',
 
             // Buttons
             'btn.edit': 'Edit',
@@ -672,6 +673,7 @@ const i18n = {
             'msg.passwordChanged': '비밀번호가 변경되었습니다',
             'msg.folderCreated': '폴더가 생성되었습니다',
             'msg.folderDeleted': '폴더가 삭제되었습니다',
+            'msg.insertFileContent': '파일 내용을 노트에 삽입하시겠습니까?',
 
             // Buttons
             'btn.edit': '편집',

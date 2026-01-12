@@ -1989,6 +1989,13 @@ body {
     overflow-y: auto;
 }
 
+.modal-content.modal-xlarge {
+    max-width: 90vw;
+    width: 1200px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
 .modal-content h3 {
     margin-bottom: 0.5rem;
     color: var(--text-primary);
@@ -2122,8 +2129,7 @@ body {
     border-color: var(--accent);
 }
 
-.version-content,
-.version-diff {
+.version-content {
     background-color: var(--bg-secondary);
     padding: 20px;
     border-radius: var(--radius);
@@ -2137,41 +2143,90 @@ body {
     line-height: 1.6;
 }
 
-/* Diff styles */
-.diff-line {
-    display: block;
-    padding: 2px 8px;
-    margin: 0 -8px;
+/* Side-by-side diff styles */
+.version-diff-container {
+    display: flex;
+    gap: 10px;
+    max-height: 500px;
 }
 
-.diff-line.added {
-    background-color: rgba(46, 160, 67, 0.2);
-    color: #3fb950;
+.diff-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
 }
 
-.diff-line.removed {
-    background-color: rgba(248, 81, 73, 0.2);
-    color: #f85149;
-}
-
-.diff-line.unchanged {
+.diff-panel-header {
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
+.diff-panel.diff-old .diff-panel-header {
+    color: #f85149;
+}
+
+.diff-panel.diff-new .diff-panel-header {
+    color: #3fb950;
+}
+
+.diff-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+/* Diff line styles */
+.diff-line {
+    display: flex;
+    padding: 1px 8px;
+    white-space: pre;
+    min-height: 1.5em;
+}
+
+.diff-line.added {
+    background-color: rgba(46, 160, 67, 0.15);
+}
+
+.diff-line.removed {
+    background-color: rgba(248, 81, 73, 0.15);
+}
+
+.diff-line.changed {
+    background-color: rgba(210, 153, 34, 0.15);
+}
+
+.diff-line.empty {
+    background-color: var(--bg-tertiary);
+    opacity: 0.5;
+}
+
 .diff-line-number {
-    display: inline-block;
+    flex-shrink: 0;
     width: 40px;
     color: var(--text-muted);
     text-align: right;
-    padding-right: 10px;
+    padding-right: 8px;
     user-select: none;
     opacity: 0.6;
+    border-right: 1px solid var(--border);
+    margin-right: 8px;
 }
 
-.diff-prefix {
-    display: inline-block;
-    width: 20px;
-    font-weight: bold;
+.diff-line-content {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Scrollbar */

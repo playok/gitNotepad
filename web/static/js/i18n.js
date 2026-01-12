@@ -146,6 +146,8 @@ const i18n = {
             'history.loadFailed': 'Failed to load history',
             'history.viewContent': 'Content',
             'history.viewDiff': 'Diff',
+            'history.oldVersion': 'Old Version',
+            'history.newVersion': 'Current',
 
             // Password
             'password.enter': 'Enter Password',
@@ -564,7 +566,9 @@ const i18n = {
             'history.current': '현재',
             'history.loadFailed': '기록을 불러오지 못했습니다',
             'history.viewContent': '내용',
-            'history.viewDiff': '변경사항',
+            'history.viewDiff': '비교',
+            'history.oldVersion': '이전 버전',
+            'history.newVersion': '현재',
 
             // Password
             'password.enter': '비밀번호 입력',

@@ -3805,16 +3805,16 @@ async function showVersion(hash) {
         // Calculate and render diff
         renderVersionDiff(data.content, getEditorContent());
 
-        // Reset to content tab
+        // Default to diff tab
         const versionTabs = document.querySelectorAll('.version-tab');
         const versionContentEl = document.getElementById('versionContent');
         const versionDiffEl = document.getElementById('versionDiff');
 
         versionTabs.forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.view === 'content');
+            tab.classList.toggle('active', tab.dataset.view === 'diff');
         });
-        versionContentEl.style.display = 'block';
-        versionDiffEl.style.display = 'none';
+        versionContentEl.style.display = 'none';
+        versionDiffEl.style.display = 'flex';
 
         historyModal.style.display = 'none';
         versionModal.style.display = 'flex';
@@ -3824,13 +3824,15 @@ async function showVersion(hash) {
 }
 
 function renderVersionDiff(oldContent, newContent) {
-    const versionDiffEl = document.getElementById('versionDiff');
-    if (!versionDiffEl) return;
+    const diffOldEl = document.getElementById('diffOldContent');
+    const diffNewEl = document.getElementById('diffNewContent');
+    if (!diffOldEl || !diffNewEl) return;
 
     // Use jsdiff library if available
     if (typeof Diff !== 'undefined') {
         const diff = Diff.diffLines(oldContent, newContent);
-        let html = '';
+        let oldHtml = '';
+        let newHtml = '';
         let oldLineNum = 1;
         let newLineNum = 1;
 
@@ -3844,24 +3846,52 @@ function renderVersionDiff(oldContent, newContent) {
             lines.forEach(line => {
                 const escapedLine = escapeHtml(line) || ' ';
                 if (part.added) {
-                    html += `<span class="diff-line added"><span class="diff-prefix">+</span>${escapedLine}</span>\n`;
+                    // Added line - show in new panel only, empty in old panel
+                    oldHtml += `<div class="diff-line empty"><span class="diff-line-number"></span><span class="diff-line-content"></span></div>`;
+                    newHtml += `<div class="diff-line added"><span class="diff-line-number">${newLineNum}</span><span class="diff-line-content">${escapedLine}</span></div>`;
                     newLineNum++;
                 } else if (part.removed) {
-                    html += `<span class="diff-line removed"><span class="diff-prefix">-</span>${escapedLine}</span>\n`;
+                    // Removed line - show in old panel only, empty in new panel
+                    oldHtml += `<div class="diff-line removed"><span class="diff-line-number">${oldLineNum}</span><span class="diff-line-content">${escapedLine}</span></div>`;
+                    newHtml += `<div class="diff-line empty"><span class="diff-line-number"></span><span class="diff-line-content"></span></div>`;
                     oldLineNum++;
                 } else {
-                    html += `<span class="diff-line unchanged"><span class="diff-prefix"> </span>${escapedLine}</span>\n`;
+                    // Unchanged line - show in both panels
+                    oldHtml += `<div class="diff-line"><span class="diff-line-number">${oldLineNum}</span><span class="diff-line-content">${escapedLine}</span></div>`;
+                    newHtml += `<div class="diff-line"><span class="diff-line-number">${newLineNum}</span><span class="diff-line-content">${escapedLine}</span></div>`;
                     oldLineNum++;
                     newLineNum++;
                 }
             });
         });
 
-        versionDiffEl.innerHTML = html || '<span class="diff-line unchanged">No changes</span>';
+        diffOldEl.innerHTML = oldHtml || '<div class="diff-line">No content</div>';
+        diffNewEl.innerHTML = newHtml || '<div class="diff-line">No content</div>';
+
+        // Sync scroll between panels
+        syncDiffScroll(diffOldEl, diffNewEl);
     } else {
-        // Fallback: simple line-by-line comparison
-        versionDiffEl.textContent = 'Diff library not loaded';
+        diffOldEl.textContent = 'Diff library not loaded';
+        diffNewEl.textContent = 'Diff library not loaded';
     }
+}
+
+function syncDiffScroll(el1, el2) {
+    let isSyncing = false;
+
+    el1.addEventListener('scroll', () => {
+        if (isSyncing) return;
+        isSyncing = true;
+        el2.scrollTop = el1.scrollTop;
+        isSyncing = false;
+    });
+
+    el2.addEventListener('scroll', () => {
+        if (isSyncing) return;
+        isSyncing = true;
+        el1.scrollTop = el2.scrollTop;
+        isSyncing = false;
+    });
 }
 
 function initVersionTabs() {
@@ -3881,7 +3911,7 @@ function initVersionTabs() {
                 versionDiffEl.style.display = 'none';
             } else {
                 versionContentEl.style.display = 'none';
-                versionDiffEl.style.display = 'block';
+                versionDiffEl.style.display = 'flex';
             }
         });
     });

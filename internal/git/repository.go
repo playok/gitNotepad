@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -94,14 +95,14 @@ func (r *Repository) Open() error {
 func (r *Repository) AddAndCommit(filePath, message string) error {
 	if r.repo == nil {
 		if err := r.Open(); err != nil {
-			fmt.Printf("[Git] Failed to open repo at %s: %v\n", r.path, err)
+			log.Printf("[Git] Failed to open repo at %s: %v\n", r.path, err)
 			return err
 		}
 	}
 
 	w, err := r.repo.Worktree()
 	if err != nil {
-		fmt.Printf("[Git] Failed to get worktree: %v\n", err)
+		log.Printf("[Git] Failed to get worktree: %v\n", err)
 		return err
 	}
 
@@ -113,11 +114,11 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	// Convert to forward slashes for git (git uses forward slashes on all platforms)
 	relPath = filepath.ToSlash(relPath)
 
-	fmt.Printf("[Git] Adding file: %s (relPath: %s, repoPath: %s)\n", filePath, relPath, r.path)
+	log.Printf("[Git] Adding file: %s (relPath: %s, repoPath: %s)\n", filePath, relPath, r.path)
 
 	// Add file to staging
 	if _, err := w.Add(relPath); err != nil {
-		fmt.Printf("[Git] Failed to add file %s: %v\n", relPath, err)
+		log.Printf("[Git] Failed to add file %s: %v\n", relPath, err)
 		return fmt.Errorf("failed to add file: %w", err)
 	}
 
@@ -130,7 +131,7 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	// Only commit if there are actual staged changes (not just untracked files)
 	hasChanges := false
 	for path, s := range status {
-		fmt.Printf("[Git] Status %s: Staging=%c, Worktree=%c\n", path, s.Staging, s.Worktree)
+		log.Printf("[Git] Status %s: Staging=%c, Worktree=%c\n", path, s.Staging, s.Worktree)
 		// Check for actual staged changes: Added, Modified, Deleted, Renamed, Copied
 		if s.Staging == git.Added || s.Staging == git.Modified || s.Staging == git.Deleted ||
 			s.Staging == git.Renamed || s.Staging == git.Copied {
@@ -139,7 +140,7 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	}
 
 	if !hasChanges {
-		fmt.Printf("[Git] No changes to commit for: %s\n", relPath)
+		log.Printf("[Git] No changes to commit for: %s\n", relPath)
 		return nil // No changes to commit
 	}
 
@@ -154,14 +155,14 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	// Handle EOF error (occurs when commit would be empty)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			fmt.Printf("[Git] EOF error (empty commit) for: %s\n", relPath)
+			log.Printf("[Git] EOF error (empty commit) for: %s\n", relPath)
 			return nil // Treat as no changes to commit
 		}
-		fmt.Printf("[Git] Commit failed: %v\n", err)
+		log.Printf("[Git] Commit failed: %v\n", err)
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 
-	fmt.Printf("[Git] Committed successfully: %s (hash: %s)\n", message, hash.String())
+	log.Printf("[Git] Committed successfully: %s (hash: %s)\n", message, hash.String())
 	return nil
 }
 
@@ -229,11 +230,11 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 }
 
 func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
-	fmt.Printf("[Git] GetHistory called: filePath=%s, repoPath=%s\n", filePath, r.path)
+	log.Printf("[Git] GetHistory called: filePath=%s, repoPath=%s\n", filePath, r.path)
 
 	if r.repo == nil {
 		if err := r.Open(); err != nil {
-			fmt.Printf("[Git] GetHistory: Failed to open repo: %v\n", err)
+			log.Printf("[Git] GetHistory: Failed to open repo: %v\n", err)
 			return []Commit{}, nil // Return empty array instead of error
 		}
 	}
@@ -245,13 +246,13 @@ func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
 	// Convert to forward slashes for git
 	relPath = filepath.ToSlash(relPath)
 
-	fmt.Printf("[Git] GetHistory: Looking for file %s in repo\n", relPath)
+	log.Printf("[Git] GetHistory: Looking for file %s in repo\n", relPath)
 
 	iter, err := r.repo.Log(&git.LogOptions{
 		FileName: &relPath,
 	})
 	if err != nil {
-		fmt.Printf("[Git] GetHistory: Log error: %v\n", err)
+		log.Printf("[Git] GetHistory: Log error: %v\n", err)
 		return []Commit{}, nil // Return empty array for files with no history
 	}
 

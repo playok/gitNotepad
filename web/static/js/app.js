@@ -3783,6 +3783,7 @@ function initSyntaxHelpModal() {
 }
 
 let currentVersionHash = null;
+let currentVersionContent = null;
 
 async function showVersion(hash) {
     if (!currentNote || !currentNote.id) return;
@@ -3797,8 +3798,23 @@ async function showVersion(hash) {
         const data = await response.json();
 
         currentVersionHash = hash;
+        currentVersionContent = data.content;
         versionHash.textContent = hash.substring(0, 8);
         versionContent.textContent = data.content;
+
+        // Calculate and render diff
+        renderVersionDiff(data.content, getEditorContent());
+
+        // Reset to content tab
+        const versionTabs = document.querySelectorAll('.version-tab');
+        const versionContentEl = document.getElementById('versionContent');
+        const versionDiffEl = document.getElementById('versionDiff');
+
+        versionTabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.view === 'content');
+        });
+        versionContentEl.style.display = 'block';
+        versionDiffEl.style.display = 'none';
 
         historyModal.style.display = 'none';
         versionModal.style.display = 'flex';
@@ -3807,8 +3823,72 @@ async function showVersion(hash) {
     }
 }
 
+function renderVersionDiff(oldContent, newContent) {
+    const versionDiffEl = document.getElementById('versionDiff');
+    if (!versionDiffEl) return;
+
+    // Use jsdiff library if available
+    if (typeof Diff !== 'undefined') {
+        const diff = Diff.diffLines(oldContent, newContent);
+        let html = '';
+        let oldLineNum = 1;
+        let newLineNum = 1;
+
+        diff.forEach(part => {
+            const lines = part.value.split('\n');
+            // Remove last empty line from split
+            if (lines[lines.length - 1] === '') {
+                lines.pop();
+            }
+
+            lines.forEach(line => {
+                const escapedLine = escapeHtml(line) || ' ';
+                if (part.added) {
+                    html += `<span class="diff-line added"><span class="diff-prefix">+</span>${escapedLine}</span>\n`;
+                    newLineNum++;
+                } else if (part.removed) {
+                    html += `<span class="diff-line removed"><span class="diff-prefix">-</span>${escapedLine}</span>\n`;
+                    oldLineNum++;
+                } else {
+                    html += `<span class="diff-line unchanged"><span class="diff-prefix"> </span>${escapedLine}</span>\n`;
+                    oldLineNum++;
+                    newLineNum++;
+                }
+            });
+        });
+
+        versionDiffEl.innerHTML = html || '<span class="diff-line unchanged">No changes</span>';
+    } else {
+        // Fallback: simple line-by-line comparison
+        versionDiffEl.textContent = 'Diff library not loaded';
+    }
+}
+
+function initVersionTabs() {
+    const versionTabs = document.querySelectorAll('.version-tab');
+    const versionContentEl = document.getElementById('versionContent');
+    const versionDiffEl = document.getElementById('versionDiff');
+
+    versionTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const view = tab.dataset.view;
+
+            versionTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            if (view === 'content') {
+                versionContentEl.style.display = 'block';
+                versionDiffEl.style.display = 'none';
+            } else {
+                versionContentEl.style.display = 'none';
+                versionDiffEl.style.display = 'block';
+            }
+        });
+    });
+}
+
 function restoreVersion() {
-    const content = versionContent.textContent;
+    const content = currentVersionContent || versionContent.textContent;
     setEditorContent(content);
     updatePreview();
     versionModal.style.display = 'none';
@@ -5997,6 +6077,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminModals();
     initSettingsModal();
     initSyntaxHelpModal();
+    initVersionTabs();
 
     // Ensure i18n is applied after modal initialization
     if (typeof i18n !== 'undefined') {

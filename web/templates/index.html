@@ -310,8 +310,15 @@
             <!-- Version View Modal -->
             <div id="versionModal" class="modal" style="display: none;">
                 <div class="modal-content modal-large">
-                    <h3><span data-i18n="history.version">Version</span>: <span id="versionHash"></span></h3>
+                    <div class="version-header">
+                        <h3><span data-i18n="history.version">Version</span>: <span id="versionHash"></span></h3>
+                        <div class="version-tabs">
+                            <button class="version-tab active" data-view="content" data-i18n="history.viewContent">Content</button>
+                            <button class="version-tab" data-view="diff" data-i18n="history.viewDiff">Diff</button>
+                        </div>
+                    </div>
                     <div id="versionContent" class="version-content"></div>
+                    <div id="versionDiff" class="version-diff" style="display: none;"></div>
                     <div class="modal-actions">
                         <button id="versionRestore" class="btn btn-primary" data-i18n="history.restoreVersion">Restore this version</button>
                         <button id="versionClose" class="btn btn-secondary" data-i18n="common.close">Close</button>
@@ -882,6 +889,7 @@ WARNING: Warn</code></pre>
     </div>
 
     <script src="{{.basePath}}/static/lib/marked.min.js"></script>
+    <script src="{{.basePath}}/static/lib/diff.min.js"></script>
     <script src="{{.basePath}}/static/lib/highlight/highlight.min.js"></script>
     <script src="{{.basePath}}/static/lib/katex/katex.min.js"></script>
     <script src="{{.basePath}}/static/lib/katex/auto-render.min.js"></script>

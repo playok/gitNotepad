@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -564,12 +563,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 
 	// Git commit - use user-specific repo
 	if userRepo, err := h.getUserRepo(c); err == nil {
-		log.Printf("[Note] Create: getUserRepo success, committing to: %s\n", userRepo.GetPath())
-		if err := userRepo.AddAndCommit(filePath, fmt.Sprintf("Create note: %s", note.Title)); err != nil {
-			log.Printf("[Note] Create: Git commit error: %v\n", err)
-		}
-	} else {
-		log.Printf("[Note] Create: getUserRepo error: %v\n", err)
+		userRepo.AddAndCommit(filePath, fmt.Sprintf("Create note: %s", note.Title))
 	}
 
 	c.JSON(http.StatusCreated, note)
@@ -588,10 +582,8 @@ type UpdateNoteRequest struct {
 }
 
 func (h *NoteHandler) Update(c *gin.Context) {
-	log.Println("[Note] Update handler called")
 	id := decodeNoteID(c.Param("id"))
 	notesPath := h.getNotesPath(c)
-	log.Printf("[Note] Update: id=%s, notesPath=%s\n", id, notesPath)
 	encryptionKey := middleware.GetEncryptionKey(c)
 
 	// Find existing note
@@ -675,11 +667,6 @@ func (h *NoteHandler) Update(c *gin.Context) {
 
 	// Git operations with user repo
 	userRepo, repoErr := h.getUserRepo(c)
-	if repoErr != nil {
-		log.Printf("[Note] getUserRepo error: %v\n", repoErr)
-	} else {
-		log.Printf("[Note] getUserRepo success, repo path: %s\n", userRepo.GetPath())
-	}
 
 	if filePath != newFilePath {
 		os.Remove(filePath)

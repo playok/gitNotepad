@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -95,14 +94,12 @@ func (r *Repository) Open() error {
 func (r *Repository) AddAndCommit(filePath, message string) error {
 	if r.repo == nil {
 		if err := r.Open(); err != nil {
-			log.Printf("[Git] Failed to open repo at %s: %v\n", r.path, err)
 			return err
 		}
 	}
 
 	w, err := r.repo.Worktree()
 	if err != nil {
-		log.Printf("[Git] Failed to get worktree: %v\n", err)
 		return err
 	}
 
@@ -114,11 +111,9 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	// Convert to forward slashes for git (git uses forward slashes on all platforms)
 	relPath = filepath.ToSlash(relPath)
 
-	log.Printf("[Git] Adding file: %s (relPath: %s, repoPath: %s)\n", filePath, relPath, r.path)
 
 	// Add file to staging
 	if _, err := w.Add(relPath); err != nil {
-		log.Printf("[Git] Failed to add file %s: %v\n", relPath, err)
 		return fmt.Errorf("failed to add file: %w", err)
 	}
 
@@ -130,21 +125,20 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 
 	// Only commit if there are actual staged changes (not just untracked files)
 	hasChanges := false
-	for path, s := range status {
-		log.Printf("[Git] Status %s: Staging=%c, Worktree=%c\n", path, s.Staging, s.Worktree)
+	for _, s := range status {
 		// Check for actual staged changes: Added, Modified, Deleted, Renamed, Copied
 		if s.Staging == git.Added || s.Staging == git.Modified || s.Staging == git.Deleted ||
 			s.Staging == git.Renamed || s.Staging == git.Copied {
 			hasChanges = true
+			break
 		}
 	}
 
 	if !hasChanges {
-		log.Printf("[Git] No changes to commit for: %s\n", relPath)
 		return nil // No changes to commit
 	}
 
-	hash, err := w.Commit(message, &git.CommitOptions{
+	_, err = w.Commit(message, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "GitNotepad",
 			Email: "gitnotepad@local",
@@ -155,14 +149,11 @@ func (r *Repository) AddAndCommit(filePath, message string) error {
 	// Handle EOF error (occurs when commit would be empty)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			log.Printf("[Git] EOF error (empty commit) for: %s\n", relPath)
 			return nil // Treat as no changes to commit
 		}
-		log.Printf("[Git] Commit failed: %v\n", err)
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 
-	log.Printf("[Git] Committed successfully: %s (hash: %s)\n", message, hash.String())
 	return nil
 }
 
@@ -230,11 +221,9 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 }
 
 func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
-	log.Printf("[Git] GetHistory called: filePath=%s, repoPath=%s\n", filePath, r.path)
 
 	if r.repo == nil {
 		if err := r.Open(); err != nil {
-			log.Printf("[Git] GetHistory: Failed to open repo: %v\n", err)
 			return []Commit{}, nil // Return empty array instead of error
 		}
 	}
@@ -246,13 +235,11 @@ func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
 	// Convert to forward slashes for git
 	relPath = filepath.ToSlash(relPath)
 
-	log.Printf("[Git] GetHistory: Looking for file %s in repo\n", relPath)
 
 	iter, err := r.repo.Log(&git.LogOptions{
 		FileName: &relPath,
 	})
 	if err != nil {
-		log.Printf("[Git] GetHistory: Log error: %v\n", err)
 		return []Commit{}, nil // Return empty array for files with no history
 	}
 

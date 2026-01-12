@@ -9,6 +9,40 @@ function encodeNoteId(id) {
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+// Helper to unescape slashes for display (\/ → /)
+// Used when displaying note titles that may contain escaped slashes
+function unescapeSlashesForDisplay(str) {
+    return str ? str.replace(/\\\//g, '/') : str;
+}
+
+// Helper to find the last unescaped slash index in a string
+// Returns -1 if no unescaped slash is found
+// Escaped slash is represented as '\/'
+function findLastUnescapedSlash(str) {
+    if (!str) return -1;
+    for (let i = str.length - 1; i >= 0; i--) {
+        if (str[i] === '/') {
+            // Check if this slash is escaped (preceded by \)
+            if (i > 0 && str[i - 1] === '\\') {
+                continue; // This is an escaped slash, skip it
+            }
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Helper to extract note name from title (handles escaped slashes)
+// e.g., "folder/A\/B test" -> "A\/B test" (the part after last unescaped /)
+function extractNoteName(title) {
+    if (!title) return title;
+    const lastSlash = findLastUnescapedSlash(title);
+    if (lastSlash === -1) {
+        return title; // No folder path, return whole title
+    }
+    return title.substring(lastSlash + 1);
+}
+
 // State
 let currentNote = null;
 let currentPassword = null;
@@ -1275,13 +1309,13 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'delete':
-            if (confirm(`Delete "${note.title}"?`)) {
+            if (confirm(`Delete "${unescapeSlashesForDisplay(note.title)}"?`)) {
                 await deleteNoteById(contextTarget);
             }
             break;
 
         case 'decrypt':
-            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${note.title}"?`)) {
+            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${unescapeSlashesForDisplay(note.title)}"?`)) {
                 await decryptNote(contextTarget);
             }
             break;
@@ -1663,8 +1697,8 @@ async function handleDrop(e, targetPath) {
     const note = notes.find(n => n.id === draggedNoteId);
     if (!note) return;
 
-    // Get the note's current name (without path)
-    const noteName = note.title.split('/').pop();
+    // Get the note's current name (without path, handles escaped slashes)
+    const noteName = extractNoteName(note.title);
 
     // Build new title with target path
     const newTitle = targetPath ? `${targetPath}/${noteName}` : noteName;
@@ -3636,7 +3670,9 @@ function renderNoteItem(note, container, level, isChild) {
         }
     }
 
-    const displayName = isChild ? note.title.split('/').pop() : note.title;
+    // Extract note name first (handles escaped slashes), then unescape for display
+    const noteName = isChild ? extractNoteName(note.title) : note.title;
+    const displayName = unescapeSlashesForDisplay(noteName);
     const lockIcon = note.private ? '<span class="lock-icon">&#128274;</span>' : '';
     const defaultTypeIcon = note.type === 'markdown' ? '📄' : (note.type === 'asciidoc' ? '📝' : '📃');
     const noteIcon = getCustomIcon('note', note.id) || defaultTypeIcon;

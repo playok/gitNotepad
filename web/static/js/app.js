@@ -2504,7 +2504,8 @@ async function performAutoSave() {
             };
             hasUnsavedChanges = false;
             updateSaveStatus('saved');
-            await loadNotes();
+            // Optimistic update: update local list instead of full reload
+            updateNoteInList(savedNote);
         } else {
             updateSaveStatus('error');
         }
@@ -3424,6 +3425,54 @@ async function loadNotes() {
     }
 }
 
+// Optimistic update: Update or add a note in the local list without full reload
+function updateNoteInList(savedNote) {
+    const index = notes.findIndex(n => n.id === savedNote.id);
+
+    // Build note list item from saved note
+    const noteItem = {
+        id: savedNote.id,
+        folder_path: savedNote.folder_path || '',
+        title: savedNote.title,
+        type: savedNote.type,
+        icon: savedNote.icon || '',
+        private: savedNote.private,
+        encrypted: savedNote.encrypted || false,
+        created: savedNote.created,
+        modified: savedNote.modified
+    };
+
+    if (index >= 0) {
+        // Update existing note
+        notes[index] = noteItem;
+    } else {
+        // Add new note
+        notes.unshift(noteItem);
+    }
+
+    // Check if a new folder was created and update folders list
+    const folderPath = savedNote.folder_path || '';
+    if (folderPath && !folders.some(f => f.path === folderPath)) {
+        // New folder detected - add to folders list
+        folders.push({ path: folderPath });
+        // Sort folders alphabetically
+        folders.sort((a, b) => a.path.localeCompare(b.path));
+    }
+
+    renderNoteTree();
+    updateCalendarIfVisible();
+}
+
+// Optimistic update: Remove a note from the local list
+function removeNoteFromList(noteId) {
+    const index = notes.findIndex(n => n.id === noteId);
+    if (index >= 0) {
+        notes.splice(index, 1);
+        renderNoteTree();
+        updateCalendarIfVisible();
+    }
+}
+
 async function loadNote(id) {
     try {
         const headers = {};
@@ -3658,7 +3707,8 @@ async function saveNote() {
             };
             hasUnsavedChanges = false;
             updateSaveStatus('saved');
-            await loadNotes();
+            // Optimistic update: update local list instead of full reload
+            updateNoteInList(savedNote);
         } else {
             const error = await response.json();
             alert(error.error || 'Failed to save note');
@@ -3687,10 +3737,12 @@ async function deleteNote() {
         });
 
         if (response.ok) {
+            const deletedNoteId = currentNote.id;
             currentNote = null;
             currentPassword = null;
             hideEditor();
-            await loadNotes();
+            // Optimistic update: remove from local list instead of full reload
+            removeNoteFromList(deletedNoteId);
         } else {
             const error = await response.json();
             alert(error.error || 'Failed to delete note');

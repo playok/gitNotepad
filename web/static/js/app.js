@@ -1,6 +1,19 @@
 // Base path for nginx proxy support
 const basePath = window.BASE_PATH || '';
 
+// Debounce utility function for performance optimization
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Helper to encode note IDs for URLs (handles folder paths with slashes)
 // Uses URL-safe base64 encoding (+ → -, / → _) to avoid issues with slashes in URLs
 function encodeNoteId(id) {
@@ -2613,10 +2626,13 @@ function setupEventListeners() {
     // New note
     newNoteBtn.addEventListener('click', createNewNote);
 
-    // Search
-    searchInput.addEventListener('input', () => {
+    // Search with debouncing (300ms delay for better performance)
+    const debouncedFilterNotes = debounce(() => {
         filterNotes();
+    }, 300);
+    searchInput.addEventListener('input', () => {
         updateSearchClearButton();
+        debouncedFilterNotes();
     });
 
     // Search clear button

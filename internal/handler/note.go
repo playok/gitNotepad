@@ -106,7 +106,11 @@ func (h *NoteHandler) loadNoteFromFile(path string, encryptionKey []byte) (*mode
 	if err != nil {
 		return nil, err
 	}
+	return h.loadNoteFromBytes(data, path, encryptionKey)
+}
 
+// loadNoteFromBytes parses a note from already-read bytes (avoids duplicate file reads)
+func (h *NoteHandler) loadNoteFromBytes(data []byte, path string, encryptionKey []byte) (*model.Note, error) {
 	// Check if file is encrypted
 	content := string(data)
 	if encryption.IsEncrypted(content) {
@@ -378,14 +382,15 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
-		// Check if file is encrypted before loading
+		// Read file once and reuse for both encryption check and parsing
 		rawContent, err := os.ReadFile(path)
 		if err != nil {
 			return nil
 		}
 		isEncrypted := encryption.IsEncrypted(string(rawContent))
 
-		note, err := h.loadNoteFromFile(path, encryptionKey)
+		// Use loadNoteFromBytes to avoid reading the file again
+		note, err := h.loadNoteFromBytes(rawContent, path, encryptionKey)
 		if err != nil {
 			return nil
 		}

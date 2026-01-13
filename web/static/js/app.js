@@ -4332,11 +4332,15 @@ function showMoveNoteModal(note) {
     // Get folder path from note.id (actual file location) rather than folder_path field
     // This ensures consistency with tree rendering which also uses note.id
     const idParts = (note.id || '').split('/');
-    const noteName = idParts.pop() || note.title || '';
+    const noteId = idParts.pop() || '';
     const currentFolderPath = idParts.join('/');
 
+    // Display title with UUID for clarity
+    const noteTitle = note.title || noteId;
+    const displayName = noteTitle !== noteId ? `${noteTitle} (${noteId})` : noteId;
+
     // Show note info
-    moveNoteInfo.textContent = i18n.t('move.movingNote', { name: noteName }) || `Moving: ${noteName}`;
+    moveNoteInfo.textContent = i18n.t('move.movingNote', { name: displayName }) || `Moving: ${displayName}`;
 
     // Populate folder list
     populateMoveFolderList(currentFolderPath);

@@ -5,7 +5,9 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"strings"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/user/gitnotepad/internal/config"
 	"github.com/user/gitnotepad/internal/database"
@@ -93,6 +95,9 @@ func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Serv
 	router.UseRawPath = true
 	router.UnescapePathValues = true
 
+	// GZip compression for text-based responses (HTML, JS, CSS, JSON)
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
+
 	s := &Server{
 		config: cfg,
 		router: router,
@@ -134,9 +139,29 @@ func (s *Server) setupRoutes() {
 	// Create base group for all routes
 	base := s.router.Group(basePath)
 
-	// Serve embedded static files under base path
+	// Serve embedded static files with caching headers
 	staticFS, _ := fs.Sub(web.Static, "static")
-	base.StaticFS("/static", http.FS(staticFS))
+	staticFileServer := http.FileServer(http.FS(staticFS))
+	base.GET("/static/*filepath", func(c *gin.Context) {
+		// Set cache headers based on file type
+		path := c.Param("filepath")
+		if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") {
+			// JS/CSS: cache for 7 days, must revalidate
+			c.Header("Cache-Control", "public, max-age=604800, must-revalidate")
+		} else if strings.HasSuffix(path, ".woff") || strings.HasSuffix(path, ".woff2") || strings.HasSuffix(path, ".ttf") {
+			// Fonts: cache for 1 year (rarely change)
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		} else if strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".gif") || strings.HasSuffix(path, ".svg") || strings.HasSuffix(path, ".ico") {
+			// Images: cache for 30 days
+			c.Header("Cache-Control", "public, max-age=2592000")
+		} else {
+			// Other files: cache for 1 day
+			c.Header("Cache-Control", "public, max-age=86400")
+		}
+		// Strip /static prefix for file server
+		c.Request.URL.Path = path
+		staticFileServer.ServeHTTP(c.Writer, c.Request)
+	})
 
 	// Login page (public)
 	base.GET("/login", func(c *gin.Context) {

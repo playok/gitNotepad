@@ -1960,9 +1960,11 @@ async function handleDrop(e, targetPath) {
     const note = notes.find(n => n.id === draggedNoteId);
     if (!note) return;
 
-    // Get the note's current name (without folder path - use folder_path if available)
-    const noteName = note.folder_path !== undefined ? note.title : extractNoteName(note.title);
-    const currentFolderPath = note.folder_path !== undefined ? note.folder_path : extractFolderPath(note.title);
+    // Get folder path from note.id (actual file location)
+    const idParts = (note.id || '').split('/');
+    const noteFileName = idParts.pop() || ''; // Always pop to get correct folder path
+    const noteName = note.title || noteFileName;
+    const currentFolderPath = idParts.join('/');
 
     // Only update if folder changed
     if (targetPath !== currentFolderPath) {
@@ -4327,9 +4329,11 @@ function showMoveNoteModal(note) {
     moveTargetNote = note;
     selectedMoveFolder = '';
 
-    // Get current folder path
-    const currentFolderPath = note.folder_path || extractFolderPath(note.title || '');
-    const noteName = note.folder_path !== undefined ? note.title : extractNoteName(note.title || '');
+    // Get folder path from note.id (actual file location) rather than folder_path field
+    // This ensures consistency with tree rendering which also uses note.id
+    const idParts = (note.id || '').split('/');
+    const noteName = idParts.pop() || note.title || '';
+    const currentFolderPath = idParts.join('/');
 
     // Show note info
     moveNoteInfo.textContent = i18n.t('move.movingNote', { name: noteName }) || `Moving: ${noteName}`;
@@ -4409,7 +4413,10 @@ function initMoveNoteModal() {
     moveNoteConfirm.addEventListener('click', async () => {
         if (!moveTargetNote) return;
 
-        const currentFolderPath = moveTargetNote.folder_path || extractFolderPath(moveTargetNote.title || '');
+        // Get folder path from note.id (actual file location)
+        const idParts = (moveTargetNote.id || '').split('/');
+        idParts.pop(); // Remove note name
+        const currentFolderPath = idParts.join('/');
 
         // Check if a folder was selected and it's different from current
         if (selectedMoveFolder === '' && currentFolderPath === '') {
@@ -4440,8 +4447,8 @@ function initMoveNoteModal() {
             }
             const fullNote = await getResponse.json();
 
-            // Get note name (without folder path)
-            const noteName = fullNote.folder_path !== undefined ? fullNote.title : extractNoteName(fullNote.title || '');
+            // Get note name from the ID (last part of the path) - use title as display name
+            const noteName = fullNote.title || moveTargetNote.id.split('/').pop() || '';
 
             // Update note with new folder path
             const response = await authFetch(`/api/notes/${encodeNoteId(moveTargetNote.id)}`, {

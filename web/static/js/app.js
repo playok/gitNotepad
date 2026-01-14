@@ -8005,7 +8005,10 @@ const EMOJI_DATA = {
             {e:'😹',n:'cat with tears of joy'},{e:'😻',n:'heart eyes cat'},{e:'😼',n:'cat with wry smile'},
             {e:'😽',n:'kissing cat'},{e:'🙀',n:'weary cat'},{e:'😿',n:'crying cat'},
             {e:'😾',n:'pouting cat'},{e:'🙈',n:'see-no-evil monkey'},{e:'🙉',n:'hear-no-evil monkey'},
-            {e:'🙊',n:'speak-no-evil monkey'}
+            {e:'🙊',n:'speak-no-evil monkey'},
+            {e:'🫠',n:'melting face'},{e:'🫢',n:'face with open eyes and hand over mouth'},{e:'🫣',n:'face with peeking eye'},
+            {e:'🫡',n:'saluting face'},{e:'🫥',n:'dotted line face'},{e:'🫤',n:'face with diagonal mouth'},
+            {e:'🥹',n:'face holding back tears'},{e:'🫨',n:'shaking face'}
         ]
     },
     'gestures': {
@@ -8027,7 +8030,10 @@ const EMOJI_DATA = {
             {e:'👂',n:'ear'},{e:'🦻',n:'ear with hearing aid'},{e:'👃',n:'nose'},
             {e:'🧠',n:'brain'},{e:'🫀',n:'anatomical heart'},{e:'🫁',n:'lungs'},
             {e:'🦷',n:'tooth'},{e:'🦴',n:'bone'},{e:'👀',n:'eyes'},
-            {e:'👁️',n:'eye'},{e:'👅',n:'tongue'},{e:'👄',n:'mouth'}
+            {e:'👁️',n:'eye'},{e:'👅',n:'tongue'},{e:'👄',n:'mouth'},
+            {e:'🫶',n:'heart hands'},{e:'🫰',n:'hand with index finger and thumb crossed'},{e:'🫵',n:'index pointing at the viewer'},
+            {e:'🫱',n:'rightwards hand'},{e:'🫲',n:'leftwards hand'},{e:'🫳',n:'palm down hand'},
+            {e:'🫴',n:'palm up hand'},{e:'🫦',n:'biting lip'}
         ]
     },
     'people': {
@@ -8051,7 +8057,8 @@ const EMOJI_DATA = {
             {e:'🚵',n:'person mountain biking'},{e:'🤸',n:'person cartwheeling'},{e:'🤼',n:'people wrestling'},{e:'🤽',n:'person playing water polo'},
             {e:'🤾',n:'person playing handball'},{e:'🤹',n:'person juggling'},{e:'🧘',n:'person in lotus position'},{e:'👫',n:'woman and man holding hands'},
             {e:'👬',n:'men holding hands'},{e:'👭',n:'women holding hands'},{e:'💏',n:'kiss'},{e:'💑',n:'couple with heart'},
-            {e:'👪',n:'family'}
+            {e:'👪',n:'family'},
+            {e:'🫃',n:'pregnant man'},{e:'🫄',n:'pregnant person'},{e:'🫅',n:'person with crown'},{e:'🧌',n:'troll'}
         ]
     },
     'animals': {
@@ -8084,7 +8091,9 @@ const EMOJI_DATA = {
             {e:'🐌',n:'snail'},{e:'🦋',n:'butterfly'},{e:'🐛',n:'bug'},{e:'🐜',n:'ant'},
             {e:'🐝',n:'honeybee'},{e:'🪲',n:'beetle'},{e:'🐞',n:'lady beetle'},{e:'🦗',n:'cricket'},
             {e:'🪳',n:'cockroach'},{e:'🕷️',n:'spider'},{e:'🕸️',n:'spider web'},{e:'🦂',n:'scorpion'},
-            {e:'🦟',n:'mosquito'},{e:'🪰',n:'fly'},{e:'🪱',n:'worm'},{e:'🦠',n:'microbe'}
+            {e:'🦟',n:'mosquito'},{e:'🪰',n:'fly'},{e:'🪱',n:'worm'},{e:'🦠',n:'microbe'},
+            {e:'🪿',n:'goose'},{e:'🫎',n:'moose'},{e:'🪼',n:'jellyfish'},{e:'🪽',n:'wing'},
+            {e:'🪸',n:'coral'},{e:'🪷',n:'lotus'},{e:'🪹',n:'empty nest'},{e:'🪺',n:'nest with eggs'},{e:'🪻',n:'hyacinth'}
         ]
     },
     'food': {
@@ -8121,7 +8130,8 @@ const EMOJI_DATA = {
             {e:'🍸',n:'cocktail glass'},{e:'🍹',n:'tropical drink'},{e:'🍺',n:'beer mug'},{e:'🍻',n:'clinking beer mugs'},
             {e:'🥂',n:'clinking glasses'},{e:'🥃',n:'tumbler glass'},{e:'🥤',n:'cup with straw'},{e:'🧋',n:'bubble tea'},
             {e:'🧃',n:'beverage box'},{e:'🧉',n:'mate'},{e:'🧊',n:'ice'},{e:'🥢',n:'chopsticks'},
-            {e:'🍽️',n:'fork and knife with plate'},{e:'🍴',n:'fork and knife'},{e:'🥄',n:'spoon'},{e:'🔪',n:'kitchen knife'}
+            {e:'🍽️',n:'fork and knife with plate'},{e:'🍴',n:'fork and knife'},{e:'🥄',n:'spoon'},{e:'🔪',n:'kitchen knife'},
+            {e:'🫘',n:'beans'},{e:'🫙',n:'jar'},{e:'🫗',n:'pouring liquid'},{e:'🫛',n:'pea pod'},{e:'🫚',n:'ginger root'}
         ]
     },
     'travel': {
@@ -8160,7 +8170,8 @@ const EMOJI_DATA = {
             {e:'✈️',n:'airplane'},{e:'🛩️',n:'small airplane'},{e:'🛫',n:'airplane departure'},{e:'🛬',n:'airplane arrival'},
             {e:'🪂',n:'parachute'},{e:'💺',n:'seat'},{e:'🚁',n:'helicopter'},{e:'🚟',n:'suspension railway'},
             {e:'🚠',n:'mountain cableway'},{e:'🚡',n:'aerial tramway'},{e:'🛰️',n:'satellite'},{e:'🚀',n:'rocket'},
-            {e:'🛸',n:'flying saucer'}
+            {e:'🛸',n:'flying saucer'},
+            {e:'🛝',n:'playground slide'},{e:'🛞',n:'wheel'},{e:'🛟',n:'ring buoy'}
         ]
     },
     'objects': {
@@ -8208,7 +8219,10 @@ const EMOJI_DATA = {
             {e:'🧴',n:'lotion bottle'},{e:'🧷',n:'safety pin'},{e:'🧹',n:'broom'},{e:'🧺',n:'basket'},
             {e:'🧻',n:'roll of paper'},{e:'🪣',n:'bucket'},{e:'🧼',n:'soap'},{e:'🪥',n:'toothbrush'},
             {e:'🧽',n:'sponge'},{e:'🧯',n:'fire extinguisher'},{e:'🛒',n:'shopping cart'},{e:'🚬',n:'cigarette'},
-            {e:'⚰️',n:'coffin'},{e:'🪦',n:'headstone'},{e:'⚱️',n:'funeral urn'},{e:'🗿',n:'moai'}
+            {e:'⚰️',n:'coffin'},{e:'🪦',n:'headstone'},{e:'⚱️',n:'funeral urn'},{e:'🗿',n:'moai'},
+            {e:'🪩',n:'mirror ball'},{e:'🪫',n:'low battery'},{e:'🫧',n:'bubbles'},{e:'🪪',n:'identification card'},
+            {e:'🪭',n:'folding hand fan'},{e:'🪮',n:'hair pick'},{e:'🪇',n:'maracas'},{e:'🪈',n:'flute'},
+            {e:'🛜',n:'wireless'},{e:'🪬',n:'hamsa'},{e:'🩻',n:'x-ray'},{e:'🩼',n:'crutch'}
         ]
     },
     'symbols': {
@@ -8216,6 +8230,7 @@ const EMOJI_DATA = {
         emojis: [
             {e:'❤️',n:'red heart'},{e:'🧡',n:'orange heart'},{e:'💛',n:'yellow heart'},{e:'💚',n:'green heart'},
             {e:'💙',n:'blue heart'},{e:'💜',n:'purple heart'},{e:'🖤',n:'black heart'},{e:'🤍',n:'white heart'},
+            {e:'🩷',n:'pink heart'},{e:'🩵',n:'light blue heart'},{e:'🩶',n:'grey heart'},{e:'🟰',n:'heavy equals sign'},
             {e:'🤎',n:'brown heart'},{e:'💔',n:'broken heart'},{e:'❣️',n:'heart exclamation'},{e:'💕',n:'two hearts'},
             {e:'💞',n:'revolving hearts'},{e:'💓',n:'beating heart'},{e:'💗',n:'growing heart'},{e:'💖',n:'sparkling heart'},
             {e:'💘',n:'heart with arrow'},{e:'💝',n:'heart with ribbon'},{e:'💟',n:'heart decoration'},{e:'☮️',n:'peace symbol'},

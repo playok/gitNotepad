@@ -8297,7 +8297,7 @@ const EMOJI_DATA = {
             {e:'🇧🇴',n:'Bolivia'},{e:'🇧🇶',n:'Caribbean Netherlands'},{e:'🇧🇷',n:'Brazil'},{e:'🇧🇸',n:'Bahamas'},
             {e:'🇧🇹',n:'Bhutan'},{e:'🇧🇻',n:'Bouvet Island'},{e:'🇧🇼',n:'Botswana'},{e:'🇧🇾',n:'Belarus'},
             {e:'🇧🇿',n:'Belize'},{e:'🇨🇦',n:'Canada'},{e:'🇨🇨',n:'Cocos Islands'},{e:'🇨🇩',n:'Congo - Kinshasa'},
-            {e:'🇨🇫',n:'Central African Republic'},{e:'🇨🇬',n:'Congo - Brazzaville'},{e:'🇨🇭',n:'Switzerland'},{e:'🇨🇮',n:'Côte d'Ivoire'},
+            {e:'🇨🇫',n:'Central African Republic'},{e:'🇨🇬',n:'Congo - Brazzaville'},{e:'🇨🇭',n:'Switzerland'},{e:'🇨🇮',n:'Ivory Coast'},
             {e:'🇨🇰',n:'Cook Islands'},{e:'🇨🇱',n:'Chile'},{e:'🇨🇲',n:'Cameroon'},{e:'🇨🇳',n:'China'},
             {e:'🇨🇴',n:'Colombia'},{e:'🇨🇵',n:'Clipperton Island'},{e:'🇨🇷',n:'Costa Rica'},{e:'🇨🇺',n:'Cuba'},
             {e:'🇨🇻',n:'Cape Verde'},{e:'🇨🇼',n:'Curaçao'},{e:'🇨🇽',n:'Christmas Island'},{e:'🇨🇾',n:'Cyprus'},

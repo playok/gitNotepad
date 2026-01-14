@@ -95,6 +95,12 @@ const i18n = {
             'toolbar.codeblock': 'Code Block',
             'toolbar.table': 'Table',
             'toolbar.hr': 'Horizontal Rule',
+            'toolbar.emoji': 'Emoji',
+
+            // Emoji Picker
+            'emoji.title': 'Emoji Picker',
+            'emoji.search': 'Search emojis...',
+            'emoji.noResults': 'No emojis found',
 
             // Note types
             'type.markdown': 'Markdown',
@@ -541,6 +547,12 @@ const i18n = {
             'toolbar.codeblock': '코드 블록',
             'toolbar.table': '표',
             'toolbar.hr': '구분선',
+            'toolbar.emoji': '이모지',
+
+            // Emoji Picker
+            'emoji.title': '이모지 선택',
+            'emoji.search': '이모지 검색...',
+            'emoji.noResults': '이모지를 찾을 수 없습니다',
 
             // Note types
             'type.markdown': '마크다운',

@@ -247,6 +247,7 @@
                             </div>
                         </div>
                         <button type="button" class="toolbar-btn" data-action="hr" data-i18n-title="toolbar.hr">―</button>
+                        <button type="button" class="toolbar-btn" data-action="emoji" data-i18n-title="toolbar.emoji" id="emojiToolbarBtn">😀</button>
                     </div>
                 </div>
                 <div class="layout-tab-bar" id="layoutTabBar" style="display: none;">
@@ -648,6 +649,29 @@ WARNING: Warn</code></pre>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emoji Picker Modal -->
+            <div id="emojiPickerModal" class="modal" style="display: none;">
+                <div class="modal-content emoji-picker-modal">
+                    <div class="emoji-picker-header">
+                        <h3 data-i18n="emoji.title">Emoji Picker</h3>
+                        <button id="emojiPickerClose" class="modal-close-btn">&times;</button>
+                    </div>
+                    <div class="emoji-picker-search">
+                        <input type="text" id="emojiSearch" placeholder="Search emojis..." data-i18n-placeholder="emoji.search">
+                    </div>
+                    <div class="emoji-picker-categories" id="emojiCategories">
+                        <!-- Category tabs will be rendered here -->
+                    </div>
+                    <div class="emoji-picker-body" id="emojiPickerBody">
+                        <!-- Emojis will be rendered here -->
+                    </div>
+                    <div class="emoji-picker-footer">
+                        <span id="emojiPreview" class="emoji-preview"></span>
+                        <span id="emojiName" class="emoji-name"></span>
                     </div>
                 </div>
             </div>

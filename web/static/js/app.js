@@ -453,11 +453,13 @@ function handleKeyboardShortcut(e) {
 
             case 'f': // Search (without Shift)
                 if (!e.shiftKey) {
-                    // Check if event target is inside CodeMirror editor
-                    const isInCodeMirror = e.target.closest('.CodeMirror') !== null;
-                    if (cmEditor && isInCodeMirror) {
-                        // Let CodeMirror handle search - don't prevent default
-                        // CodeMirror search addon will handle Ctrl+F
+                    // Check if event target is inside editor or preview area
+                    const isInEditor = e.target.closest('.CodeMirror') !== null;
+                    const isInPreview = e.target.closest('.preview-pane') !== null ||
+                                        e.target.closest('#preview') !== null;
+                    if (isInEditor || isInPreview) {
+                        // Let browser/CodeMirror handle search
+                        // Don't prevent default - allows native browser search in preview
                         return;
                     } else {
                         // Otherwise focus note search

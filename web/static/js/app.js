@@ -4038,11 +4038,26 @@ function buildNoteTree(notesList) {
     const tree = {};
     const searchTerm = searchInput.value.toLowerCase();
 
+    // When searching, only show folders that contain matching notes
+    // Build a set of folder paths that contain matching notes
+    const foldersWithMatchingNotes = new Set();
+    if (searchTerm) {
+        notesList.forEach(note => {
+            // Extract folder path from note.id
+            const parts = note.id.split('/');
+            if (parts.length > 1) {
+                // Build all parent folder paths
+                for (let i = 1; i < parts.length; i++) {
+                    foldersWithMatchingNotes.add(parts.slice(0, i).join('/'));
+                }
+            }
+        });
+    }
+
     // Add folders from API first (so empty folders are also displayed)
-    // Always show all folders unless text search filters them out
     folders.forEach(folder => {
-        // For text search: hide folders that don't match the search term
-        if (searchTerm && !folder.path.toLowerCase().includes(searchTerm)) {
+        // When searching, only show folders that contain matching notes
+        if (searchTerm && !foldersWithMatchingNotes.has(folder.path)) {
             return;
         }
 
@@ -4066,13 +4081,9 @@ function buildNoteTree(notesList) {
         });
     });
 
-    // Filter notes by text search only (date filtering removed - handled by panel)
-    const filteredNotes = notesList.filter(note => {
-        // No search term - show all notes
-        if (!searchTerm) return true;
-        // Check title match
-        return note.title.toLowerCase().includes(searchTerm);
-    });
+    // When search term exists, notes are already filtered by server (including content search)
+    // So we don't need to filter again here - just use the notesList as is
+    const filteredNotes = notesList;
 
     // Build tree structure from note IDs (which include folder paths)
     filteredNotes.forEach(note => {

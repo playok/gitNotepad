@@ -23,7 +23,7 @@ const i18n = {
             'common.success': 'Success',
 
             // Sidebar
-            'sidebar.search': 'Search notes...',
+            'sidebar.search': 'Search all note contents...',
             'sidebar.newNote': 'New Note (Ctrl+N)',
             'sidebar.help': 'Help (F1)',
             'sidebar.settings': 'Settings',
@@ -475,7 +475,7 @@ const i18n = {
             'common.success': '성공',
 
             // Sidebar
-            'sidebar.search': '노트 검색...',
+            'sidebar.search': '전체 노트 내용 검색...',
             'sidebar.newNote': '새 노트 (Ctrl+N)',
             'sidebar.help': '도움말 (F1)',
             'sidebar.settings': '설정',

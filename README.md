@@ -572,6 +572,22 @@ rm data/gitnotepad.db
 
 ## 변경 이력
 
+### v0.9.0 - i18n 전체 적용 및 검색 기능 개선
+
+**새 기능:**
+- 전체 노트 내용 검색 (searchInput에서 제목+내용 검색)
+- Ctrl+F 영역별 검색 지원 (에디터: CodeMirror 검색, 프리뷰: 브라우저 검색)
+
+**i18n 전체 적용:**
+- 사용자 메뉴 (관리자, 사용자 관리, 로그아웃)
+- Settings 모달 (Notes by Type, Recent Activity)
+- 테이블 에디터 (Size, Selected 동적 텍스트)
+- 모든 alert/confirm 메시지 번역
+- 폴더 오류, Import/Export 메시지 번역
+
+**버그 수정:**
+- 사용자 드롭다운 한글 레이아웃 수정
+
 ### v0.8.0 - 성능 최적화
 
 **성능 개선:**

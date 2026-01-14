@@ -213,7 +213,9 @@ daemon:
 - **폴더 관리**: 드래그 앤 드롭, 폴더 펼치기/닫기, 아이콘 변경, 노트 이동 모달
 - **새 노트 위치 선택**: 노트 생성 시 폴더 선택 모달
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
-- **다국어 지원 (i18n)**: 영어/한국어, Settings 다이얼로그 포함
+- **다국어 지원 (i18n)**: 영어/한국어 전체 UI 적용 (메뉴, 모달, alert/confirm 메시지)
+- **전체 노트 내용 검색**: searchInput에서 제목+내용 서버 검색
+- **Ctrl+F 영역별 검색**: 에디터(CodeMirror), 프리뷰(브라우저 검색) 지원
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
 - **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
@@ -271,7 +273,8 @@ daemon:
   - 새 노트 위치: `showNewNoteLocationModal()`, `populateFolderSelectionList()`
   - 폴더 경로 표시: `formatFolderPathForDisplay()` - `:>:` → `/` 변환
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
-  - Settings 다이얼로그, 툴바, 테이블 에디터 번역 키 포함
+  - 전체 UI 번역: 메뉴, 모달, 툴바, 테이블 에디터, alert/confirm 메시지
+  - 파라미터 치환 지원: `{key}` 형식 (`i18n.t('key', { param: value })`)
 - **handler/file.go**, **handler/image.go**: 파일 메타데이터 저장
   - `.filemeta.json`, `.imagemeta.json`: UUID-원본파일명 매핑
   - `?download=true` 파라미터로 원본 파일명 복원

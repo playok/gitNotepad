@@ -369,8 +369,30 @@ const i18n = {
             'msg.folderRenamed': 'Folder renamed',
             'msg.folderMoved': 'Folder order changed',
             'msg.insertFileContent': 'Would you like to insert the file content into the note?',
+            'msg.allNotesDeleted': 'All notes have been deleted',
+
+            // Folder errors
+            'folder.createFailed': 'Failed to create folder',
+            'folder.deleteFailed': 'Failed to delete folder',
+            'folder.renameFailed': 'Failed to rename folder',
+
+            // Error messages
+            'error.invalidJson': 'Invalid JSON',
+            'error.uploadImageFailed': 'Failed to upload image',
+            'error.uploadFileFailed': 'Failed to upload file',
+            'error.saveFailed': 'Failed to save note',
+            'error.deleteFailed': 'Failed to delete note',
+            'error.exportFailed': 'Failed to export notes',
+            'error.importFailed': 'Failed to import notes',
+            'error.deleteAllFailed': 'Failed to delete notes',
+
+            // Import/Export
+            'import.selectZipFile': 'Please select a ZIP file',
+            'import.confirmImport': 'This will import notes from the ZIP file. Continue?',
+            'import.success': 'Successfully imported {count} notes',
 
             // Confirm dialogs
+            'confirm.deleteNote': 'Delete "{title}"?',
             'confirm.unsavedChanges': 'You have unsaved changes. Are you sure you want to close?',
             'confirm.discardChanges': 'You have unsaved changes. Do you want to discard them?',
 
@@ -458,6 +480,8 @@ const i18n = {
             'tableEditor.merge': 'Merge Cells',
             'tableEditor.unmerge': 'Unmerge',
             'tableEditor.insert': 'Insert Table',
+            'tableEditor.size': 'Size: {cols} x {rows}',
+            'tableEditor.selected': 'Selected: {count} cells',
         },
 
         ko: {
@@ -826,8 +850,30 @@ const i18n = {
             'msg.folderRenamed': '폴더 이름이 변경되었습니다',
             'msg.folderMoved': '폴더 순서가 변경되었습니다',
             'msg.insertFileContent': '파일 내용을 노트에 삽입하시겠습니까?',
+            'msg.allNotesDeleted': '모든 노트가 삭제되었습니다',
+
+            // Folder errors
+            'folder.createFailed': '폴더 생성 실패',
+            'folder.deleteFailed': '폴더 삭제 실패',
+            'folder.renameFailed': '폴더 이름 변경 실패',
+
+            // Error messages
+            'error.invalidJson': '잘못된 JSON',
+            'error.uploadImageFailed': '이미지 업로드 실패',
+            'error.uploadFileFailed': '파일 업로드 실패',
+            'error.saveFailed': '노트 저장 실패',
+            'error.deleteFailed': '노트 삭제 실패',
+            'error.exportFailed': '노트 내보내기 실패',
+            'error.importFailed': '노트 가져오기 실패',
+            'error.deleteAllFailed': '노트 삭제 실패',
+
+            // Import/Export
+            'import.selectZipFile': 'ZIP 파일을 선택해주세요',
+            'import.confirmImport': 'ZIP 파일에서 노트를 가져옵니다. 계속하시겠습니까?',
+            'import.success': '{count}개의 노트를 가져왔습니다',
 
             // Confirm dialogs
+            'confirm.deleteNote': '"{title}" 삭제하시겠습니까?',
             'confirm.unsavedChanges': '저장되지 않은 변경사항이 있습니다. 닫으시겠습니까?',
             'confirm.discardChanges': '저장되지 않은 변경사항이 있습니다. 변경사항을 취소하시겠습니까?',
 
@@ -915,6 +961,8 @@ const i18n = {
             'tableEditor.merge': '셀 병합',
             'tableEditor.unmerge': '병합 해제',
             'tableEditor.insert': '테이블 삽입',
+            'tableEditor.size': '크기: {cols} x {rows}',
+            'tableEditor.selected': '선택됨: {count}개 셀',
         }
     },
 

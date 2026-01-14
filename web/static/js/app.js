@@ -1390,7 +1390,7 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'delete':
-            if (confirm(`Delete "${extractNoteName(note.title)}"?`)) {
+            if (confirm(i18n.t('confirm.deleteNote', { title: extractNoteName(note.title) }))) {
                 await deleteNoteById(contextTarget);
             }
             break;
@@ -1657,7 +1657,7 @@ async function createFolder(name, parentPath) {
             showToast(msg);
         } else {
             const data = await response.json();
-            alert(data.error || 'Failed to create folder');
+            alert(data.error || i18n.t('folder.createFailed'));
         }
     } catch (error) {
         console.error('Failed to create folder:', error);
@@ -1676,7 +1676,7 @@ async function deleteFolder(path) {
             showToast(msg);
         } else {
             const data = await response.json();
-            alert(data.error || 'Failed to delete folder');
+            alert(data.error || i18n.t('folder.deleteFailed'));
         }
     } catch (error) {
         console.error('Failed to delete folder:', error);
@@ -1783,7 +1783,7 @@ async function renameFolder(oldPath, newName) {
         showToast(msg);
     } catch (error) {
         console.error('Failed to rename folder:', error);
-        alert('Failed to rename folder');
+        alert(i18n.t('folder.renameFailed'));
     }
 }
 
@@ -2622,7 +2622,7 @@ function prettyJson() {
             }
         }
 
-        alert('Invalid JSON: ' + e.message);
+        alert(i18n.t('error.invalidJson') + ': ' + e.message);
     }
 }
 
@@ -2824,13 +2824,13 @@ async function uploadAndInsertImage(file) {
             // Remove placeholder on error
             replaceInEditor(placeholder, '');
             updatePreview();
-            alert('Failed to upload image');
+            alert(i18n.t('error.uploadImageFailed'));
         }
     } catch (error) {
         console.error('Image upload failed:', error);
         replaceInEditor(placeholder, '');
         updatePreview();
-        alert('Failed to upload image');
+        alert(i18n.t('error.uploadImageFailed'));
     }
 }
 
@@ -3188,13 +3188,13 @@ async function uploadAndInsertFile(file) {
         } else {
             replaceInEditor(placeholder, '');
             updatePreview();
-            alert('Failed to upload file');
+            alert(i18n.t('error.uploadFileFailed'));
         }
     } catch (error) {
         console.error('File upload failed:', error);
         replaceInEditor(placeholder, '');
         updatePreview();
-        alert('Failed to upload file');
+        alert(i18n.t('error.uploadFileFailed'));
     }
 }
 
@@ -3735,7 +3735,7 @@ async function saveNote() {
             updateNoteInList(savedNote);
         } else {
             const error = await response.json();
-            alert(error.error || 'Failed to save note');
+            alert(error.error || i18n.t('error.saveFailed'));
         }
     } catch (error) {
         console.error('Failed to save note:', error);
@@ -3769,7 +3769,7 @@ async function deleteNote() {
             removeNoteFromList(deletedNoteId);
         } else {
             const error = await response.json();
-            alert(error.error || 'Failed to delete note');
+            alert(error.error || i18n.t('error.deleteFailed'));
         }
     } catch (error) {
         console.error('Failed to delete note:', error);
@@ -5850,11 +5850,11 @@ function updateTableEditorInfo() {
     const unmergeBtn = document.getElementById('tableEditorUnmerge');
 
     if (sizeEl) {
-        sizeEl.textContent = `Size: ${tableEditor.cols} x ${tableEditor.rows + 1}`;
+        sizeEl.textContent = i18n.t('tableEditor.size', { cols: tableEditor.cols, rows: tableEditor.rows + 1 });
     }
 
     if (selectionEl) {
-        selectionEl.textContent = `Selected: ${tableEditor.selectedCells.length} cells`;
+        selectionEl.textContent = i18n.t('tableEditor.selected', { count: tableEditor.selectedCells.length });
     }
 
     // Enable/disable merge button
@@ -7149,7 +7149,7 @@ async function exportNotes() {
         window.URL.revokeObjectURL(url);
     } catch (err) {
         console.error('Export error:', err);
-        alert('Failed to export notes');
+        alert(i18n.t('error.exportFailed'));
     } finally {
         if (exportBtn) {
             exportBtn.disabled = false;
@@ -7163,12 +7163,12 @@ async function handleImportFile(e) {
     if (!file) return;
 
     if (!file.name.endsWith('.zip')) {
-        alert('Please select a ZIP file');
+        alert(i18n.t('import.selectZipFile'));
         e.target.value = '';
         return;
     }
 
-    if (!confirm('This will import notes from the ZIP file. Continue?')) {
+    if (!confirm(i18n.t('import.confirmImport'))) {
         e.target.value = '';
         return;
     }
@@ -7194,13 +7194,13 @@ async function handleImportFile(e) {
         }
 
         const result = await response.json();
-        alert(`Successfully imported ${result.imported} notes`);
+        alert(i18n.t('import.success', { count: result.imported }));
 
         // Reload notes list
         await loadNotes();
     } catch (err) {
         console.error('Import error:', err);
-        alert('Failed to import notes: ' + err.message);
+        alert(i18n.t('error.importFailed') + ': ' + err.message);
     } finally {
         if (importBtn) {
             importBtn.disabled = false;
@@ -7229,7 +7229,7 @@ async function deleteAllNotes() {
 
         if (!response.ok) throw new Error('Delete failed');
 
-        alert('All notes have been deleted');
+        alert(i18n.t('msg.allNotesDeleted'));
 
         // Reload notes list and hide editor
         await loadNotes();
@@ -7240,7 +7240,7 @@ async function deleteAllNotes() {
         loadUsageStats();
     } catch (err) {
         console.error('Delete all error:', err);
-        alert('Failed to delete notes');
+        alert(i18n.t('error.deleteAllFailed'));
     } finally {
         if (deleteBtn) {
             deleteBtn.disabled = false;

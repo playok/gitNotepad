@@ -451,10 +451,17 @@ function handleKeyboardShortcut(e) {
                 createNewNote();
                 break;
 
-            case 'f': // Focus search (without Shift)
+            case 'f': // Search (without Shift)
                 if (!e.shiftKey) {
-                    e.preventDefault();
-                    searchInput.focus();
+                    // If editor has focus, use CodeMirror search
+                    if (cmEditor && cmEditor.hasFocus()) {
+                        e.preventDefault();
+                        cmEditor.execCommand('find');
+                    } else {
+                        // Otherwise focus note search
+                        e.preventDefault();
+                        searchInput.focus();
+                    }
                 }
                 break;
 

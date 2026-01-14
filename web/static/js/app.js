@@ -662,12 +662,12 @@ function createShareModal() {
             </div>
             <div class="share-expiry-container" style="margin-top: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.expiration">Link expiration:</label>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
                         <input type="radio" name="expiryType" id="expiryNever" value="never" checked>
                         <span style="font-size: 0.875rem;" data-i18n="share.never">Never</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
                         <input type="radio" name="expiryType" id="expiryDate" value="date">
                         <span style="font-size: 0.875rem;" data-i18n="share.expiresOn">Expires on:</span>
                     </label>
@@ -677,12 +677,12 @@ function createShareModal() {
             <div id="shareLinkExpiryInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
             <div class="share-visibility-container" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.visibility">Link visibility:</label>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
                         <input type="radio" name="visibilityType" id="visibilityPrivate" value="private" checked>
                         <span style="font-size: 0.875rem;" data-i18n="share.private">Private</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
                         <input type="radio" name="visibilityType" id="visibilityPublic" value="public">
                         <span style="font-size: 0.875rem;" data-i18n="share.public">Public</span>
                     </label>

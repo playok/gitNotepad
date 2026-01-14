@@ -453,10 +453,12 @@ function handleKeyboardShortcut(e) {
 
             case 'f': // Search (without Shift)
                 if (!e.shiftKey) {
-                    // If editor has focus, use CodeMirror search
-                    if (cmEditor && cmEditor.hasFocus()) {
-                        e.preventDefault();
-                        cmEditor.execCommand('find');
+                    // Check if event target is inside CodeMirror editor
+                    const isInCodeMirror = e.target.closest('.CodeMirror') !== null;
+                    if (cmEditor && isInCodeMirror) {
+                        // Let CodeMirror handle search - don't prevent default
+                        // CodeMirror search addon will handle Ctrl+F
+                        return;
                     } else {
                         // Otherwise focus note search
                         e.preventDefault();

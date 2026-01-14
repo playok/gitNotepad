@@ -453,19 +453,32 @@ function handleKeyboardShortcut(e) {
 
             case 'f': // Search (without Shift)
                 if (!e.shiftKey) {
-                    // Check if event target is inside editor or preview area
+                    // Check if event target is inside CodeMirror editor
                     const isInEditor = e.target.closest('.CodeMirror') !== null;
-                    const isInPreview = e.target.closest('.preview-pane') !== null ||
-                                        e.target.closest('#preview') !== null;
-                    if (isInEditor || isInPreview) {
-                        // Let browser/CodeMirror handle search
-                        // Don't prevent default - allows native browser search in preview
+                    if (isInEditor) {
+                        // Use CodeMirror search (Ctrl+F handled by CodeMirror)
                         return;
-                    } else {
-                        // Otherwise focus note search
-                        e.preventDefault();
-                        searchInput.focus();
                     }
+
+                    // Check if preview pane is visible
+                    const previewPane = document.getElementById('previewPane');
+                    const previewVisible = previewPane &&
+                                          previewPane.style.display !== 'none' &&
+                                          previewPane.offsetParent !== null;
+
+                    // Check if activeElement is inside CodeMirror
+                    const activeInEditor = document.activeElement &&
+                                          document.activeElement.closest('.CodeMirror') !== null;
+
+                    // If preview is visible and not actively editing, allow browser search
+                    if (previewVisible && !activeInEditor) {
+                        // Don't prevent default - allows native browser search
+                        return;
+                    }
+
+                    // Otherwise focus note search
+                    e.preventDefault();
+                    searchInput.focus();
                 }
                 break;
 

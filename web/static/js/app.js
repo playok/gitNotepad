@@ -4267,14 +4267,53 @@ function countNotesInTree(data) {
     return count;
 }
 
-function filterNotes() {
-    renderNoteTree();
+// Track if we're currently searching to avoid duplicate requests
+let isSearching = false;
+let lastSearchQuery = '';
+
+async function filterNotes() {
+    const searchTerm = searchInput.value.trim();
+
+    // If search term is empty, reload all notes
+    if (!searchTerm) {
+        if (lastSearchQuery !== '') {
+            lastSearchQuery = '';
+            await loadNotes();
+        } else {
+            renderNoteTree();
+        }
+        return;
+    }
+
+    // Avoid duplicate searches
+    if (searchTerm === lastSearchQuery || isSearching) {
+        return;
+    }
+
+    lastSearchQuery = searchTerm;
+    isSearching = true;
+
+    try {
+        // Search via API (searches title and content on server)
+        const response = await fetch(`${basePath}/api/notes?q=${encodeURIComponent(searchTerm)}`);
+        if (response.ok) {
+            notes = await response.json();
+            if (!notes) notes = [];
+            renderNoteTree();
+            updateCalendarIfVisible();
+        }
+    } catch (error) {
+        console.error('Search failed:', error);
+    } finally {
+        isSearching = false;
+    }
 }
 
 function clearSearch() {
     searchInput.value = '';
+    lastSearchQuery = '';
     updateSearchClearButton();
-    renderNoteTree();
+    loadNotes();
 }
 
 function updateSearchClearButton() {

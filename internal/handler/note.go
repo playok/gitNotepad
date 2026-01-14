@@ -357,6 +357,7 @@ type NoteListItem struct {
 func (h *NoteHandler) List(c *gin.Context) {
 	notesPath := h.getNotesPath(c)
 	encryptionKey := middleware.GetEncryptionKey(c)
+	searchQuery := strings.ToLower(strings.TrimSpace(c.Query("q")))
 
 	var notes []NoteListItem
 
@@ -393,6 +394,15 @@ func (h *NoteHandler) List(c *gin.Context) {
 		note, err := h.loadNoteFromBytes(rawContent, path, encryptionKey)
 		if err != nil {
 			return nil
+		}
+
+		// Search filter: check title and content
+		if searchQuery != "" {
+			titleMatch := strings.Contains(strings.ToLower(note.Title), searchQuery)
+			contentMatch := strings.Contains(strings.ToLower(note.Content), searchQuery)
+			if !titleMatch && !contentMatch {
+				return nil // Skip notes that don't match
+			}
 		}
 
 		// Calculate relative path from notesPath for the ID

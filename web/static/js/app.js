@@ -8494,11 +8494,10 @@ function searchEmojis(query) {
 }
 
 function insertEmoji(emoji) {
-    if (!editor) return;
-    const doc = editor.getDoc();
-    const cursor = doc.getCursor();
-    doc.replaceRange(emoji, cursor);
-    editor.focus();
+    if (!cmEditor) return;
+    const cursor = cmEditor.getCursor();
+    cmEditor.replaceRange(emoji, cursor);
+    cmEditor.focus();
 }
 
 function openEmojiPicker() {

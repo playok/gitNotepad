@@ -1314,7 +1314,8 @@ body {
 }
 
 .table-editor-content {
-    background: var(--bg);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
     max-width: 90vw;
@@ -1365,6 +1366,7 @@ body {
     border-radius: 4px;
     overflow: auto;
     margin-bottom: 16px;
+    background: var(--bg-tertiary);
 }
 
 .table-editor-preview table {
@@ -1379,7 +1381,7 @@ body {
     min-height: 32px;
     cursor: pointer;
     position: relative;
-    background: var(--bg);
+    background: var(--bg-primary);
     transition: background-color 0.1s;
     user-select: none;
 }

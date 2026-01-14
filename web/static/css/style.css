@@ -3631,7 +3631,8 @@ code.hljs[data-line-count^="1000"] .line-number {
     position: absolute;
     top: calc(100% + 0.5rem);
     right: 0;
-    min-width: 200px;
+    min-width: 160px;
+    width: max-content;
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -3699,6 +3700,7 @@ code.hljs[data-line-count^="1000"] .line-number {
     color: var(--text-primary);
     text-decoration: none;
     font-size: 0.875rem;
+    white-space: nowrap;
     transition: background-color 0.15s ease;
 }
 

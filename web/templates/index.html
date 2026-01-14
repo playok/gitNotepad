@@ -57,17 +57,17 @@
                                 <span class="user-icon-large">&#128100;</span>
                                 <div class="user-info">
                                     <span class="user-name-large">{{.user.Username}}</span>
-                                    {{if .user.IsAdmin}}<span class="user-role">Admin</span>{{end}}
+                                    {{if .user.IsAdmin}}<span class="user-role" data-i18n="userMenu.admin">Admin</span>{{end}}
                                 </div>
                             </div>
                             <div class="user-dropdown-divider"></div>
                             {{if .user.IsAdmin}}
                             <a href="#" class="user-dropdown-item" id="adminUsersBtn">
-                                <span>&#128101;</span> Manage Users
+                                <span>&#128101;</span> <span data-i18n="userMenu.manageUsers">Manage Users</span>
                             </a>
                             {{end}}
                             <a href="#" class="user-dropdown-item" id="logoutBtn">
-                                <span>&#128682;</span> Logout
+                                <span>&#128682;</span> <span data-i18n="userMenu.logout">Logout</span>
                             </a>
                         </div>
                     </div>

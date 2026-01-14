@@ -40,6 +40,11 @@ const i18n = {
             'sidebar.notes': 'notes',
             'sidebar.clearSearch': 'Clear search',
 
+            // User Menu
+            'userMenu.admin': 'Admin',
+            'userMenu.manageUsers': 'Manage Users',
+            'userMenu.logout': 'Logout',
+
             // New Note Location
             'newNote.selectLocation': 'Select Location',
             'newNote.createAtRoot': 'Create at root',
@@ -491,6 +496,11 @@ const i18n = {
             'sidebar.noNotes': '노트가 없습니다',
             'sidebar.notes': '개의 노트',
             'sidebar.clearSearch': '검색 지우기',
+
+            // User Menu
+            'userMenu.admin': '관리자',
+            'userMenu.manageUsers': '사용자 관리',
+            'userMenu.logout': '로그아웃',
 
             // New Note Location
             'newNote.selectLocation': '위치 선택',

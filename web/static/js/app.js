@@ -663,13 +663,13 @@ function createShareModal() {
             <div class="share-expiry-container" style="margin-top: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.expiration">Link expiration:</label>
                 <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
-                        <input type="radio" name="expiryType" id="expiryNever" value="never" checked>
-                        <span style="font-size: 0.875rem;" data-i18n="share.never">Never</span>
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="expiryType" id="expiryNever" value="never" checked style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.never">Never</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
-                        <input type="radio" name="expiryType" id="expiryDate" value="date">
-                        <span style="font-size: 0.875rem;" data-i18n="share.expiresOn">Expires on:</span>
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="expiryType" id="expiryDate" value="date" style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.expiresOn">Expires on:</span>
                     </label>
                     <input type="date" id="shareLinkExpiryDate" style="padding: 0.375rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.875rem;" disabled>
                 </div>
@@ -678,13 +678,13 @@ function createShareModal() {
             <div class="share-visibility-container" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.visibility">Link visibility:</label>
                 <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
-                        <input type="radio" name="visibilityType" id="visibilityPrivate" value="private" checked>
-                        <span style="font-size: 0.875rem;" data-i18n="share.private">Private</span>
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="visibilityType" id="visibilityPrivate" value="private" checked style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.private">Private</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
-                        <input type="radio" name="visibilityType" id="visibilityPublic" value="public">
-                        <span style="font-size: 0.875rem;" data-i18n="share.public">Public</span>
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="visibilityType" id="visibilityPublic" value="public" style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.public">Public</span>
                     </label>
                 </div>
                 <div id="shareLinkVisibilityInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>

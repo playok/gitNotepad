@@ -3956,6 +3956,10 @@ function renderVersionDiff(oldContent, newContent) {
     const diffNewEl = document.getElementById('diffNewContent');
     if (!diffOldEl || !diffNewEl) return;
 
+    // Ensure content is a string (handle undefined/null)
+    oldContent = oldContent || '';
+    newContent = newContent || '';
+
     // Use jsdiff library if available
     if (typeof Diff !== 'undefined') {
         const diff = Diff.diffLines(oldContent, newContent);

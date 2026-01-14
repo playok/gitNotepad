@@ -5835,7 +5835,7 @@ code.hljs[data-line-count^="1000"] .line-number {
 
 /* Emoji Picker Modal */
 .emoji-picker-modal {
-    width: 420px;
+    width: 560px;
     max-width: 95vw;
     max-height: 70vh;
     display: flex;

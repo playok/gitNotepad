@@ -5,6 +5,7 @@ set BINARY_NAME=gitnotepad
 set MAIN_FILE=main.go
 set BUILD_DIR=build
 set LDFLAGS=-s -w
+set CGO_ENABLED=0
 
 if "%1"=="" goto build
 if "%1"=="build" goto build
@@ -65,9 +66,11 @@ echo Building for Linux...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=linux
 set GOARCH=amd64
-go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%/%BINARY_NAME%-linux-amd64 %MAIN_FILE%
+echo   - linux/amd64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-linux-amd64 %MAIN_FILE%
 set GOARCH=arm64
-go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%/%BINARY_NAME%-linux-arm64 %MAIN_FILE%
+echo   - linux/arm64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-linux-arm64 %MAIN_FILE%
 set GOOS=
 set GOARCH=
 echo Linux builds completed
@@ -78,10 +81,14 @@ echo Building for Windows...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=windows
 set GOARCH=amd64
-go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%/%BINARY_NAME%-windows-amd64.exe %MAIN_FILE%
+echo   - windows/amd64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-windows-amd64.exe %MAIN_FILE%
+set GOARCH=arm64
+echo   - windows/arm64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-windows-arm64.exe %MAIN_FILE%
 set GOOS=
 set GOARCH=
-echo Windows build completed
+echo Windows builds completed
 goto end
 
 :darwin
@@ -89,27 +96,41 @@ echo Building for macOS...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=darwin
 set GOARCH=amd64
-go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%/%BINARY_NAME%-darwin-amd64 %MAIN_FILE%
+echo   - darwin/amd64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-darwin-amd64 %MAIN_FILE%
 set GOARCH=arm64
-go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%/%BINARY_NAME%-darwin-arm64 %MAIN_FILE%
+echo   - darwin/arm64...
+go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-darwin-arm64 %MAIN_FILE%
 set GOOS=
 set GOARCH=
 echo macOS builds completed
 goto end
 
 :release
+echo.
+echo ========================================
+echo  Building for all platforms
+echo ========================================
+echo.
 call :clean
 call :linux
 call :windows
 call :darwin
-echo Release builds completed in %BUILD_DIR%/
+echo.
+echo ========================================
+echo  Release builds completed
+echo ========================================
+echo.
+echo Output directory: %BUILD_DIR%\
+dir /b %BUILD_DIR%
+echo.
 goto end
 
 :help
 echo.
-echo Git Notepad Build Script
+echo Git Notepad Build Script (CGO_ENABLED=0)
 echo.
-echo Usage: build.bat [command]
+echo Usage: build.cmd [command]
 echo.
 echo Commands:
 echo   build     Build for current OS (default)
@@ -119,10 +140,13 @@ echo   clean     Remove build artifacts
 echo   test      Run tests
 echo   deps      Download dependencies
 echo   tidy      Tidy go.mod
-echo   linux     Cross-compile for Linux
-echo   windows   Cross-compile for Windows
-echo   darwin    Cross-compile for macOS
-echo   release   Build for all platforms
+echo.
+echo Cross-compile:
+echo   linux     Build for Linux (amd64, arm64)
+echo   windows   Build for Windows (amd64, arm64)
+echo   darwin    Build for macOS (amd64, arm64)
+echo   release   Build for all platforms (6 binaries)
+echo.
 echo   help      Show this help
 echo.
 goto end

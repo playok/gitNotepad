@@ -62,48 +62,66 @@ go mod tidy
 goto end
 
 :linux
-echo Building for Linux...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=linux
+if "%2"=="amd64" goto linux_amd64
+if "%2"=="arm64" goto linux_arm64
+echo Building for Linux (all architectures)...
+:linux_amd64
 set GOARCH=amd64
 echo   - linux/amd64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-linux-amd64 %MAIN_FILE%
+if "%2"=="amd64" goto linux_done
+:linux_arm64
 set GOARCH=arm64
 echo   - linux/arm64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-linux-arm64 %MAIN_FILE%
+:linux_done
 set GOOS=
 set GOARCH=
-echo Linux builds completed
+echo Linux build completed
 goto end
 
 :windows
-echo Building for Windows...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=windows
+if "%2"=="amd64" goto windows_amd64
+if "%2"=="arm64" goto windows_arm64
+echo Building for Windows (all architectures)...
+:windows_amd64
 set GOARCH=amd64
 echo   - windows/amd64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-windows-amd64.exe %MAIN_FILE%
+if "%2"=="amd64" goto windows_done
+:windows_arm64
 set GOARCH=arm64
 echo   - windows/arm64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-windows-arm64.exe %MAIN_FILE%
+:windows_done
 set GOOS=
 set GOARCH=
-echo Windows builds completed
+echo Windows build completed
 goto end
 
 :darwin
-echo Building for macOS...
 if not exist %BUILD_DIR% mkdir %BUILD_DIR%
 set GOOS=darwin
+if "%2"=="amd64" goto darwin_amd64
+if "%2"=="arm64" goto darwin_arm64
+echo Building for macOS (all architectures)...
+:darwin_amd64
 set GOARCH=amd64
 echo   - darwin/amd64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-darwin-amd64 %MAIN_FILE%
+if "%2"=="amd64" goto darwin_done
+:darwin_arm64
 set GOARCH=arm64
 echo   - darwin/arm64...
 go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-darwin-arm64 %MAIN_FILE%
+:darwin_done
 set GOOS=
 set GOARCH=
-echo macOS builds completed
+echo macOS build completed
 goto end
 
 :release
@@ -142,10 +160,15 @@ echo   deps      Download dependencies
 echo   tidy      Tidy go.mod
 echo.
 echo Cross-compile:
-echo   linux     Build for Linux (amd64, arm64)
-echo   windows   Build for Windows (amd64, arm64)
-echo   darwin    Build for macOS (amd64, arm64)
-echo   release   Build for all platforms (6 binaries)
+echo   linux     [arch]   Build for Linux (amd64, arm64)
+echo   windows   [arch]   Build for Windows (amd64, arm64)
+echo   darwin    [arch]   Build for macOS (amd64, arm64)
+echo   release            Build for all platforms (6 binaries)
+echo.
+echo Examples:
+echo   build.cmd linux           Build Linux amd64 + arm64
+echo   build.cmd linux amd64     Build Linux amd64 only
+echo   build.cmd windows arm64   Build Windows arm64 only
 echo.
 echo   help      Show this help
 echo.

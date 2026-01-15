@@ -4431,7 +4431,7 @@ function initNewNoteLocationModal() {
     });
 
     // Confirm button
-    newNoteLocationConfirm.addEventListener('click', () => {
+    newNoteLocationConfirm.addEventListener('click', async () => {
         let folderPath = '';
 
         if (selectedNewNoteLocation === 'existing') {
@@ -4446,6 +4446,10 @@ function initNewNoteLocationModal() {
                 alert(i18n.t('newNote.pleaseEnterFolderName'));
                 return;
             }
+            // Convert / to :>: for internal path format
+            folderPath = folderPath.replace(/\//g, ':>:');
+            // Create the folder immediately
+            await createFolderPath(folderPath);
         }
 
         newNoteLocationModal.style.display = 'none';
@@ -7776,6 +7780,25 @@ async function ensureDailyFolderExists(year, month) {
             localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
         }
     }
+}
+
+// Create folder path (handles nested paths like 'parent:>:child')
+async function createFolderPath(folderPath) {
+    if (!folderPath) return;
+
+    const parts = folderPath.split(':>:');
+    let currentPath = '';
+
+    for (const part of parts) {
+        if (!part) continue;
+        await createFolderSilent(part, currentPath);
+        currentPath = currentPath ? currentPath + ':>:' + part : part;
+    }
+
+    // Reload notes to show the new folder
+    await loadNotes();
+    const msg = i18n ? i18n.t('msg.folderCreated') : 'Folder created';
+    showToast(msg);
 }
 
 // Create folder without showing toast (for auto-creation)

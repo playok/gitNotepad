@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
 	"github.com/user/gitnotepad/internal/repository"
 )
@@ -66,6 +68,14 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		// Log error but don't fail - directory will be created on first note save
 		// The user was created successfully in DB
 	}
+
+	// Log user creation
+	adminUser := middleware.GetCurrentUser(c)
+	adminName := "unknown"
+	if adminUser != nil {
+		adminName = adminUser.Username
+	}
+	log.Printf("[ADMIN] User created: username=%s, is_admin=%v, by=%s, ip=%s", user.Username, user.IsAdmin, adminName, c.ClientIP())
 
 	c.JSON(http.StatusCreated, gin.H{
 		"id":       user.ID,
@@ -139,6 +149,14 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 		// Directory might not exist or have permission issues
 	}
 
+	// Log user deletion
+	adminUser := middleware.GetCurrentUser(c)
+	adminName := "unknown"
+	if adminUser != nil {
+		adminName = adminUser.Username
+	}
+	log.Printf("[ADMIN] User deleted: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
+
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
 
@@ -177,6 +195,14 @@ func (h *AdminHandler) UpdatePassword(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
 		return
 	}
+
+	// Log password update
+	adminUser := middleware.GetCurrentUser(c)
+	adminName := "unknown"
+	if adminUser != nil {
+		adminName = adminUser.Username
+	}
+	log.Printf("[ADMIN] Password changed: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated"})
 }

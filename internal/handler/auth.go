@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -46,8 +47,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	clientIP := c.ClientIP()
+
 	user, err := h.userRepo.GetByUsername(req.Username)
 	if err != nil || user == nil || !user.CheckPassword(req.Password) {
+		log.Printf("[AUTH] Login failed: username=%s, ip=%s, reason=invalid_credentials", req.Username, clientIP)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -78,6 +82,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		true,  // httpOnly
 	)
 
+	log.Printf("[AUTH] Login success: username=%s, ip=%s, is_admin=%v", user.Username, clientIP, user.IsAdmin)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
 		"user": gin.H{
@@ -90,6 +96,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 // Logout handles session termination
 func (h *AuthHandler) Logout(c *gin.Context) {
+	clientIP := c.ClientIP()
+	user := middleware.GetCurrentUser(c)
+	username := "unknown"
+	if user != nil {
+		username = user.Username
+	}
+
 	cookie, err := c.Cookie(middleware.SessionCookieName)
 	if err == nil {
 		// Remove encryption key from store
@@ -97,6 +110,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		// Delete session from database
 		h.sessionRepo.Delete(cookie)
 	}
+
+	log.Printf("[AUTH] Logout: username=%s, ip=%s", username, clientIP)
 
 	c.SetCookie(middleware.SessionCookieName, "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})

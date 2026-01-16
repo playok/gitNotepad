@@ -2567,11 +2567,13 @@ body {
 
     .sidebar {
         width: 100% !important;
-        height: 35vh;
-        min-height: 200px;
-        max-height: 50vh;
+        height: auto;
+        min-height: 150px;
+        max-height: 45vh;
         min-width: 0 !important;
-        overflow: hidden;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
     }
 
     .sidebar-splitter {
@@ -2586,31 +2588,33 @@ body {
         display: none !important;
     }
 
-    /* Note list scrollable */
+    /* Note list scrollable - take remaining space */
     .note-list {
         flex: 1;
-        min-height: 100px;
+        min-height: 80px;
+        max-height: 25vh;
         overflow-y: auto;
     }
 
-    /* Mini calendar responsive - collapsible and compact */
+    /* Mini calendar responsive - always visible at bottom */
     .mini-calendar {
         flex-shrink: 0;
-        max-height: none;
         overflow: visible;
         border-top: 1px solid var(--border);
+        background: var(--bg-primary);
     }
 
     .mini-calendar-body {
-        max-height: 200px;
         overflow: visible;
     }
 
-    /* Collapse calendar by default on small screens */
-    .mini-calendar.auto-collapse .mini-calendar-body {
-        max-height: 0;
-        opacity: 0;
-        margin-top: 0;
+    /* Compact calendar grid on tablets */
+    .mini-calendar-grid {
+        gap: 1px;
+    }
+
+    .mini-cal-day {
+        font-size: 0.7rem;
     }
 
     .editor {

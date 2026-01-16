@@ -134,6 +134,7 @@ gitnotepad --reset-password admin -config /path/to/config.yaml
 | GET | /s/:code | 단축 URL 리다이렉트 |
 | POST | /api/images | 이미지 업로드 |
 | POST | /api/files | 파일 업로드 |
+| GET | /api/tags | 전체 태그 목록 |
 | GET | /api/stats | 통계 조회 |
 | GET | /api/notes/export | 노트 내보내기 |
 | POST | /api/notes/import | 노트 가져오기 |
@@ -148,6 +149,9 @@ gitnotepad --reset-password admin -config /path/to/config.yaml
 ---
 title: 노트 제목
 type: markdown
+tags:
+  - tag1
+  - tag2
 private: false
 password: <bcrypt_hash>
 created: 2025-12-30T12:00:00+09:00
@@ -220,6 +224,7 @@ daemon:
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
 - **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
 - **태블릿 지원**: 터치 디바이스 최적화 (44px 최소 터치 영역)
+- **태그 기능**: YAML frontmatter 저장, 자동완성, 태그별 노트 필터링 팝업
 
 ## 핵심 모듈
 
@@ -272,6 +277,9 @@ daemon:
   - 노트 이동: `showMoveNoteModal()`, `populateMoveFolderList()`, `selectMoveFolder()`
   - 새 노트 위치: `showNewNoteLocationModal()`, `populateFolderSelectionList()`
   - 폴더 경로 표시: `formatFolderPathForDisplay()` - `:>:` → `/` 변환
+  - 태그 관리: `initTags()`, `loadAllTags()`, `renderTags()`, `addTag()`, `removeTag()`
+  - 태그 자동완성: `showTagSuggestions()`, `hideTagSuggestions()`, `navigateTagSuggestions()`
+  - 태그 노트 팝업: `showNotesByTag()`, `closeTagNotesModal()` - 태그별 노트 필터링
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
   - 전체 UI 번역: 메뉴, 모달, 툴바, 테이블 에디터, alert/confirm 메시지
   - 파라미터 치환 지원: `{key}` 형식 (`i18n.t('key', { param: value })`)
@@ -400,3 +408,28 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 ### API 변경사항
 - `NoteListItem`에 `Created` 필드 추가
 - `UpdateNoteRequest`에 `Created *time.Time` 필드 추가 (옵셔널)
+
+## 태그 기능
+
+### 기능
+- 노트에 태그 추가/삭제 (YAML frontmatter에 저장)
+- 태그 입력 시 기존 태그 자동완성
+- 태그 클릭 시 해당 태그를 가진 노트 목록 팝업 표시
+- 태그 추가/삭제 시 자동 저장
+
+### 구현 세부사항
+- **저장 형식**: YAML frontmatter의 `tags` 필드 (배열)
+- **API**: `GET /api/tags` - 전체 태그 목록 조회
+- **자동완성**: `showTagSuggestions()` - 입력 중 기존 태그 필터링
+- **변경 감지**: `isContentChanged()`에서 태그 배열 비교
+- **자동 저장**: `addTag()`, `removeTag()`에서 기존 노트일 경우 즉시 저장
+- **UI 위치**: 에디터 헤더 아래 태그 섹션 (`#tagsSection`)
+- **CSS 클래스**: `.tags-section`, `.tag-item`, `.tag-input`, `.tag-suggestions`
+
+### 프론트엔드 함수
+- `initTags()`: 태그 입력 이벤트 초기화
+- `loadAllTags()`: API에서 전체 태그 목록 로드
+- `renderTags()`: 현재 노트의 태그 렌더링
+- `addTag(tag)`: 태그 추가 및 자동 저장
+- `removeTag(tag)`: 태그 삭제 및 자동 저장
+- `showNotesByTag(tag)`: 태그별 노트 목록 팝업

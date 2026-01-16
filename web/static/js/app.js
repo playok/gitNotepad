@@ -629,7 +629,7 @@ function initEditorHeaderScroll() {
         const maxScroll = scrollWidth - clientWidth;
 
         // Only show indicators if content is wider than container
-        if (scrollWidth <= clientWidth) {
+        if (scrollWidth <= clientWidth + 5) {
             editorHeader.classList.remove('can-scroll-left', 'can-scroll-right');
             return;
         }
@@ -655,33 +655,88 @@ function initEditorHeaderScroll() {
     // Update indicators on window resize
     window.addEventListener('resize', updateScrollIndicators);
 
-    // Initial check
-    setTimeout(updateScrollIndicators, 100);
+    // Initial check (delayed to ensure content is rendered)
+    setTimeout(updateScrollIndicators, 200);
 
     // Re-check when content might change
-    const observer = new MutationObserver(updateScrollIndicators);
+    const observer = new MutationObserver(() => {
+        setTimeout(updateScrollIndicators, 50);
+    });
     observer.observe(editorHeader, { childList: true, subtree: true });
 
-    // Touch swipe enhancement for smoother scrolling
+    // Touch swipe with momentum for smooth scrolling
     if (isTouchDevice) {
         let startX = 0;
+        let startTime = 0;
         let scrollStart = 0;
         let isDragging = false;
+        let lastX = 0;
+        let velocity = 0;
+        let animationId = null;
 
         editorHeader.addEventListener('touchstart', (e) => {
+            // Cancel any ongoing momentum animation
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
             startX = e.touches[0].clientX;
+            lastX = startX;
+            startTime = Date.now();
             scrollStart = editorHeader.scrollLeft;
             isDragging = true;
+            velocity = 0;
         }, { passive: true });
 
         editorHeader.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
-            const deltaX = startX - e.touches[0].clientX;
+
+            const currentX = e.touches[0].clientX;
+            const deltaX = startX - currentX;
+
+            // Calculate velocity for momentum
+            const now = Date.now();
+            const dt = now - startTime;
+            if (dt > 0) {
+                velocity = (lastX - currentX) / dt * 15; // Adjust multiplier for momentum strength
+            }
+
+            lastX = currentX;
+            startTime = now;
+
             editorHeader.scrollLeft = scrollStart + deltaX;
         }, { passive: true });
 
         editorHeader.addEventListener('touchend', () => {
             isDragging = false;
+
+            // Apply momentum scrolling
+            if (Math.abs(velocity) > 0.5) {
+                const friction = 0.95;
+                const minVelocity = 0.5;
+
+                function momentumScroll() {
+                    if (Math.abs(velocity) < minVelocity) {
+                        animationId = null;
+                        return;
+                    }
+
+                    editorHeader.scrollLeft += velocity;
+                    velocity *= friction;
+
+                    // Stop at boundaries
+                    const maxScroll = editorHeader.scrollWidth - editorHeader.clientWidth;
+                    if (editorHeader.scrollLeft <= 0 || editorHeader.scrollLeft >= maxScroll) {
+                        animationId = null;
+                        return;
+                    }
+
+                    animationId = requestAnimationFrame(momentumScroll);
+                }
+
+                animationId = requestAnimationFrame(momentumScroll);
+            }
         }, { passive: true });
     }
 }

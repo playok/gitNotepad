@@ -820,11 +820,18 @@ body {
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     background: var(--bg-primary);
     border-radius: var(--radius) var(--radius) 0 0;
     transition: background-color 0.2s ease;
     position: relative;
+    overflow: hidden;
+}
+
+.editor-header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
 }
 
 /* Scroll fade indicator for touch devices */
@@ -2692,27 +2699,30 @@ body {
     }
 
     .editor-header {
-        flex-wrap: nowrap;
+        padding: 0.5rem;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
         /* Hide scrollbar but keep functionality */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE/Edge */
-        padding: 0.5rem;
-        gap: 0.5rem;
     }
 
     .editor-header::-webkit-scrollbar {
         display: none; /* Chrome/Safari */
     }
 
+    .editor-header-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: max-content;
+        min-width: 100%;
+    }
+
     .editor-title-row {
         flex: 0 0 auto;
         min-width: 150px;
-        width: auto;
-        max-width: none;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -2728,7 +2738,6 @@ body {
         display: flex;
         align-items: center;
         gap: 2px;
-        width: auto;
     }
 
     .editor-actions > * {

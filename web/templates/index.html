@@ -159,12 +159,13 @@
             <!-- Editor -->
             <div id="editor" class="editor" style="display: none;">
                 <div class="editor-header">
-                    <div class="editor-title-row">
-                        <span id="noteFolderPath" class="note-folder-path"></span>
-                        <input type="text" id="noteTitle" class="note-title-input" placeholder="Note title...">
-                        <span id="saveStatus" class="save-status"></span>
-                    </div>
-                    <div class="editor-actions">
+                    <div class="editor-header-content">
+                        <div class="editor-title-row">
+                            <span id="noteFolderPath" class="note-folder-path"></span>
+                            <input type="text" id="noteTitle" class="note-title-input" placeholder="Note title...">
+                            <span id="saveStatus" class="save-status"></span>
+                        </div>
+                        <div class="editor-actions">
                         <select id="noteType" class="note-type-select" title="Note type" data-i18n-title="editor.noteType">
                             <option value="markdown">MD</option>
                             <option value="asciidoc">ADOC</option>
@@ -192,6 +193,7 @@
                             <button id="layoutPositionBtn" class="btn-icon" title="Toggle Preview Position" data-i18n-title="layout.position">&#8649;</button>
                             <button id="tabModeBtn" class="btn-icon" title="Tab Mode" data-i18n-title="layout.tabMode">&#9783;</button>
                             <button id="popoutPreviewBtn" class="btn-icon" title="Pop-out Preview" data-i18n-title="layout.popout">&#10064;</button>
+                        </div>
                         </div>
                     </div>
                 </div>

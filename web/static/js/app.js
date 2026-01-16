@@ -5343,8 +5343,16 @@ async function showNotesByTag(tag) {
             const noteTitle = escapeHtml(note.title || i18n.t('editor.untitled'));
             const noteDate = new Date(note.modified).toLocaleDateString();
 
+            // Render tags for this note
+            const noteTags = (note.tags || []).map(t =>
+                `<span class="tag-note-tag${t === tag ? ' current' : ''}">#${escapeHtml(t)}</span>`
+            ).join('');
+
             noteEl.innerHTML = `
-                <div class="tag-note-title">${folderPath}${noteTitle}</div>
+                <div class="tag-note-info">
+                    <div class="tag-note-title">${folderPath}${noteTitle}</div>
+                    <div class="tag-note-tags">${noteTags}</div>
+                </div>
                 <div class="tag-note-date">${noteDate}</div>
             `;
 

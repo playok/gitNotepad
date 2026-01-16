@@ -2241,6 +2241,14 @@ function applyLayoutState() {
         tabBar.style.display = layoutState.tabMode ? 'flex' : 'none';
     }
 
+    // Show/hide markdown toolbar based on tab mode and active tab
+    const markdownToolbar = document.getElementById('markdownToolbar');
+    if (markdownToolbar) {
+        // Hide toolbar only when in tab mode AND preview tab is active
+        const shouldHideToolbar = layoutState.tabMode && layoutState.activeTab === 'preview';
+        markdownToolbar.style.display = shouldHideToolbar ? 'none' : 'flex';
+    }
+
     // Apply active tab
     if (layoutState.tabMode) {
         // Clear active class from both first
@@ -2336,6 +2344,12 @@ function switchTab(tabName) {
 
     updateTabBarState();
     saveLayoutState();
+
+    // Show/hide markdown toolbar based on active tab
+    const markdownToolbar = document.getElementById('markdownToolbar');
+    if (markdownToolbar) {
+        markdownToolbar.style.display = tabName === 'preview' ? 'none' : 'flex';
+    }
 
     // Update preview when switching to preview tab
     if (tabName === 'preview') {

@@ -223,8 +223,10 @@ daemon:
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
 - **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
-- **태블릿 지원**: 터치 디바이스 최적화 (44px 최소 터치 영역)
+- **태블릿 지원**: 터치 디바이스 최적화 (44px 최소 터치 영역), splitter 터치 드래그
 - **태그 기능**: YAML frontmatter 저장, 자동완성, 태그별 노트 필터링 팝업
+- **노트/캘린더 Splitter**: 노트 목록과 캘린더 영역 크기 조절 가능
+- **에디터 헤더 스와이프**: 태블릿에서 헤더 좌우 스와이프 스크롤, 모멘텀 효과
 
 ## 핵심 모듈
 
@@ -280,6 +282,8 @@ daemon:
   - 태그 관리: `initTags()`, `loadAllTags()`, `renderTags()`, `addTag()`, `removeTag()`
   - 태그 자동완성: `showTagSuggestions()`, `hideTagSuggestions()`, `navigateTagSuggestions()`
   - 태그 노트 팝업: `showNotesByTag()`, `closeTagNotesModal()` - 태그별 노트 필터링
+  - 노트/캘린더 Splitter: `initNoteCalendarSplitter()` - 드래그로 영역 크기 조절, 터치 지원
+  - 에디터 헤더 스크롤: `initEditorHeaderScroll()` - 터치 스와이프, 모멘텀 효과, 스크롤 표시기
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
   - 전체 UI 번역: 메뉴, 모달, 툴바, 테이블 에디터, alert/confirm 메시지
   - 파라미터 치환 지원: `{key}` 형식 (`i18n.t('key', { param: value })`)

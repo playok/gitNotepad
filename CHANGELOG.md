@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.10.1] - Tablet Responsive Improvements
+
+**New Features:**
+- Note list / Calendar resizable splitter (drag to resize)
+- Editor header swipe scroll with momentum effect
+- Screen size display in Settings > About
+
+**Tablet Improvements:**
+- Sidebar splitter touch event support
+- All splitters support touch drag
+- Editor header horizontal swipe for narrow screens
+- Scroll indicators (gradient fade) for editor header
+
+**Bug Fixes:**
+- Calendar last week not visible on tablets (#35)
+- Editor toolbar buttons not visible on narrow screens (#35)
+
 ## [v0.10.0](https://github.com/playok/gitNotepad/releases/tag/v0.10.0) - Tag Feature
 
 **New Features:**

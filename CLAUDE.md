@@ -293,6 +293,19 @@ daemon:
 - **GoReleaser**: `.goreleaser.yaml`로 멀티 플랫폼 릴리즈 자동화
 - **지원 플랫폼**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64, arm64)
 
+## 문서 구조
+
+```
+├── README.md           # 영어 (기본)
+├── README.ko.md        # 한국어
+├── CHANGELOG.md        # 버전별 변경 이력
+└── CLAUDE.md           # 개발자 가이드 (Claude Code용)
+```
+
+- **README.md / README.ko.md**: 상단에 언어 전환 링크 포함
+- **CHANGELOG.md**: 버전별 변경 내역, GitHub 릴리즈 링크 포함
+- 새 버전 릴리즈 시 CHANGELOG.md 업데이트 필수
+
 ## API 호출 가이드라인 (프론트엔드)
 
 nginx 리버스 프록시 환경 지원을 위해 모든 API 호출은 `basePath`를 포함해야 함.

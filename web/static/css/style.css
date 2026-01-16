@@ -2569,7 +2569,7 @@ body {
         width: 100% !important;
         height: auto;
         min-height: 150px;
-        max-height: 50vh;
+        max-height: 55vh;
         min-width: 0 !important;
         overflow-y: auto;
         display: flex;
@@ -2588,45 +2588,63 @@ body {
         display: none !important;
     }
 
-    /* Note list scrollable - take remaining space */
+    /* Note list scrollable - limited height to make room for calendar */
     .note-list {
-        flex: 1;
-        min-height: 60px;
-        max-height: 20vh;
+        flex: 0 1 auto;
+        min-height: 50px;
+        max-height: 100px;
         overflow-y: auto;
     }
 
-    /* Mini calendar responsive - always visible at bottom */
+    /* Mini calendar responsive - priority for full display */
     .mini-calendar {
         flex-shrink: 0;
+        min-height: 170px;
         overflow: visible;
         border-top: 1px solid var(--border);
         background: var(--bg-primary);
+        padding: 0.25rem;
+    }
+
+    .mini-calendar-header {
+        margin-bottom: 0.25rem;
     }
 
     .mini-calendar-body {
         overflow: visible;
+        margin-top: 0.25rem;
     }
 
-    /* Compact calendar grid on tablets */
+    /* Very compact calendar grid on tablets */
     .mini-calendar-grid {
-        gap: 1px;
+        gap: 0;
     }
 
     .mini-cal-day {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         aspect-ratio: auto;
-        min-height: 28px;
-        max-height: 32px;
-        padding: 4px 0;
+        min-height: 18px;
+        max-height: 22px;
+        padding: 2px 0;
     }
 
     .mini-calendar-weekdays {
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
 
     .mini-weekday {
-        padding: 1px 0;
+        font-size: 0.6rem;
+        padding: 0;
+    }
+
+    .mini-cal-title {
+        font-size: 0.75rem;
+    }
+
+    .mini-cal-nav,
+    .mini-cal-toggle {
+        padding: 1px 4px;
+        font-size: 0.6rem;
     }
 
     .editor {

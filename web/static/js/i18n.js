@@ -487,6 +487,7 @@ const i18n = {
             'tags.title': 'Tags',
             'tags.addPlaceholder': 'Add tag...',
             'tags.createNew': 'Create new tag "{tag}"',
+            'tags.noNotesWithTag': 'No notes with this tag',
         },
 
         ko: {
@@ -973,6 +974,7 @@ const i18n = {
             'tags.title': '태그',
             'tags.addPlaceholder': '태그 추가...',
             'tags.createNew': '새 태그 "{tag}" 만들기',
+            'tags.noNotesWithTag': '이 태그가 있는 노트가 없습니다',
         }
     },
 

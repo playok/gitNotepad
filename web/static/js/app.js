@@ -5283,12 +5283,78 @@ function renderTags() {
             <span class="tag-text">${escapeHtml(tag)}</span>
             <span class="tag-remove" data-tag="${escapeHtml(tag)}">×</span>
         `;
+        // Click on tag text to show notes with this tag
+        tagEl.querySelector('.tag-text').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showNotesByTag(tag);
+        });
         tagEl.querySelector('.tag-remove').addEventListener('click', (e) => {
             e.stopPropagation();
             removeTag(tag);
         });
         tagsList.appendChild(tagEl);
     });
+}
+
+// Show popup with all notes that have the specified tag
+async function showNotesByTag(tag) {
+    const modal = document.getElementById('tagNotesModal');
+    const titleEl = document.getElementById('tagNotesTitle');
+    const listEl = document.getElementById('tagNotesList');
+
+    if (!modal || !titleEl || !listEl) return;
+
+    // Set title
+    titleEl.textContent = `#${tag}`;
+    listEl.innerHTML = `<div class="tag-notes-loading">${i18n ? i18n.t('common.loading') : 'Loading...'}</div>`;
+
+    // Show modal
+    modal.style.display = 'flex';
+
+    try {
+        // Filter notes that have this tag
+        const notesWithTag = notes.filter(note =>
+            note.tags && note.tags.includes(tag)
+        );
+
+        if (notesWithTag.length === 0) {
+            listEl.innerHTML = `<div class="tag-notes-empty">${i18n ? i18n.t('tags.noNotesWithTag') : 'No notes with this tag'}</div>`;
+            return;
+        }
+
+        // Render notes list
+        listEl.innerHTML = '';
+        notesWithTag.forEach(note => {
+            const noteEl = document.createElement('div');
+            noteEl.className = 'tag-note-item';
+
+            const folderPath = note.folder_path ? `<span class="tag-note-folder">${escapeHtml(note.folder_path)}/</span>` : '';
+            const noteTitle = escapeHtml(note.title || i18n.t('editor.untitled'));
+            const noteDate = new Date(note.modified).toLocaleDateString();
+
+            noteEl.innerHTML = `
+                <div class="tag-note-title">${folderPath}${noteTitle}</div>
+                <div class="tag-note-date">${noteDate}</div>
+            `;
+
+            noteEl.addEventListener('click', () => {
+                closeTagNotesModal();
+                loadNote(note.id);
+            });
+
+            listEl.appendChild(noteEl);
+        });
+    } catch (error) {
+        console.error('Error showing notes by tag:', error);
+        listEl.innerHTML = `<div class="tag-notes-empty">${i18n ? i18n.t('common.error') : 'Error'}</div>`;
+    }
+}
+
+function closeTagNotesModal() {
+    const modal = document.getElementById('tagNotesModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function addTag(tag) {

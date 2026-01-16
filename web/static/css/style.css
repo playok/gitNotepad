@@ -4227,6 +4227,78 @@ code.hljs[data-line-count^="1000"] .line-number {
     font-style: italic;
 }
 
+/* Tag text clickable */
+.tag-item .tag-text {
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.tag-item .tag-text:hover {
+    opacity: 0.8;
+}
+
+/* Tag Notes Modal */
+.tag-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.tag-notes-title-text {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.tag-notes-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tag-notes-loading,
+.tag-notes-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.tag-note-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.tag-note-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.tag-note-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.tag-note-folder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.tag-note-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-left: 1rem;
+}
+
 /* ============================================
    Attachments Section Styles
    ============================================ */

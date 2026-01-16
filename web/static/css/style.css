@@ -2568,10 +2568,9 @@ body {
     .sidebar {
         width: 100% !important;
         height: auto;
-        min-height: 150px;
-        max-height: 55vh;
+        min-height: 200px;
         min-width: 0 !important;
-        overflow-y: auto;
+        overflow: visible;
         display: flex;
         flex-direction: column;
     }
@@ -2588,63 +2587,24 @@ body {
         display: none !important;
     }
 
-    /* Note list scrollable - limited height to make room for calendar */
+    /* Note list - fixed height, scrollable */
     .note-list {
-        flex: 0 1 auto;
-        min-height: 50px;
-        max-height: 100px;
+        flex: 0 0 auto;
+        height: 80px;
+        min-height: 80px;
+        max-height: 80px;
         overflow-y: auto;
     }
 
-    /* Mini calendar responsive - priority for full display */
+    /* Mini calendar - no height constraints */
     .mini-calendar {
-        flex-shrink: 0;
-        min-height: 170px;
+        flex: 0 0 auto;
         overflow: visible;
-        border-top: 1px solid var(--border);
-        background: var(--bg-primary);
-        padding: 0.25rem;
-    }
-
-    .mini-calendar-header {
-        margin-bottom: 0.25rem;
     }
 
     .mini-calendar-body {
         overflow: visible;
-        margin-top: 0.25rem;
-    }
-
-    /* Very compact calendar grid on tablets */
-    .mini-calendar-grid {
-        gap: 0;
-    }
-
-    .mini-cal-day {
-        font-size: 0.65rem;
-        aspect-ratio: auto;
-        min-height: 18px;
-        max-height: 22px;
-        padding: 2px 0;
-    }
-
-    .mini-calendar-weekdays {
-        margin-bottom: 1px;
-    }
-
-    .mini-weekday {
-        font-size: 0.6rem;
-        padding: 0;
-    }
-
-    .mini-cal-title {
-        font-size: 0.75rem;
-    }
-
-    .mini-cal-nav,
-    .mini-cal-toggle {
-        padding: 1px 4px;
-        font-size: 0.6rem;
+        max-height: none;
     }
 
     .editor {
@@ -2734,46 +2694,6 @@ body {
 
     .btn-icon:active {
         background-color: var(--bg-tertiary);
-    }
-
-    /* Compact mini calendar for tablets (touch devices) */
-    .mini-calendar {
-        padding: 0.25rem;
-    }
-
-    .mini-calendar-body {
-        margin-top: 0.25rem;
-    }
-
-    .mini-calendar-grid {
-        gap: 0;
-    }
-
-    .mini-cal-day {
-        font-size: 0.65rem;
-        aspect-ratio: auto;
-        min-height: 20px;
-        max-height: 24px;
-        padding: 2px 0;
-    }
-
-    .mini-calendar-weekdays {
-        margin-bottom: 1px;
-    }
-
-    .mini-weekday {
-        font-size: 0.6rem;
-        padding: 0;
-    }
-
-    .mini-cal-title {
-        font-size: 0.75rem;
-    }
-
-    .mini-cal-nav,
-    .mini-cal-toggle {
-        padding: 2px 4px;
-        font-size: 0.55rem;
     }
 }
 

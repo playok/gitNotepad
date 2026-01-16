@@ -288,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderMiniCalendar();
     });
 
+    // Handle window resize - update screen size display
+    window.addEventListener('resize', updateScreenWidth);
+
     // Ensure i18n is applied after all initialization
     if (typeof i18n !== 'undefined') {
         i18n.updateUI();
@@ -7709,6 +7712,9 @@ async function loadAboutInfo() {
         if (versionEl) versionEl.textContent = version.Version || 'dev';
         if (commitEl) commitEl.textContent = version.Commit ? version.Commit.substring(0, 7) : 'unknown';
         if (buildDateEl) buildDateEl.textContent = version.Date || 'unknown';
+
+        // Update screen width
+        updateScreenWidth();
     } catch (err) {
         console.error('Error loading about info:', err);
         // Show placeholder values
@@ -7719,6 +7725,19 @@ async function loadAboutInfo() {
         if (versionEl) versionEl.textContent = 'dev';
         if (commitEl) commitEl.textContent = 'unknown';
         if (buildDateEl) buildDateEl.textContent = 'unknown';
+
+        // Update screen width
+        updateScreenWidth();
+    }
+}
+
+// Update screen width display
+function updateScreenWidth() {
+    const screenWidthEl = document.getElementById('aboutScreenWidth');
+    if (screenWidthEl) {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        screenWidthEl.textContent = `${width} x ${height} px`;
     }
 }
 

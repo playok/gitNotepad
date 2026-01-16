@@ -1,53 +1,55 @@
+**English** | [한국어](README.ko.md)
+
 # Git Notepad
 
-Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
+A web-based note application with integrated Git version control
 
-## 주요 기능
+## Key Features
 
-- **다중 문서 형식 지원**: Markdown, AsciiDoc, TXT
-- **CodeMirror 에디터**: 문법 강조, 줄 번호, 자동 완성
-- **편집 툴바**: Markdown/AsciiDoc 서식 버튼, 표 그리드 선택기
-- **AsciiDoc 테이블 에디터**: 드래그로 셀 선택, 병합/해제, span 문법 자동 생성
-- **실시간 미리보기**: Markdown/AsciiDoc 실시간 렌더링
-- **KaTeX 수식 렌더링**: LaTeX 문법 지원 ($...$, $$...$$)
-- **에디터/프리뷰 도킹**: 가로/세로 레이아웃, 탭 모드, 팝아웃 프리뷰
-- **Git 버전 관리**: 모든 변경사항 자동 커밋, 3-way diff 비교
-- **사용자 인증**: SQLite 기반 다중 사용자 지원
-- **비밀번호 보호**: 개별 노트 암호화
-- **파일 암호화**: AES-256-GCM 암호화로 저장 파일 보호 (선택적)
-- **파일 첨부**: 이미지 및 파일 업로드 (원본 파일명 복원)
-- **4개 테마**: Light, Dark, Dark High Contrast, Dark Cyan
-- **다국어 지원**: 영어/한국어 (Settings에서 변경)
-- **오프라인 지원**: 모든 라이브러리 로컬 포함
-- **단축 URL**: 노트 공유용 짧은 링크 생성 (공개/비공개, 만료일 설정)
-- **캘린더 뷰**: 사이드바 미니 캘린더, 날짜별 노트 관리, Daily 폴더 자동 생성
-- **폴더 관리**: 드래그 앤 드롭, 펼치기/닫기, 아이콘 변경, 노트 이동 모달
-- **새 노트 위치 선택**: 노트 생성 시 폴더 선택 모달
-- **태블릿 지원**: 터치 디바이스 최적화 (44px 최소 터치 영역)
-- **태그 기능**: YAML frontmatter 저장, 자동완성, 태그별 노트 필터링
-- **데이터 관리**: 노트 내보내기/가져오기, 통계 조회
-- **크로스 플랫폼**: CGO 없이 Linux/macOS/Windows 빌드
-- **Nginx 프록시**: 서브 경로에서 운영 가능
-- **단일 바이너리**: 템플릿/정적 파일 임베디드 (go:embed)
-- **데몬 모드**: 백그라운드 실행 (start/stop/restart/status)
-- **로그 롤링**: 일단위 로그 파일 생성 (`gitnotepad.log.YYYY-MM-DD`)
+- **Multiple Document Formats**: Markdown, AsciiDoc, TXT
+- **CodeMirror Editor**: Syntax highlighting, line numbers, auto-completion
+- **Editing Toolbar**: Markdown/AsciiDoc formatting buttons, table grid selector
+- **AsciiDoc Table Editor**: Drag to select cells, merge/split, auto-generate span syntax
+- **Real-time Preview**: Live rendering for Markdown/AsciiDoc
+- **KaTeX Math Rendering**: LaTeX syntax support ($...$, $$...$$)
+- **Editor/Preview Docking**: Horizontal/vertical layout, tab mode, popout preview
+- **Git Version Control**: Auto-commit all changes, 3-way diff comparison
+- **User Authentication**: SQLite-based multi-user support
+- **Password Protection**: Individual note encryption
+- **File Encryption**: AES-256-GCM encryption for stored files (optional)
+- **File Attachments**: Image and file upload (original filename restoration)
+- **4 Themes**: Light, Dark, Dark High Contrast, Dark Cyan
+- **Multi-language Support**: English/Korean (changeable in Settings)
+- **Offline Support**: All libraries included locally
+- **Short URLs**: Generate short links for note sharing (public/private, expiration date)
+- **Calendar View**: Sidebar mini calendar, date-based note management, auto Daily folder creation
+- **Folder Management**: Drag & drop, expand/collapse, icon change, note move modal
+- **New Note Location**: Folder selection modal when creating notes
+- **Tablet Support**: Touch device optimization (44px minimum touch area)
+- **Tag Feature**: YAML frontmatter storage, autocomplete, filter notes by tag
+- **Data Management**: Note export/import, statistics view
+- **Cross-platform**: Linux/macOS/Windows build without CGO
+- **Nginx Proxy**: Operable on sub-paths
+- **Single Binary**: Templates/static files embedded (go:embed)
+- **Daemon Mode**: Background execution (start/stop/restart/status)
+- **Log Rolling**: Daily log file creation (`gitnotepad.log.YYYY-MM-DD`)
 
-## 스크린샷
+## Screenshots
 
-**리스트 뷰 (기본):**
+**List View (Default):**
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Git Notepad    [+] [?] [⚙] [☀]                            │
 ├─────────────┬───────────────────────────────────────────────┤
-│ [☰][📅]     │  # 제목                    │  # 제목          │
-│ 📄 노트 1   │                            │                  │
-│ 📄 노트 2   │  본문 내용...              │  본문 내용...    │
-│ 📁 폴더     │                            │                  │
-│   📄 하위   │  [Editor]                  │  [Preview]       │
+│ [☰][📅]     │  # Title                   │  # Title         │
+│ 📄 Note 1   │                            │                  │
+│ 📄 Note 2   │  Content...                │  Content...      │
+│ 📁 Folder   │                            │                  │
+│   📄 Sub    │  [Editor]                  │  [Preview]       │
 └─────────────┴───────────────────────────────────────────────┘
 ```
 
-**캘린더 뷰:**
+**Calendar View:**
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Git Notepad    [+] [?] [⚙] [☀]                            │
@@ -55,73 +57,73 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 │ [☰][📅]     │  ◀  January 2025  ▶  [Today]   │ Jan 15, 2025  │
 │             │  Su Mo Tu We Th Fr Sa          │ [+ New Note]  │
 │             │      1  2  3  4  5  6          │               │
-│             │   7  8  9 10 11 12 13          │ 📄 회의록     │
-│             │  14 [15] 16 17 18 19 20        │ 📄 일기       │
+│             │   7  8  9 10 11 12 13          │ 📄 Meeting    │
+│             │  14 [15] 16 17 18 19 20        │ 📄 Diary      │
 │             │  21 22 23 24 25 26 27          │               │
 │             │  28 29 30 31                   │               │
 └─────────────┴───────────────────────────────────────────────┘
 ```
 
-## 요구 사항
+## Requirements
 
-- Go 1.21 이상 (CGO 불필요)
-- Git (버전 관리 기능 사용 시)
+- Go 1.21 or higher (CGO not required)
+- Git (for version control feature)
 
-## 설치 및 실행
+## Installation & Running
 
-### 소스에서 빌드
+### Build from Source
 
 ```bash
-# 저장소 클론
+# Clone repository
 git clone https://github.com/playok/gitNotepad.git
 cd gitNotepad
 
-# 의존성 설치
+# Install dependencies
 make deps
 
-# 빌드
+# Build
 make build
 
-# 실행
+# Run
 ./gitnotepad
 ```
 
-### 바로 실행
+### Quick Run
 
 ```bash
 make run
 ```
 
-브라우저에서 `http://localhost:8080` 접속
+Access `http://localhost:8080` in browser
 
-### CLI 옵션
-
-```bash
-gitnotepad                             # 자동 모드 (초기 설정 필요 시 포그라운드, 아니면 데몬)
-gitnotepad --help                      # 도움말 출력
-gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
-gitnotepad -config my.yaml             # 설정 파일 지정
-gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
-```
-
-### 데몬 명령어
+### CLI Options
 
 ```bash
-gitnotepad start                       # 백그라운드 데몬 시작
-gitnotepad stop                        # 데몬 중지
-gitnotepad restart                     # 데몬 재시작
-gitnotepad status                      # 데몬 상태 확인
-gitnotepad run                         # 포그라운드 실행 (디버깅용)
-gitnotepad start -config my.yaml       # 설정 파일 지정하여 시작
+gitnotepad                             # Auto mode (foreground if initial setup needed, else daemon)
+gitnotepad --help                      # Show help
+gitnotepad --nginx                     # Show nginx proxy setup guide
+gitnotepad -config my.yaml             # Specify config file
+gitnotepad --reset-password <username> # Reset user password
 ```
 
-> **기본 동작**: 인자 없이 실행 시, 초기 설정이 필요하면 포그라운드로 실행하여 관리자 비밀번호를 설정하고, 설정이 완료되어 있으면 데몬 모드로 시작합니다.
+### Daemon Commands
 
-## 초기 설정
+```bash
+gitnotepad start                       # Start background daemon
+gitnotepad stop                        # Stop daemon
+gitnotepad restart                     # Restart daemon
+gitnotepad status                      # Check daemon status
+gitnotepad run                         # Foreground execution (for debugging)
+gitnotepad start -config my.yaml       # Start with specific config file
+```
 
-### 관리자 비밀번호 설정
+> **Default Behavior**: When run without arguments, it runs in foreground for initial setup (admin password), then starts as daemon once configured.
 
-첫 실행 시 터미널에서 관리자 비밀번호를 입력받습니다:
+## Initial Setup
+
+### Admin Password Setup
+
+On first run, enter admin password in terminal:
 
 ```
 ╔════════════════════════════════════════════════════════════╗
@@ -133,222 +135,222 @@ Confirm admin password:
 Admin password set successfully!
 ```
 
-- **사용자명**: `admin` (config.yaml에서 변경 가능)
-- **비밀번호**: 터미널에서 직접 입력 (SHA-512 해시로 config.yaml에 저장)
+- **Username**: `admin` (changeable in config.yaml)
+- **Password**: Enter directly in terminal (stored as SHA-512 hash in config.yaml)
 
-> 비밀번호는 평문으로 저장되지 않으며, SHA-512 해시가 config.yaml에 저장됩니다.
+> Password is never stored in plaintext; SHA-512 hash is saved in config.yaml.
 
-### 사용자 관리
+### User Management
 
-관리자 계정으로 로그인 후:
+After logging in as admin:
 
-1. 우측 상단 사용자 아이콘 클릭
-2. "Manage Users" 선택
-3. 새 사용자 추가 또는 기존 사용자 삭제
+1. Click user icon in top right
+2. Select "Manage Users"
+3. Add new users or delete existing ones
 
-## 사용법
+## Usage
 
-### 노트 생성
+### Creating Notes
 
-1. 사이드바 상단의 `+` 버튼 클릭
-2. 노트 제목 입력
-3. 문서 형식 선택 (MD/ADOC/TXT)
-4. 내용 작성
+1. Click `+` button at top of sidebar
+2. Enter note title
+3. Select document format (MD/ADOC/TXT)
+4. Write content
 
-### 노트 형식
+### Note Formats
 
-| 형식 | 확장자 | 설명 |
-|------|--------|------|
-| Markdown | `.md` | GitHub Flavored Markdown 지원 |
-| AsciiDoc | `.adoc` | 기술 문서 작성에 적합 |
-| Text | `.txt` | 일반 텍스트 (미리보기 없음) |
+| Format | Extension | Description |
+|--------|-----------|-------------|
+| Markdown | `.md` | GitHub Flavored Markdown support |
+| AsciiDoc | `.adoc` | Suitable for technical documentation |
+| Text | `.txt` | Plain text (no preview) |
 
-### 폴더 구조
+### Folder Structure
 
-노트 제목에 `/`를 사용하여 폴더 구조 생성:
+Use `/` in note titles to create folder structure:
 
 ```
-프로젝트/설계문서
-프로젝트/회의록/2024-01
-개인/일기
+Project/Design Document
+Project/Meeting Notes/2024-01
+Personal/Diary
 ```
 
-**노트 이동:**
-1. 노트 목록에서 우클릭 → "이동..."
-2. 모달에서 대상 폴더 선택
-3. 루트 또는 기존 폴더로 이동
+**Moving Notes:**
+1. Right-click note in list → "Move..."
+2. Select target folder in modal
+3. Move to root or existing folder
 
-**새 노트 생성:**
-1. `+` 버튼 클릭 시 위치 선택 모달 표시
-2. 루트, 기존 폴더, 새 폴더 중 선택
+**Creating New Notes:**
+1. Click `+` button to show location selection modal
+2. Choose from root, existing folder, or new folder
 
-### 비공개 노트
+### Private Notes
 
-1. 에디터 상단의 🔒 아이콘 클릭
-2. 비밀번호 설정
-3. 다음 접근 시 비밀번호 입력 필요
+1. Click 🔒 icon at top of editor
+2. Set password
+3. Password required for next access
 
-### 파일 첨부
+### File Attachments
 
-**이미지 붙여넣기:**
-- 클립보드의 이미지를 `Ctrl+V`로 직접 붙여넣기
+**Pasting Images:**
+- Paste images from clipboard with `Ctrl+V`
 
-**파일 업로드:**
-1. 에디터 상단의 📎 버튼 클릭
-2. 파일 선택
-3. 자동으로 마크다운 링크 삽입
+**File Upload:**
+1. Click 📎 button at top of editor
+2. Select file
+3. Markdown link automatically inserted
 
-### 버전 관리
+### Version Control
 
-**히스토리 보기:**
-1. 에디터 상단의 🕐 버튼 클릭
-2. 3패널 뷰: 버전 목록 + 이전 버전 + 현재 버전
-3. 색상 범례로 변경 사항 확인 (빨강: 삭제, 초록: 추가)
-4. 원하는 버전 선택하여 diff 비교
-5. "Restore" 버튼으로 복원
+**Viewing History:**
+1. Click 🕐 button at top of editor
+2. 3-panel view: Version list + Previous version + Current version
+3. Color legend shows changes (red: deleted, green: added)
+4. Select version to view diff comparison
+5. Click "Restore" button to restore
 
-### 노트 공유
+### Note Sharing
 
-**공유 링크 생성:**
-1. 에디터 상단의 공유 버튼 클릭
-2. 공개/비공개 설정
-3. 만료일 설정 (Never 또는 날짜 선택)
-4. 생성된 링크 복사하여 공유
+**Creating Share Links:**
+1. Click share button at top of editor
+2. Set public/private
+3. Set expiration date (Never or select date)
+4. Copy generated link to share
 
-**공유 옵션:**
-- **공개 (Public)**: 로그인 없이 누구나 접근 가능
-- **비공개 (Private)**: 로그인 필요
+**Share Options:**
+- **Public**: Anyone can access without login
+- **Private**: Login required
 
-**만료 옵션:**
-- `Never`: 무기한 유효
-- 날짜 선택: 해당 날짜까지 유효
+**Expiration Options:**
+- `Never`: Valid indefinitely
+- Select date: Valid until that date
 
-> 만료된 링크는 매일 자정에 자동 정리됩니다 (노트는 유지됨)
+> Expired links are automatically cleaned up daily at midnight (notes are preserved)
 
-### 에디터/프리뷰 도킹
+### Editor/Preview Docking
 
-에디터 영역 상단의 레이아웃 컨트롤 버튼으로 다양한 레이아웃을 설정할 수 있습니다:
+Use layout control buttons at top of editor area for various layouts:
 
-**레이아웃 버튼:**
-- **⇔ 레이아웃 방향**: 가로/세로 전환
-- **⇉ 프리뷰 위치**: 에디터/프리뷰 순서 변경
-- **☷ 탭 모드**: 에디터와 프리뷰를 탭으로 전환
-- **⧉ 팝아웃**: 프리뷰를 별도 창으로 분리
+**Layout Buttons:**
+- **⇔ Layout Direction**: Toggle horizontal/vertical
+- **⇉ Preview Position**: Swap editor/preview order
+- **☷ Tab Mode**: Switch between editor and preview as tabs
+- **⧉ Popout**: Separate preview into new window
 
-**팝아웃 프리뷰:**
-- 별도 브라우저 창에서 프리뷰 표시
-- 에디터 입력 시 실시간 동기화
-- 듀얼 모니터 환경에서 유용
+**Popout Preview:**
+- Display preview in separate browser window
+- Real-time sync when typing in editor
+- Useful for dual monitor setups
 
-> 레이아웃 설정은 localStorage에 저장되어 브라우저 재시작 후에도 유지됩니다.
+> Layout settings are saved in localStorage and persist across browser restarts.
 
-### JSON 포맷팅
+### JSON Formatting
 
-1. JSON 텍스트 선택 (또는 전체)
-2. `Ctrl+Shift+F` 또는 `{ }` 버튼 클릭
-3. 자동으로 들여쓰기 적용
+1. Select JSON text (or all)
+2. Press `Ctrl+Shift+F` or click `{ }` button
+3. Indentation automatically applied
 
-### 언어 설정
+### Language Settings
 
-1. 우측 상단 ⚙ (Settings) 버튼 클릭
-2. General 탭에서 Language 선택
-3. English 또는 한국어 선택
+1. Click ⚙ (Settings) button in top right
+2. Select Language in General tab
+3. Choose English or 한국어
 
-> 언어 설정은 즉시 적용되며 localStorage에 저장됩니다.
+> Language setting applies immediately and is saved in localStorage.
 
-### 캘린더 뷰
+### Calendar View
 
-**미니 캘린더:**
-- 사이드바 상단에 미니 캘린더 표시
-- 노트가 있는 날짜는 점으로 표시
+**Mini Calendar:**
+- Mini calendar displayed at top of sidebar
+- Dates with notes shown with dots
 
-**캘린더 사용:**
-1. 월 이동: ◀ / ▶ 버튼 또는 "Today" 버튼
-2. 날짜 선택: 원하는 날짜 클릭
-3. 노트 확인: 에디터 영역에 해당 날짜 노트 패널 표시
-4. 노트 열기: 노트 항목 클릭 시 에디터로 이동
+**Using Calendar:**
+1. Navigate months: ◀ / ▶ buttons or "Today" button
+2. Select date: Click desired date
+3. View notes: Date notes panel shown in editor area
+4. Open note: Click note item to go to editor
 
-**날짜 이동 (드래그 앤 드롭):**
-1. 날짜 패널의 노트 항목을 드래그
-2. 원하는 날짜 셀에 드롭
-3. 노트의 생성일이 해당 날짜로 변경됨
+**Date Move (Drag & Drop):**
+1. Drag note item from date panel
+2. Drop on desired date cell
+3. Note's creation date changes to that date
 
-**새 노트 생성:**
-1. 날짜 선택 후 "+ New Note" 버튼 클릭
-2. `Daily/YYYY.MM/` 폴더에 자동 저장
-3. 자동으로 날짜가 제목에 입력됨 (YYYY-MM-DD 형식)
+**Creating New Notes:**
+1. Select date then click "+ New Note" button
+2. Auto-saved in `Daily/YYYY.MM/` folder
+3. Date automatically entered as title (YYYY-MM-DD format)
 
-## 설정
+## Configuration
 
 ### config.yaml
 
 ```yaml
 server:
-  port: 8080          # 서버 포트
-  host: "0.0.0.0"     # 바인딩 주소
-  base_path: ""       # 서브 경로 (nginx 프록시용, 예: "/note")
+  port: 8080          # Server port
+  host: "0.0.0.0"     # Binding address
+  base_path: ""       # Sub-path (for nginx proxy, e.g., "/note")
 
 storage:
-  path: "./data"      # 노트 저장 경로
-  auto_init_git: true # Git 자동 초기화
+  path: "./data"      # Note storage path
+  auto_init_git: true # Auto Git initialization
 
 logging:
-  encoding: ""        # "utf-8" (기본) 또는 "euc-kr"
-  file: false         # 파일 로깅 활성화
-  dir: "./logs"       # 로그 디렉토리 (일단위 롤링: gitnotepad.log.YYYY-MM-DD)
-  max_age: 30         # 로그 보관 일수
+  encoding: ""        # "utf-8" (default) or "euc-kr"
+  file: false         # Enable file logging
+  dir: "./logs"       # Log directory (daily rolling: gitnotepad.log.YYYY-MM-DD)
+  max_age: 30         # Log retention days
 
 editor:
-  default_type: "markdown"  # 기본 문서 형식
-  auto_save: true           # 자동 저장 (2초 후)
+  default_type: "markdown"  # Default document format
+  auto_save: true           # Auto save (after 2 seconds)
 
 auth:
-  enabled: true                # 인증 활성화
-  session_timeout: 168         # 세션 만료 (시간)
-  admin_username: "admin"      # 초기 관리자 ID
-  admin_password_hash: ""      # SHA-512 해시 (첫 실행 시 자동 설정)
+  enabled: true                # Enable authentication
+  session_timeout: 168         # Session expiration (hours)
+  admin_username: "admin"      # Initial admin ID
+  admin_password_hash: ""      # SHA-512 hash (auto-set on first run)
 
 database:
-  path: "./data/gitnotepad.db" # SQLite DB 경로
+  path: "./data/gitnotepad.db" # SQLite DB path
 
 encryption:
-  enabled: false               # 파일 암호화 활성화
-  salt: ""                     # 암호화 salt (첫 실행 시 자동 생성)
+  enabled: false               # Enable file encryption
+  salt: ""                     # Encryption salt (auto-generated on first run)
 
 daemon:
-  pid_file: "./gitnotepad.pid" # PID 파일 경로
+  pid_file: "./gitnotepad.pid" # PID file path
 ```
 
-### 환경별 설정
+### Environment-specific Settings
 
-**개발 환경:**
+**Development:**
 ```yaml
 server:
   port: 3000
 auth:
-  enabled: false  # 인증 비활성화
+  enabled: false  # Disable authentication
 ```
 
-**프로덕션 환경:**
+**Production:**
 ```yaml
 server:
-  host: "127.0.0.1"  # localhost만 허용
+  host: "127.0.0.1"  # Allow localhost only
 auth:
   enabled: true
 encryption:
-  enabled: true      # 파일 암호화 활성화
+  enabled: true      # Enable file encryption
 ```
 
-### Nginx 리버스 프록시
+### Nginx Reverse Proxy
 
-서브 경로(`/note`)에서 운영하려면:
+To operate on sub-path (`/note`):
 
 **config.yaml:**
 ```yaml
 server:
   port: 8080
   host: "127.0.0.1"
-  base_path: "/note"  # 서브 경로 설정
+  base_path: "/note"  # Set sub-path
 ```
 
 **nginx.conf:**
@@ -362,277 +364,277 @@ location /note {
 }
 ```
 
-## 키보드 단축키
+## Keyboard Shortcuts
 
-### 전역
+### Global
 
-| 단축키 | 기능 |
-|--------|------|
-| `Ctrl+N` | 새 노트 생성 |
-| `Ctrl+S` | 저장 |
-| `Ctrl+F` | 검색창 포커스 |
-| `Ctrl+B` | 사이드바 토글 |
-| `F1` 또는 `Ctrl+/` | 도움말 |
-| `Esc` | 모달 닫기 |
+| Shortcut | Function |
+|----------|----------|
+| `Ctrl+N` | Create new note |
+| `Ctrl+S` | Save |
+| `Ctrl+F` | Focus search box |
+| `Ctrl+B` | Toggle sidebar |
+| `F1` or `Ctrl+/` | Help |
+| `Esc` | Close modal |
 
-### 에디터
+### Editor
 
-| 단축키 | 기능 |
-|--------|------|
-| `Ctrl+E` | 에디터 전체화면 |
-| `Ctrl+P` | 미리보기 전체화면 |
-| `Ctrl+Shift+F` | JSON 포맷팅 |
-| `Enter` | 마크다운 리스트 자동 계속 |
+| Shortcut | Function |
+|----------|----------|
+| `Ctrl+E` | Editor fullscreen |
+| `Ctrl+P` | Preview fullscreen |
+| `Ctrl+Shift+F` | JSON formatting |
+| `Enter` | Auto-continue markdown list |
 
-## Make 명령어
+## Make Commands
 
-| 명령어 | 설명 |
-|--------|------|
-| `make` | 현재 OS용 빌드 |
-| `make build` | 현재 OS용 빌드 |
-| `make run` | 바로 실행 |
-| `make dev` | config.yaml로 실행 |
-| `make clean` | 빌드 결과물 삭제 |
-| `make test` | 테스트 실행 |
-| `make deps` | 의존성 설치 |
-| `make tidy` | go.mod 정리 |
-| `make linux` | Linux 빌드 (amd64, arm64) |
-| `make windows` | Windows 빌드 |
-| `make darwin` | macOS 빌드 (amd64, arm64) |
-| `make release` | 모든 플랫폼 빌드 |
+| Command | Description |
+|---------|-------------|
+| `make` | Build for current OS |
+| `make build` | Build for current OS |
+| `make run` | Quick run |
+| `make dev` | Run with config.yaml |
+| `make clean` | Delete build artifacts |
+| `make test` | Run tests |
+| `make deps` | Install dependencies |
+| `make tidy` | Clean go.mod |
+| `make linux` | Linux build (amd64, arm64) |
+| `make windows` | Windows build |
+| `make darwin` | macOS build (amd64, arm64) |
+| `make release` | Build all platforms |
 
-### Windows (make 없이)
+### Windows (without make)
 
-Windows에서는 `build.cmd`를 사용할 수 있습니다:
+On Windows, you can use `build.cmd`:
 
 ```cmd
-build          :: 현재 OS용 빌드
-build run      :: 바로 실행
-build dev      :: config.yaml로 실행
-build clean    :: 빌드 결과물 삭제
-build test     :: 테스트 실행
-build deps     :: 의존성 설치
-build tidy     :: go.mod 정리
-build linux    :: Linux 빌드
-build windows  :: Windows 빌드
-build darwin   :: macOS 빌드
-build release  :: 모든 플랫폼 빌드
-build help     :: 도움말
+build          :: Build for current OS
+build run      :: Quick run
+build dev      :: Run with config.yaml
+build clean    :: Delete build artifacts
+build test     :: Run tests
+build deps     :: Install dependencies
+build tidy     :: Clean go.mod
+build linux    :: Linux build
+build windows  :: Windows build
+build darwin   :: macOS build
+build release  :: Build all platforms
+build help     :: Help
 ```
 
-## 디렉토리 구조
+## Directory Structure
 
 ```
 gitNotepad/
-├── main.go                 # 진입점
-├── config.yaml             # 설정 파일
+├── main.go                 # Entry point
+├── config.yaml             # Config file
 ├── internal/
-│   ├── config/             # 설정 로드
-│   ├── daemon/             # 데몬 관리, 로그 롤링
-│   ├── database/           # SQLite 초기화
-│   ├── encryption/         # AES-256 암호화
-│   ├── git/                # Git 연동
-│   ├── handler/            # HTTP 핸들러
-│   ├── middleware/         # 인증 미들웨어
-│   ├── model/              # 데이터 모델
-│   ├── repository/         # DB 레포지토리
-│   └── server/             # 서버 설정
+│   ├── config/             # Config loading
+│   ├── daemon/             # Daemon management, log rolling
+│   ├── database/           # SQLite initialization
+│   ├── encryption/         # AES-256 encryption
+│   ├── git/                # Git integration
+│   ├── handler/            # HTTP handlers
+│   ├── middleware/         # Auth middleware
+│   ├── model/              # Data models
+│   ├── repository/         # DB repositories
+│   └── server/             # Server setup
 ├── web/
 │   ├── static/
-│   │   ├── css/            # 스타일시트
+│   │   ├── css/            # Stylesheets
 │   │   ├── js/             # JavaScript
-│   │   └── lib/            # 외부 라이브러리 (오프라인용)
-│   └── templates/          # HTML 템플릿
-└── data/                   # 노트 저장소 (gitignore)
+│   │   └── lib/            # External libraries (for offline)
+│   └── templates/          # HTML templates
+└── data/                   # Note storage (gitignore)
     ├── gitnotepad.db       # SQLite DB
-    └── {username}/         # 사용자별 노트
+    └── {username}/         # Per-user notes
         ├── .git/
         ├── note1.md
         └── images/
 ```
 
-## API 엔드포인트
+## API Endpoints
 
-### 인증
+### Authentication
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| POST | `/api/auth/login` | 로그인 |
-| POST | `/api/auth/logout` | 로그아웃 |
-| GET | `/api/auth/me` | 현재 사용자 정보 |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Current user info |
 
-### 노트
+### Notes
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | `/api/notes` | 노트 목록 |
-| GET | `/api/notes/:id` | 노트 조회 |
-| POST | `/api/notes` | 노트 생성 |
-| PUT | `/api/notes/:id` | 노트 수정 |
-| DELETE | `/api/notes/:id` | 노트 삭제 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/notes` | List notes |
+| GET | `/api/notes/:id` | Get note |
+| POST | `/api/notes` | Create note |
+| PUT | `/api/notes/:id` | Update note |
+| DELETE | `/api/notes/:id` | Delete note |
 
-### 파일
+### Files
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| POST | `/api/images` | 이미지 업로드 |
-| POST | `/api/files` | 파일 업로드 |
-| GET | `/api/git/history/:id` | 버전 히스토리 |
-| GET | `/api/git/version/:id/:hash` | 특정 버전 조회 |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/images` | Upload image |
+| POST | `/api/files` | Upload file |
+| GET | `/api/git/history/:id` | Version history |
+| GET | `/api/git/version/:id/:hash` | Get specific version |
 
-### 공유 링크
+### Short Links
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| POST | `/api/notes/:id/shortlink` | 단축 URL 생성 |
-| GET | `/api/notes/:id/shortlink` | 단축 URL 조회 |
-| DELETE | `/api/notes/:id/shortlink` | 단축 URL 삭제 |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/notes/:id/shortlink` | Create short URL |
+| GET | `/api/notes/:id/shortlink` | Get short URL |
+| DELETE | `/api/notes/:id/shortlink` | Delete short URL |
 
-### 태그
+### Tags
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | `/api/tags` | 모든 태그 목록 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/tags` | List all tags |
 
-### 데이터 관리
+### Data Management
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | `/api/stats` | 통계 조회 |
-| GET | `/api/notes/export` | 노트 내보내기 |
-| POST | `/api/notes/import` | 노트 가져오기 |
-| DELETE | `/api/notes` | 모든 노트 삭제 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/stats` | Get statistics |
+| GET | `/api/notes/export` | Export notes |
+| POST | `/api/notes/import` | Import notes |
+| DELETE | `/api/notes` | Delete all notes |
 
-### 관리자
+### Admin
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | `/api/admin/users` | 사용자 목록 |
-| POST | `/api/admin/users` | 사용자 생성 |
-| DELETE | `/api/admin/users/:id` | 사용자 삭제 |
-| PUT | `/api/admin/users/:id/password` | 비밀번호 변경 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/users` | List users |
+| POST | `/api/admin/users` | Create user |
+| DELETE | `/api/admin/users/:id` | Delete user |
+| PUT | `/api/admin/users/:id/password` | Change password |
 
-## 파일 암호화
+## File Encryption
 
-### 개요
+### Overview
 
-노트 파일을 AES-256-GCM으로 암호화하여 저장합니다. 사용자 비밀번호에서 PBKDF2 키를 파생하여 암호화합니다.
+Encrypts note files with AES-256-GCM. Derives PBKDF2 key from user password.
 
-### 활성화
+### Enabling
 
-`config.yaml`에서 암호화를 활성화합니다:
+Enable encryption in `config.yaml`:
 
 ```yaml
 encryption:
   enabled: true
-  salt: ""  # 첫 실행 시 자동 생성
+  salt: ""  # Auto-generated on first run
 ```
 
-### 동작 방식
+### How It Works
 
-1. **키 파생**: 사용자 로그인 시 비밀번호와 salt로 PBKDF2 키 생성 (100,000 iterations, SHA-256)
-2. **암호화**: 노트 저장 시 AES-256-GCM으로 암호화
-3. **저장 형식**: `ENC:base64_encoded_ciphertext` 형태로 파일에 저장
-4. **복호화**: 노트 로드 시 세션 키로 복호화
+1. **Key Derivation**: Generate PBKDF2 key from password and salt on login (100,000 iterations, SHA-256)
+2. **Encryption**: Encrypt with AES-256-GCM when saving notes
+3. **Storage Format**: Saved as `ENC:base64_encoded_ciphertext` in file
+4. **Decryption**: Decrypt with session key when loading notes
 
-### 특징
+### Features
 
-- **세션 기반 키**: 암호화 키는 로그인 세션 동안만 메모리에 유지
-- **하위 호환성**: 기존 암호화되지 않은 파일도 정상 읽기 가능
-- **자동 salt 생성**: 첫 실행 시 보안 난수로 salt 자동 생성
+- **Session-based Key**: Encryption key kept in memory only during login session
+- **Backward Compatibility**: Existing unencrypted files still readable
+- **Auto Salt Generation**: Security random salt auto-generated on first run
 
-### 주의사항
+### Cautions
 
-- 암호화 활성화 후에는 비밀번호 분실 시 데이터 복구 불가
-- salt가 변경되면 기존 암호화된 파일 복호화 불가
-- 여러 사용자가 같은 암호화된 노트에 접근하려면 같은 비밀번호 필요
+- Data unrecoverable if password lost after enabling encryption
+- Existing encrypted files unreadable if salt changes
+- Same password required for multiple users to access same encrypted notes
 
-## 문제 해결
+## Troubleshooting
 
-### 포트 충돌
+### Port Conflict
 
 ```bash
-# 다른 포트로 실행
+# Run on different port
 ./gitnotepad -port 3000
 ```
 
-또는 `config.yaml`에서 포트 변경
+Or change port in `config.yaml`
 
-### Git 오류
+### Git Errors
 
 ```bash
-# Git이 설치되어 있는지 확인
+# Check if Git is installed
 git --version
 
-# data 디렉토리 초기화
+# Initialize data directory
 rm -rf data/
 ./gitnotepad
 ```
 
-### 데이터베이스 초기화
+### Database Reset
 
 ```bash
-# SQLite DB 삭제 후 재시작
+# Delete SQLite DB and restart
 rm data/gitnotepad.db
 ./gitnotepad
 ```
 
-## 변경 이력
+## Changelog
 
-### v0.10.0 - 태그 기능
+### v0.10.0 - Tag Feature
 
-**새 기능:**
-- 노트 태그 기능 (YAML frontmatter에 저장)
-- 태그 자동완성 (기존 태그 제안)
-- 태그 클릭 시 해당 태그가 있는 노트 목록 팝업 표시
-- 태그 추가/삭제 시 자동 저장
+**New Features:**
+- Note tag feature (stored in YAML frontmatter)
+- Tag autocomplete (suggest existing tags)
+- Show notes list popup when clicking tag
+- Auto-save on tag add/remove
 
-**버그 수정:**
-- 프리뷰 모드에서 마크다운 툴바 숨김 처리
-- 에디터와 프리뷰 패널 정렬 수정 (#33)
-- 태그 자동완성 드롭다운 불투명 처리
+**Bug Fixes:**
+- Hide markdown toolbar in preview mode
+- Fix editor and preview panel alignment (#33)
+- Fix tag autocomplete dropdown opacity
 
-### v0.9.0 - i18n 전체 적용 및 검색 기능 개선
+### v0.9.0 - Full i18n & Search Improvements
 
-**새 기능:**
-- 전체 노트 내용 검색 (searchInput에서 제목+내용 검색)
-- Ctrl+F 영역별 검색 지원 (에디터: CodeMirror 검색, 프리뷰: 브라우저 검색)
+**New Features:**
+- Full note content search (title + content search in searchInput)
+- Ctrl+F area-specific search (Editor: CodeMirror search, Preview: browser search)
 
-**i18n 전체 적용:**
-- 사용자 메뉴 (관리자, 사용자 관리, 로그아웃)
-- Settings 모달 (Notes by Type, Recent Activity)
-- 테이블 에디터 (Size, Selected 동적 텍스트)
-- 모든 alert/confirm 메시지 번역
-- 폴더 오류, Import/Export 메시지 번역
+**Full i18n:**
+- User menu (Admin, Manage Users, Logout)
+- Settings modal (Notes by Type, Recent Activity)
+- Table editor (Size, Selected dynamic text)
+- All alert/confirm messages translated
+- Folder errors, Import/Export messages translated
 
-**버그 수정:**
-- 사용자 드롭다운 한글 레이아웃 수정
+**Bug Fixes:**
+- Fix Korean layout in user dropdown
 
-### v0.8.0 - 성능 최적화
+### v0.8.0 - Performance Optimization
 
-**성능 개선:**
-- GZip 압축 적용 (HTML, JS, CSS, JSON) - 전송 용량 ~75% 감소
-- 정적 파일 캐싱 (JS/CSS 7일, 폰트 1년, 이미지 30일)
-- 파일 중복 읽기 제거 - List API 성능 2배 향상
-- 검색 입력 디바운싱 (300ms) - 렌더링 횟수 ~70% 감소
-- 낙관적 업데이트 - 저장/삭제 후 API 호출 3개 → 0개
+**Performance Improvements:**
+- GZip compression (HTML, JS, CSS, JSON) - ~75% transfer size reduction
+- Static file caching (JS/CSS 7 days, fonts 1 year, images 30 days)
+- Remove duplicate file reads - List API 2x faster
+- Search input debouncing (300ms) - ~70% fewer renders
+- Optimistic updates - 3 → 0 API calls after save/delete
 
-**버그 수정:**
-- 노트 폴더 경로 불일치로 인한 저장 실패 문제 (#30)
-- 노트 이동 모달에 제목과 UUID 함께 표시
+**Bug Fixes:**
+- Note folder path mismatch causing save failure (#30)
+- Show title and UUID together in note move modal
 
 ### v0.7.0
 
-- Git 버전 관리 3-way diff 비교
-- 노트 이동 시 폴더 선택 모달
-- 새 노트 생성 시 위치 선택 모달
-- 폴더 구분자 표시 개선 (`:>:` → `/`)
-- 태블릿 터치 지원 개선 (44px 최소 터치 영역)
+- Git version control 3-way diff comparison
+- Folder selection modal when moving notes
+- Location selection modal when creating new notes
+- Folder separator display improvement (`:>:` → `/`)
+- Tablet touch support improvement (44px minimum touch area)
 
-## 라이선스
+## License
 
 MIT License
 
-## 기여
+## Contributing
 
-버그 리포트 및 기능 제안은 [GitHub Issues](https://github.com/playok/gitNotepad/issues)에서 받습니다.
+Bug reports and feature suggestions welcome at [GitHub Issues](https://github.com/playok/gitNotepad/issues).

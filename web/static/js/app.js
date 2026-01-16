@@ -5394,7 +5394,13 @@ function removeTag(tag) {
     if (index > -1) {
         currentTags.splice(index, 1);
         renderTags();
-        markAsUnsaved();
+
+        // Auto-save if editing an existing note
+        if (currentNote) {
+            saveNote();
+        } else {
+            markAsUnsaved();
+        }
     }
 }
 

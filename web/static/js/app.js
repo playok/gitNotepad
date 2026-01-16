@@ -377,6 +377,20 @@ function initSidebarSplitter() {
         e.preventDefault();
     });
 
+    // Touch support for sidebar splitter
+    splitter.addEventListener('touchstart', (e) => {
+        if (sidebarCollapsed) return;
+
+        isResizing = true;
+        startX = e.touches[0].clientX;
+        startWidth = sidebar.getBoundingClientRect().width;
+
+        splitter.classList.add('dragging');
+        container.classList.add('resizing');
+
+        e.preventDefault();
+    }, { passive: false });
+
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
 
@@ -393,7 +407,35 @@ function initSidebarSplitter() {
         sidebar.style.minWidth = newWidth + 'px';
     });
 
+    document.addEventListener('touchmove', (e) => {
+        if (!isResizing) return;
+
+        const deltaX = e.touches[0].clientX - startX;
+        let newWidth = startWidth + deltaX;
+
+        // Min/max constraints
+        const minWidth = 200;
+        const maxWidth = window.innerWidth * 0.5; // Max 50% of viewport
+
+        newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+        sidebar.style.width = newWidth + 'px';
+        sidebar.style.minWidth = newWidth + 'px';
+    }, { passive: false });
+
     document.addEventListener('mouseup', () => {
+        if (!isResizing) return;
+
+        isResizing = false;
+        splitter.classList.remove('dragging');
+        container.classList.remove('resizing');
+
+        // Save width to localStorage
+        const width = sidebar.getBoundingClientRect().width;
+        localStorage.setItem('sidebarWidth', Math.round(width).toString());
+    });
+
+    document.addEventListener('touchend', () => {
         if (!isResizing) return;
 
         isResizing = false;

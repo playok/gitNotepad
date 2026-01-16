@@ -325,6 +325,9 @@ function initSidebarToggle() {
 
     // Initialize sidebar splitter
     initSidebarSplitter();
+
+    // Initialize note list / calendar splitter
+    initNoteCalendarSplitter();
 }
 
 function toggleSidebar() {
@@ -407,6 +410,164 @@ function initSidebarSplitter() {
         sidebar.style.width = '320px';
         sidebar.style.minWidth = '320px';
         localStorage.removeItem('sidebarWidth');
+    });
+}
+
+// Note List / Calendar Splitter
+function initNoteCalendarSplitter() {
+    const splitter = document.getElementById('noteCalendarSplitter');
+    const noteList = document.getElementById('noteList');
+    const miniCalendar = document.getElementById('miniCalendar');
+    const sidebar = document.getElementById('sidebar');
+
+    if (!splitter || !noteList || !miniCalendar || !sidebar) return;
+
+    let isResizing = false;
+    let startY = 0;
+    let startNoteListHeight = 0;
+
+    // Load saved ratio from localStorage
+    const savedRatio = localStorage.getItem('noteCalendarRatio');
+    if (savedRatio) {
+        applyNoteCalendarRatio(parseFloat(savedRatio));
+    }
+
+    function applyNoteCalendarRatio(ratio) {
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const headerHeight = getFixedHeaderHeight();
+        const availableHeight = sidebarRect.height - headerHeight - splitter.offsetHeight;
+
+        const noteListHeight = Math.max(80, availableHeight * ratio);
+        noteList.style.height = noteListHeight + 'px';
+        noteList.style.flex = '0 0 auto';
+        miniCalendar.style.flex = '1 1 auto';
+        miniCalendar.style.minHeight = '150px';
+        miniCalendar.style.overflow = 'auto';
+    }
+
+    function getFixedHeaderHeight() {
+        // Calculate height of fixed elements above note list
+        const sidebarHeader = sidebar.querySelector('.sidebar-header');
+        const searchBox = sidebar.querySelector('.search-box');
+        const folderActions = sidebar.querySelector('.folder-actions');
+
+        let height = 0;
+        if (sidebarHeader) height += sidebarHeader.offsetHeight;
+        if (searchBox) height += searchBox.offsetHeight;
+        if (folderActions) height += folderActions.offsetHeight;
+        return height;
+    }
+
+    splitter.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startY = e.clientY;
+        startNoteListHeight = noteList.getBoundingClientRect().height;
+
+        splitter.classList.add('dragging');
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none';
+
+        e.preventDefault();
+    });
+
+    // Touch support
+    splitter.addEventListener('touchstart', (e) => {
+        isResizing = true;
+        startY = e.touches[0].clientY;
+        startNoteListHeight = noteList.getBoundingClientRect().height;
+
+        splitter.classList.add('dragging');
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const deltaY = e.clientY - startY;
+        let newHeight = startNoteListHeight + deltaY;
+
+        // Min/max constraints
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const headerHeight = getFixedHeaderHeight();
+        const minHeight = 80;
+        const maxHeight = sidebarRect.height - headerHeight - splitter.offsetHeight - 150; // Leave 150px for calendar
+
+        newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+
+        noteList.style.height = newHeight + 'px';
+        noteList.style.flex = '0 0 auto';
+        miniCalendar.style.flex = '1 1 auto';
+        miniCalendar.style.minHeight = '150px';
+        miniCalendar.style.overflow = 'auto';
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isResizing) return;
+
+        const deltaY = e.touches[0].clientY - startY;
+        let newHeight = startNoteListHeight + deltaY;
+
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const headerHeight = getFixedHeaderHeight();
+        const minHeight = 80;
+        const maxHeight = sidebarRect.height - headerHeight - splitter.offsetHeight - 150;
+
+        newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+
+        noteList.style.height = newHeight + 'px';
+        noteList.style.flex = '0 0 auto';
+        miniCalendar.style.flex = '1 1 auto';
+        miniCalendar.style.minHeight = '150px';
+        miniCalendar.style.overflow = 'auto';
+    }, { passive: false });
+
+    document.addEventListener('mouseup', () => {
+        if (!isResizing) return;
+
+        isResizing = false;
+        splitter.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        // Save ratio to localStorage
+        saveNoteCalendarRatio();
+    });
+
+    document.addEventListener('touchend', () => {
+        if (!isResizing) return;
+
+        isResizing = false;
+        splitter.classList.remove('dragging');
+
+        // Save ratio to localStorage
+        saveNoteCalendarRatio();
+    });
+
+    function saveNoteCalendarRatio() {
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const headerHeight = getFixedHeaderHeight();
+        const availableHeight = sidebarRect.height - headerHeight - splitter.offsetHeight;
+        const noteListHeight = noteList.getBoundingClientRect().height;
+        const ratio = noteListHeight / availableHeight;
+        localStorage.setItem('noteCalendarRatio', ratio.toFixed(3));
+    }
+
+    // Double click to reset to default (50/50)
+    splitter.addEventListener('dblclick', () => {
+        localStorage.removeItem('noteCalendarRatio');
+        noteList.style.height = '';
+        noteList.style.flex = '1 1 auto';
+        miniCalendar.style.flex = '0 0 auto';
+        miniCalendar.style.minHeight = '150px';
+        miniCalendar.style.overflow = 'hidden';
+    });
+
+    // Recalculate on window resize
+    window.addEventListener('resize', () => {
+        const savedRatio = localStorage.getItem('noteCalendarRatio');
+        if (savedRatio) {
+            applyNoteCalendarRatio(parseFloat(savedRatio));
+        }
     });
 }
 

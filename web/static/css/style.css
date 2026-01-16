@@ -482,13 +482,47 @@ body {
     visibility: visible;
 }
 
+/* Note List / Calendar Splitter */
+.note-calendar-splitter {
+    height: 6px;
+    background: var(--border);
+    cursor: row-resize;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.note-calendar-splitter:hover,
+.note-calendar-splitter.dragging {
+    background: var(--accent-bg);
+}
+
+.note-calendar-splitter .splitter-handle-h {
+    width: 30px;
+    height: 2px;
+    background: var(--text-muted);
+    border-radius: 1px;
+    opacity: 0.4;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.note-calendar-splitter:hover .splitter-handle-h,
+.note-calendar-splitter.dragging .splitter-handle-h {
+    opacity: 1;
+    background: var(--accent);
+}
+
 /* Mini Calendar - Fixed at bottom */
 .mini-calendar {
     padding: 0.5rem;
-    border-top: 1px solid var(--border);
+    border-top: none;
     background: var(--bg-primary);
     user-select: none;
-    flex-shrink: 0;
+    flex: 0 0 auto;
+    min-height: 150px;
+    overflow: hidden;
 }
 
 .mini-calendar-header {
@@ -654,8 +688,8 @@ body {
 .note-list {
     list-style: none;
     overflow-y: auto;
-    flex: 1;
-    min-height: 0;
+    flex: 1 1 auto;
+    min-height: 100px;
     padding: 4px;
 }
 
@@ -2668,40 +2702,11 @@ body {
     }
 }
 
-/* Tablet (768px - 1024px) - calendar fix */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* Tablet calendar - ensure scrollable when resized via splitter */
+@media (min-width: 769px) and (max-width: 1366px) {
     .mini-calendar-body {
-        overflow: visible;
+        overflow: auto;
         max-height: none;
-    }
-}
-
-/* Large Tablet (1024px - 1366px) - calendar fix */
-@media (min-width: 1025px) and (max-width: 1366px) {
-    /* Limit note list to leave room for calendar */
-    .note-list {
-        max-height: calc(100vh - 350px) !important;
-    }
-
-    .mini-calendar {
-        flex-shrink: 0 !important;
-        min-height: 200px !important;
-    }
-
-    .mini-calendar-body {
-        overflow: visible !important;
-        max-height: none !important;
-    }
-
-    .mini-cal-day {
-        aspect-ratio: auto !important;
-        min-height: 24px !important;
-        max-height: 28px !important;
-        height: 26px !important;
-    }
-
-    .mini-calendar-grid {
-        gap: 1px;
     }
 }
 

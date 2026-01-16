@@ -2700,6 +2700,8 @@ body {
         /* Hide scrollbar but keep functionality */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE/Edge */
+        padding: 0.5rem;
+        gap: 0.5rem;
     }
 
     .editor-header::-webkit-scrollbar {
@@ -2707,21 +2709,36 @@ body {
     }
 
     .editor-title-row {
-        flex-shrink: 0;
-        min-width: 120px;
-        max-width: 50%;
-        overflow: hidden;
+        flex: 0 0 auto;
+        min-width: 150px;
+        width: auto;
+        max-width: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .editor-title-row input {
-        min-width: 100px;
+        min-width: 120px;
+        width: 150px;
     }
 
     .editor-actions {
-        flex-shrink: 0;
-        width: auto;
-        justify-content: flex-end;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
         gap: 2px;
+        width: auto;
+    }
+
+    .editor-actions > * {
+        flex-shrink: 0;
+    }
+
+    .layout-controls {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
     }
 
     /* Larger touch targets on mobile/tablet */
@@ -2731,6 +2748,20 @@ body {
         font-size: 1rem;
         min-width: 44px;
         min-height: 44px;
+        flex-shrink: 0;
+    }
+
+    .note-type-select {
+        flex-shrink: 0;
+        min-width: 60px;
+    }
+
+    .private-toggle,
+    .autosave-toggle {
+        flex-shrink: 0;
+    }
+
+    .action-separator {
         flex-shrink: 0;
     }
 }

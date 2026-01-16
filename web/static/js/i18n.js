@@ -482,6 +482,11 @@ const i18n = {
             'tableEditor.insert': 'Insert Table',
             'tableEditor.size': 'Size: {cols} x {rows}',
             'tableEditor.selected': 'Selected: {count} cells',
+
+            // Tags
+            'tags.title': 'Tags',
+            'tags.addPlaceholder': 'Add tag...',
+            'tags.createNew': 'Create new tag "{tag}"',
         },
 
         ko: {
@@ -963,6 +968,11 @@ const i18n = {
             'tableEditor.insert': '테이블 삽입',
             'tableEditor.size': '크기: {cols} x {rows}',
             'tableEditor.selected': '선택됨: {count}개 셀',
+
+            // Tags
+            'tags.title': '태그',
+            'tags.addPlaceholder': '태그 추가...',
+            'tags.createNew': '새 태그 "{tag}" 만들기',
         }
     },
 

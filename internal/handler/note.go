@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -348,6 +349,7 @@ type NoteListItem struct {
 	Title      string    `json:"title"`
 	Type       string    `json:"type"`
 	Icon       string    `json:"icon,omitempty"`
+	Tags       []string  `json:"tags"`
 	Private    bool      `json:"private"`
 	Encrypted  bool      `json:"encrypted"`
 	Created    time.Time `json:"created"`
@@ -422,6 +424,7 @@ func (h *NoteHandler) List(c *gin.Context) {
 			Title:      note.Title,
 			Type:       note.Type,
 			Icon:       note.Icon,
+			Tags:       note.Tags,
 			Private:    note.Private,
 			Encrypted:  isEncrypted,
 			Created:    note.Created,
@@ -437,6 +440,46 @@ func (h *NoteHandler) List(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, notes)
+}
+
+// ListTags returns all unique tags used across all notes
+func (h *NoteHandler) ListTags(c *gin.Context) {
+	notesPath := h.getNotesPath(c)
+	encryptionKey := middleware.GetEncryptionKey(c)
+
+	tagSet := make(map[string]bool)
+
+	filepath.WalkDir(notesPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+
+		ext := filepath.Ext(path)
+		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+			return nil
+		}
+
+		note, err := h.loadNoteFromFile(path, encryptionKey)
+		if err != nil {
+			return nil
+		}
+
+		for _, tag := range note.Tags {
+			tagSet[tag] = true
+		}
+
+		return nil
+	})
+
+	tags := make([]string, 0, len(tagSet))
+	for tag := range tagSet {
+		tags = append(tags, tag)
+	}
+
+	// Sort tags alphabetically
+	sort.Strings(tags)
+
+	c.JSON(http.StatusOK, tags)
 }
 
 func (h *NoteHandler) Get(c *gin.Context) {
@@ -497,6 +540,7 @@ type CreateNoteRequest struct {
 	Title       string             `json:"title" binding:"required"`
 	Content     string             `json:"content"`
 	Type        string             `json:"type"`
+	Tags        []string           `json:"tags"`
 	Private     bool               `json:"private"`
 	Password    string             `json:"password"`
 	Attachments []model.Attachment `json:"attachments"`
@@ -556,6 +600,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 		Title:       req.Title,
 		Content:     req.Content,
 		Type:        req.Type,
+		Tags:        req.Tags,
 		Private:     req.Private,
 		Attachments: req.Attachments,
 		Created:     now,
@@ -590,6 +635,7 @@ type UpdateNoteRequest struct {
 	Content     string             `json:"content"`
 	Type        string             `json:"type"`
 	Icon        *string            `json:"icon,omitempty"`
+	Tags        []string           `json:"tags"`
 	Private     bool               `json:"private"`
 	Password    *string            `json:"password"`
 	Attachments []model.Attachment `json:"attachments"`
@@ -643,6 +689,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	if req.Type != "" {
 		note.Type = req.Type
 	}
+	note.Tags = req.Tags
 	note.Private = req.Private
 	note.Attachments = req.Attachments
 	note.Modified = time.Now()

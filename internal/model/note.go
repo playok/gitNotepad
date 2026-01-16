@@ -28,6 +28,7 @@ type Note struct {
 	Content     string       `json:"content" yaml:"-"`
 	Type        string       `json:"type" yaml:"type"`
 	Icon        string       `json:"icon,omitempty" yaml:"icon,omitempty"`
+	Tags        []string     `json:"tags" yaml:"tags,omitempty"`
 	Private     bool         `json:"private" yaml:"private"`
 	Password    string       `json:"-" yaml:"password,omitempty"`
 	Attachments []Attachment `json:"attachments" yaml:"attachments,omitempty"`
@@ -40,6 +41,7 @@ type NoteMetadata struct {
 	Title       string       `yaml:"title"`
 	Type        string       `yaml:"type"`
 	Icon        string       `yaml:"icon,omitempty"`
+	Tags        []string     `yaml:"tags,omitempty"`
 	Private     bool         `yaml:"private"`
 	Password    string       `yaml:"password,omitempty"`
 	Attachments []Attachment `yaml:"attachments,omitempty"`
@@ -89,6 +91,7 @@ func (n *Note) ToFileContent() ([]byte, error) {
 		Title:       n.Title,
 		Type:        n.Type,
 		Icon:        n.Icon,
+		Tags:        n.Tags,
 		Private:     n.Private,
 		Password:    n.Password,
 		Attachments: n.Attachments,
@@ -183,6 +186,7 @@ func ParseNoteFromBytes(data []byte, path string) (*Note, error) {
 		Content:     content,
 		Type:        meta.Type,
 		Icon:        meta.Icon,
+		Tags:        meta.Tags,
 		Private:     meta.Private,
 		Password:    meta.Password,
 		Attachments: meta.Attachments,

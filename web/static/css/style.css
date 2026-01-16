@@ -4107,6 +4107,127 @@ code.hljs[data-line-count^="1000"] .line-number {
 }
 
 /* ============================================
+   Tags Section Styles
+   ============================================ */
+
+.tags-section {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    padding: 0.375rem 0.75rem;
+}
+
+.tags-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.tags-icon {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    align-items: center;
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tag-item:hover {
+    background: var(--accent);
+    color: var(--bg);
+}
+
+.tag-item .tag-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    font-size: 0.625rem;
+    border-radius: 50%;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.tag-item:hover .tag-remove {
+    opacity: 1;
+}
+
+.tag-input {
+    flex: 1;
+    min-width: 80px;
+    max-width: 150px;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    background: transparent;
+    font-size: 0.75rem;
+    color: var(--text);
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.tag-input:focus {
+    border-color: var(--accent);
+    background: var(--bg);
+}
+
+.tag-input::placeholder {
+    color: var(--text-muted);
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    margin-top: 0.25rem;
+}
+
+.tag-suggestion-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: var(--text);
+    transition: background-color 0.15s ease;
+}
+
+.tag-suggestion-item:hover,
+.tag-suggestion-item.selected {
+    background: var(--bg-tertiary);
+}
+
+.tag-suggestion-item.create-new {
+    color: var(--accent);
+    font-style: italic;
+}
+
+/* ============================================
    Attachments Section Styles
    ============================================ */
 

@@ -74,6 +74,8 @@ let expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '{}'
 let folderIcons = {}; // { folderPath: emoji } - loaded from API
 let draggedNoteId = null;
 let currentAttachments = []; // Track attachments for current note
+let currentTags = []; // Track tags for current note
+let allTags = []; // All available tags from API for autocomplete
 let isViewMode = true; // View mode by default (preview only)
 
 // CodeMirror Editor
@@ -261,9 +263,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFileUpload();
     initMiniCalendar();
     initMarkdownToolbar();
+    initTags();
     initLocaleSelector();
     initFontSize();
     await loadFolderOrder();
+    await loadAllTags();
     // Load notes (includes folder icons)
     loadNotes().then(() => {
         handleHashNavigation();
@@ -1516,6 +1520,8 @@ async function handleFolderContextMenuAction(e) {
             notePrivate.checked = false;
             currentAttachments = [];
             renderAttachments();
+            currentTags = [];
+            renderTags();
 
             // Reset original content
             originalContent = {
@@ -3708,6 +3714,7 @@ async function saveNote() {
         title: noteTitle.value.trim(),
         content,
         type,
+        tags: currentTags,
         private: isPrivate,
         attachments: currentAttachments
     };
@@ -4669,6 +4676,10 @@ function createNewNoteInFolder(folderPath) {
     previewContent.innerHTML = '';
     updateMarkdownToolbarVisibility();
 
+    // Clear tags for new note
+    currentTags = [];
+    renderTags();
+
     // Clear attachments for new note
     currentAttachments = [];
     renderAttachments();
@@ -4709,6 +4720,8 @@ function closeNote() {
     previewContent.innerHTML = '';
     currentAttachments = [];
     renderAttachments();
+    currentTags = [];
+    renderTags();
     hasUnsavedChanges = false;
     updateSaveStatus('');
 
@@ -4753,6 +4766,10 @@ function showPreviewOnly(note) {
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
 
+    // Load tags from note
+    currentTags = note.tags || [];
+    renderTags();
+
     // Load attachments from note
     loadAttachmentsFromNote(note);
 
@@ -4795,6 +4812,10 @@ function showEditor(note) {
     noteType.value = note.type || 'markdown';
     notePrivate.checked = note.private || false;
     updateMarkdownToolbarVisibility();
+
+    // Load tags from note
+    currentTags = note.tags || [];
+    renderTags();
 
     // Load attachments from note
     loadAttachmentsFromNote(note);
@@ -5176,6 +5197,208 @@ function updateMarkdownToolbarVisibility() {
     } else {
         toolbar.classList.add('hidden');
     }
+}
+
+// ============================================
+// Tags Management
+// ============================================
+
+function initTags() {
+    const tagInput = document.getElementById('tagInput');
+    const tagSuggestions = document.getElementById('tagSuggestions');
+
+    if (!tagInput) return;
+
+    // Handle input events for autocomplete
+    tagInput.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        showTagSuggestions(value);
+    });
+
+    // Handle keydown events
+    tagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = tagInput.value.trim();
+            if (value) {
+                addTag(value);
+                tagInput.value = '';
+                hideTagSuggestions();
+            }
+        } else if (e.key === 'Escape') {
+            hideTagSuggestions();
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateTagSuggestions(e.key === 'ArrowDown' ? 1 : -1);
+        }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.tags-container')) {
+            hideTagSuggestions();
+        }
+    });
+
+    // Handle focus
+    tagInput.addEventListener('focus', () => {
+        const value = tagInput.value.trim();
+        if (value || allTags.length > 0) {
+            showTagSuggestions(value);
+        }
+    });
+}
+
+async function loadAllTags() {
+    try {
+        const response = await authFetch('/api/tags');
+        if (response.ok) {
+            allTags = await response.json();
+        }
+    } catch (error) {
+        console.error('Error loading tags:', error);
+    }
+}
+
+function renderTags() {
+    const tagsList = document.getElementById('tagsList');
+    if (!tagsList) return;
+
+    tagsList.innerHTML = '';
+    currentTags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag-item';
+        tagEl.innerHTML = `
+            <span class="tag-text">${escapeHtml(tag)}</span>
+            <span class="tag-remove" data-tag="${escapeHtml(tag)}">×</span>
+        `;
+        tagEl.querySelector('.tag-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeTag(tag);
+        });
+        tagsList.appendChild(tagEl);
+    });
+}
+
+function addTag(tag) {
+    tag = tag.trim().toLowerCase();
+    if (!tag || currentTags.includes(tag)) return;
+
+    currentTags.push(tag);
+    renderTags();
+    markAsUnsaved();
+
+    // Add to allTags if not exists
+    if (!allTags.includes(tag)) {
+        allTags.push(tag);
+        allTags.sort();
+    }
+}
+
+function removeTag(tag) {
+    const index = currentTags.indexOf(tag);
+    if (index > -1) {
+        currentTags.splice(index, 1);
+        renderTags();
+        markAsUnsaved();
+    }
+}
+
+function showTagSuggestions(query) {
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    if (!tagSuggestions) return;
+
+    query = query.toLowerCase();
+
+    // Filter tags that match query and are not already added
+    let suggestions = allTags.filter(tag =>
+        tag.toLowerCase().includes(query) && !currentTags.includes(tag)
+    );
+
+    // Limit to 10 suggestions
+    suggestions = suggestions.slice(0, 10);
+
+    if (suggestions.length === 0 && !query) {
+        hideTagSuggestions();
+        return;
+    }
+
+    tagSuggestions.innerHTML = '';
+
+    suggestions.forEach((tag, index) => {
+        const item = document.createElement('div');
+        item.className = 'tag-suggestion-item';
+        item.textContent = tag;
+        item.dataset.index = index;
+        item.addEventListener('click', () => {
+            addTag(tag);
+            document.getElementById('tagInput').value = '';
+            hideTagSuggestions();
+        });
+        tagSuggestions.appendChild(item);
+    });
+
+    // Show "Create new tag" option if query doesn't exist
+    if (query && !allTags.includes(query) && !currentTags.includes(query)) {
+        const createItem = document.createElement('div');
+        createItem.className = 'tag-suggestion-item create-new';
+        createItem.textContent = `${i18n.t('tags.createNew') || 'Create'}: "${query}"`;
+        createItem.addEventListener('click', () => {
+            addTag(query);
+            document.getElementById('tagInput').value = '';
+            hideTagSuggestions();
+        });
+        tagSuggestions.appendChild(createItem);
+    }
+
+    if (tagSuggestions.children.length > 0) {
+        tagSuggestions.style.display = 'block';
+    } else {
+        hideTagSuggestions();
+    }
+}
+
+function hideTagSuggestions() {
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    if (tagSuggestions) {
+        tagSuggestions.style.display = 'none';
+    }
+}
+
+function navigateTagSuggestions(direction) {
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    if (!tagSuggestions || tagSuggestions.style.display === 'none') return;
+
+    const items = tagSuggestions.querySelectorAll('.tag-suggestion-item');
+    if (items.length === 0) return;
+
+    const selectedIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
+    let newIndex = selectedIndex + direction;
+
+    if (newIndex < 0) newIndex = items.length - 1;
+    if (newIndex >= items.length) newIndex = 0;
+
+    items.forEach((item, index) => {
+        item.classList.toggle('selected', index === newIndex);
+    });
+
+    // If Enter is pressed, select the highlighted item
+    const tagInput = document.getElementById('tagInput');
+    tagInput.addEventListener('keydown', function handleEnter(e) {
+        if (e.key === 'Enter') {
+            const selected = tagSuggestions.querySelector('.tag-suggestion-item.selected');
+            if (selected) {
+                e.preventDefault();
+                selected.click();
+            }
+            tagInput.removeEventListener('keydown', handleEnter);
+        }
+    }, { once: true });
+}
+
+function markAsUnsaved() {
+    hasUnsavedChanges = true;
+    updateSaveStatus('unsaved');
 }
 
 // Code Language Selector
@@ -7556,9 +7779,11 @@ function createNoteForMiniCalDate(dateKey) {
     notePrivate.checked = false;
     previewContent.innerHTML = '';
 
-    // Clear attachments
+    // Clear attachments and tags
     currentAttachments = [];
     renderAttachments();
+    currentTags = [];
+    renderTags();
 
     // Reset original content
     originalContent = {
@@ -7743,9 +7968,11 @@ async function createNoteForDate(date) {
     notePrivate.checked = false;
     previewContent.innerHTML = '';
 
-    // Clear attachments
+    // Clear attachments and tags
     currentAttachments = [];
     renderAttachments();
+    currentTags = [];
+    renderTags();
 
     // Reset original content
     originalContent = {

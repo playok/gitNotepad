@@ -2678,15 +2678,30 @@ body {
 
 /* Large Tablet (1024px - 1366px) - calendar fix */
 @media (min-width: 1025px) and (max-width: 1366px) {
+    /* Limit note list to leave room for calendar */
+    .note-list {
+        max-height: calc(100vh - 350px) !important;
+    }
+
+    .mini-calendar {
+        flex-shrink: 0 !important;
+        min-height: 200px !important;
+    }
+
     .mini-calendar-body {
-        overflow: visible;
-        max-height: none;
+        overflow: visible !important;
+        max-height: none !important;
     }
 
     .mini-cal-day {
-        aspect-ratio: auto;
-        min-height: 24px;
-        max-height: 28px;
+        aspect-ratio: auto !important;
+        min-height: 24px !important;
+        max-height: 28px !important;
+        height: 26px !important;
+    }
+
+    .mini-calendar-grid {
+        gap: 1px;
     }
 }
 

@@ -1748,7 +1748,7 @@ body {
 /* Preview Pane - GitHub Markdown Style */
 .preview-pane {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0;
     overflow-y: auto;
     background-color: var(--bg-secondary);
     min-width: 200px;
@@ -3092,6 +3092,7 @@ body {
 #previewContent {
     flex: 1;
     overflow-y: auto;
+    padding: 0.5rem;
 }
 
 /* Share Modal Styles */

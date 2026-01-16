@@ -94,7 +94,8 @@ let originalContent = {
     title: '',
     content: '',
     type: 'markdown',
-    private: false
+    private: false,
+    tags: []
 };
 
 // DOM Elements
@@ -1528,7 +1529,8 @@ async function handleFolderContextMenuAction(e) {
                 title: '',
                 content: '',
                 type: 'markdown',
-                private: false
+                private: false,
+                tags: []
             };
             hasUnsavedChanges = false;
             updateSaveStatus('');
@@ -2462,10 +2464,14 @@ function updatePopoutPreview() {
 
 // Auto-save functions
 function isContentChanged() {
+    // Compare tags arrays
+    const tagsChanged = JSON.stringify(currentTags.slice().sort()) !== JSON.stringify((originalContent.tags || []).slice().sort());
+
     return getFullNoteTitle() !== originalContent.title ||
            getEditorContent() !== originalContent.content ||
            noteType.value !== originalContent.type ||
-           notePrivate.checked !== originalContent.private;
+           notePrivate.checked !== originalContent.private ||
+           tagsChanged;
 }
 
 function triggerAutoSave() {
@@ -2544,7 +2550,8 @@ async function performAutoSave() {
                 title: getFullNoteTitle(),
                 content: getEditorContent(),
                 type: noteType.value,
-                private: notePrivate.checked
+                private: notePrivate.checked,
+                tags: [...currentTags]
             };
             hasUnsavedChanges = false;
             updateSaveStatus('saved');
@@ -3748,7 +3755,8 @@ async function saveNote() {
                 title: getFullNoteTitle(),
                 content: getEditorContent(),
                 type: noteType.value,
-                private: notePrivate.checked
+                private: notePrivate.checked,
+                tags: [...currentTags]
             };
             hasUnsavedChanges = false;
             updateSaveStatus('saved');
@@ -4689,7 +4697,8 @@ function createNewNoteInFolder(folderPath) {
         title: '',
         content: '',
         type: 'markdown',
-        private: false
+        private: false,
+        tags: []
     };
     hasUnsavedChanges = false;
     updateSaveStatus('');
@@ -4778,7 +4787,8 @@ function showPreviewOnly(note) {
         title: note.title || '',
         content: note.content || '',
         type: note.type || 'markdown',
-        private: note.private || false
+        private: note.private || false,
+        tags: [...(note.tags || [])]
     };
 
     hasUnsavedChanges = false;
@@ -4825,7 +4835,8 @@ function showEditor(note) {
         title: note.title || '',
         content: note.content || '',
         type: note.type || 'markdown',
-        private: note.private || false
+        private: note.private || false,
+        tags: [...(note.tags || [])]
     };
 
     hasUnsavedChanges = false;
@@ -7873,7 +7884,8 @@ function createNoteForMiniCalDate(dateKey) {
         title: '',
         content: '',
         type: noteType.value,
-        private: false
+        private: false,
+        tags: []
     };
     hasUnsavedChanges = false;
     updateSaveStatus('');
@@ -8062,7 +8074,8 @@ async function createNoteForDate(date) {
         title: '',
         content: '',
         type: noteType.value,
-        private: false
+        private: false,
+        tags: []
     };
     hasUnsavedChanges = false;
     updateSaveStatus('');

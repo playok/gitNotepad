@@ -5363,12 +5363,18 @@ function addTag(tag) {
 
     currentTags.push(tag);
     renderTags();
-    markAsUnsaved();
 
     // Add to allTags if not exists
     if (!allTags.includes(tag)) {
         allTags.push(tag);
         allTags.sort();
+    }
+
+    // Auto-save if editing an existing note
+    if (currentNote) {
+        saveNote();
+    } else {
+        markAsUnsaved();
     }
 }
 

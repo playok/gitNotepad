@@ -266,6 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initMarkdownToolbar();
     initTags();
     initLocaleSelector();
+    initEditorHeaderScroll();
     initFontSize();
     await loadFolderOrder();
     await loadAllTags();
@@ -611,6 +612,78 @@ function initNoteCalendarSplitter() {
             applyNoteCalendarRatio(parseFloat(savedRatio));
         }
     });
+}
+
+// Editor Header Scroll (for touch devices)
+function initEditorHeaderScroll() {
+    const editorHeader = document.querySelector('.editor-header');
+    if (!editorHeader) return;
+
+    // Check if touch device
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    function updateScrollIndicators() {
+        const scrollLeft = editorHeader.scrollLeft;
+        const scrollWidth = editorHeader.scrollWidth;
+        const clientWidth = editorHeader.clientWidth;
+        const maxScroll = scrollWidth - clientWidth;
+
+        // Only show indicators if content is wider than container
+        if (scrollWidth <= clientWidth) {
+            editorHeader.classList.remove('can-scroll-left', 'can-scroll-right');
+            return;
+        }
+
+        // Show/hide left indicator
+        if (scrollLeft > 5) {
+            editorHeader.classList.add('can-scroll-left');
+        } else {
+            editorHeader.classList.remove('can-scroll-left');
+        }
+
+        // Show/hide right indicator
+        if (scrollLeft < maxScroll - 5) {
+            editorHeader.classList.add('can-scroll-right');
+        } else {
+            editorHeader.classList.remove('can-scroll-right');
+        }
+    }
+
+    // Update indicators on scroll
+    editorHeader.addEventListener('scroll', updateScrollIndicators);
+
+    // Update indicators on window resize
+    window.addEventListener('resize', updateScrollIndicators);
+
+    // Initial check
+    setTimeout(updateScrollIndicators, 100);
+
+    // Re-check when content might change
+    const observer = new MutationObserver(updateScrollIndicators);
+    observer.observe(editorHeader, { childList: true, subtree: true });
+
+    // Touch swipe enhancement for smoother scrolling
+    if (isTouchDevice) {
+        let startX = 0;
+        let scrollStart = 0;
+        let isDragging = false;
+
+        editorHeader.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            scrollStart = editorHeader.scrollLeft;
+            isDragging = true;
+        }, { passive: true });
+
+        editorHeader.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const deltaX = startX - e.touches[0].clientX;
+            editorHeader.scrollLeft = scrollStart + deltaX;
+        }, { passive: true });
+
+        editorHeader.addEventListener('touchend', () => {
+            isDragging = false;
+        }, { passive: true });
+    }
 }
 
 // Keyboard Shortcuts

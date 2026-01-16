@@ -824,6 +824,33 @@ body {
     background: var(--bg-primary);
     border-radius: var(--radius) var(--radius) 0 0;
     transition: background-color 0.2s ease;
+    position: relative;
+}
+
+/* Scroll fade indicator for touch devices */
+.editor-header.can-scroll-right::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, var(--bg-primary));
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.editor-header.can-scroll-left::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to left, transparent, var(--bg-primary));
+    pointer-events: none;
+    opacity: 0.9;
+    z-index: 1;
 }
 
 .editor-title-row {
@@ -2667,12 +2694,22 @@ body {
     .editor-header {
         flex-wrap: nowrap;
         overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        /* Hide scrollbar but keep functionality */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .editor-header::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
     }
 
     .editor-title-row {
-        flex-shrink: 1;
-        min-width: 0;
+        flex-shrink: 0;
+        min-width: 120px;
+        max-width: 50%;
         overflow: hidden;
     }
 
@@ -2684,7 +2721,7 @@ body {
         flex-shrink: 0;
         width: auto;
         justify-content: flex-end;
-        overflow-x: auto;
+        gap: 2px;
     }
 
     /* Larger touch targets on mobile/tablet */
@@ -2695,10 +2732,6 @@ body {
         min-width: 44px;
         min-height: 44px;
         flex-shrink: 0;
-    }
-
-    .editor-actions {
-        gap: 2px;
     }
 }
 

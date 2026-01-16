@@ -4855,6 +4855,9 @@ function showEditorPane() {
     // Show editor pane (may have been hidden in view mode)
     editorPane.style.display = 'flex';
 
+    // Show markdown toolbar in editor mode (respects note type)
+    updateMarkdownToolbarVisibility();
+
     togglePreview();
 
     // Refresh CodeMirror after editor becomes visible to fix gutter width
@@ -4885,6 +4888,12 @@ function showPreviewPane() {
     // Hide editor pane and splitter
     editorPane.style.display = 'none';
     if (splitter) splitter.style.display = 'none';
+
+    // Hide markdown toolbar in preview-only mode
+    const markdownToolbar = document.getElementById('markdownToolbar');
+    if (markdownToolbar) {
+        markdownToolbar.style.display = 'none';
+    }
 
     // Show preview pane at full width
     previewPane.style.display = 'flex';
@@ -5191,11 +5200,13 @@ function updateMarkdownToolbarVisibility() {
     if (!toolbar) return;
 
     const type = noteType.value;
-    // Show toolbar for both markdown and asciidoc
-    if (type === 'markdown' || type === 'asciidoc') {
+    // Show toolbar for both markdown and asciidoc (only in editor mode, not preview-only)
+    if ((type === 'markdown' || type === 'asciidoc') && !isViewMode) {
         toolbar.classList.remove('hidden');
+        toolbar.style.display = 'flex';
     } else {
         toolbar.classList.add('hidden');
+        toolbar.style.display = 'none';
     }
 }
 

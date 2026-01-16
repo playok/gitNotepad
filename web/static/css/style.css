@@ -2668,6 +2668,14 @@ body {
     }
 }
 
+/* Tablet (768px - 1024px) - calendar fix */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .mini-calendar-body {
+        overflow: visible;
+        max-height: none;
+    }
+}
+
 /* Touch device improvements */
 @media (pointer: coarse) {
     .btn-icon {

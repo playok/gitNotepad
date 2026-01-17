@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v0.10.1] - Tablet Responsive Improvements
+## [v0.11.0](https://github.com/playok/gitNotepad/releases/tag/v0.11.0) - Tablet Responsive Improvements
 
 **New Features:**
 - Note list / Calendar resizable splitter (drag to resize)
@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 **Bug Fixes:**
 - Calendar last week not visible on tablets (#35)
 - Editor toolbar buttons not visible on narrow screens (#35)
+- Calendar i18n initialization on first load
 
 ## [v0.10.0](https://github.com/playok/gitNotepad/releases/tag/v0.10.0) - Tag Feature
 

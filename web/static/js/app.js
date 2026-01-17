@@ -8152,7 +8152,7 @@ function renderMiniCalendar() {
     const month = miniCalCurrentDate.getMonth();
 
     // Update title with i18n
-    const locale = localStorage.getItem('locale') || 'en';
+    const locale = (typeof i18n !== 'undefined') ? i18n.getLocale() : (localStorage.getItem('locale') || 'en');
     const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
     miniCalTitle.textContent = miniCalCurrentDate.toLocaleDateString(dateLocale, { year: 'numeric', month: 'short' });
 
@@ -8286,7 +8286,7 @@ function showDateNotesPanel(dateKey) {
     // Format date for display
     const date = new Date(dateKey + 'T00:00:00');
     const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-    const locale = localStorage.getItem('locale') || 'en';
+    const locale = (typeof i18n !== 'undefined') ? i18n.getLocale() : (localStorage.getItem('locale') || 'en');
     title.textContent = date.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', options);
 
     // Get notes for this date

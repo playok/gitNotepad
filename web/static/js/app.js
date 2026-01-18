@@ -4031,7 +4031,7 @@ async function saveNote() {
     // Check if content actually changed (skip if setting new password)
     if (!pendingPassword && !isContentChanged()) {
         updateSaveStatus('saved');
-        setTimeout(() => updateSaveStatus(''), 1000);
+        showToast(i18n.t('msg.noteSaved'));
         return;
     }
 
@@ -4094,6 +4094,7 @@ async function saveNote() {
             };
             hasUnsavedChanges = false;
             updateSaveStatus('saved');
+            showToast(i18n.t('msg.noteSaved'));
             // Optimistic update: update local list instead of full reload
             updateNoteInList(savedNote);
         } else {

@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Calendar last week not visible on tablets (#35)
 - Editor toolbar buttons not visible on narrow screens (#35)
 - Calendar i18n initialization on first load
+- Unified Ctrl+S and save button behavior - both now show toast and status (#21)
 
 ## [v0.10.0](https://github.com/playok/gitNotepad/releases/tag/v0.10.0) - Tag Feature
 

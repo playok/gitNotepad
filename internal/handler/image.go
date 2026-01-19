@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -220,14 +219,13 @@ func (h *ImageHandler) Serve(c *gin.Context) {
 		originalName = filename // Fallback to UUID filename
 	}
 
-	// Set Content-Disposition header for download with original filename
+	// Serve file with original filename
 	if download {
-		// RFC 5987 encoded filename for non-ASCII characters
-		encodedName := url.PathEscape(originalName)
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", originalName, encodedName))
+		// Use FileAttachment to properly set Content-Disposition header
+		c.FileAttachment(filePath, originalName)
+	} else {
+		c.File(filePath)
 	}
-
-	c.File(filePath)
 }
 
 // deleteMetadata removes image metadata from disk for a user

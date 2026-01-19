@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -205,11 +206,11 @@ func (h *FileHandler) Serve(c *gin.Context) {
 
 	// Serve file with original filename
 	if download {
-		// Use FileAttachment to properly set Content-Disposition header
-		c.FileAttachment(filePath, originalName)
-	} else {
-		c.File(filePath)
+		// RFC 5987 encoding: use PathEscape for proper space encoding (%20 instead of +)
+		encodedName := url.PathEscape(originalName)
+		c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, originalName, encodedName))
 	}
+	c.File(filePath)
 }
 
 // deleteMetadata removes file metadata from disk for a user

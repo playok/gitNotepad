@@ -222,9 +222,13 @@ func (h *ImageHandler) Serve(c *gin.Context) {
 
 	// Serve file with original filename
 	if download {
-		// RFC 5987 encoding: use PathEscape for proper space encoding (%20 instead of +)
+		// RFC 6266 / RFC 5987 compliant Content-Disposition
+		// - filename: for legacy browsers (escape quotes/backslashes)
+		// - filename*: for modern browsers (UTF-8 percent-encoded)
+		safeFilename := strings.ReplaceAll(originalName, `\`, `\\`)
+		safeFilename = strings.ReplaceAll(safeFilename, `"`, `\"`)
 		encodedName := url.PathEscape(originalName)
-		c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, originalName, encodedName))
+		c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, safeFilename, encodedName))
 	}
 	c.File(filePath)
 }

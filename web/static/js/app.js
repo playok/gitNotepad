@@ -8107,9 +8107,21 @@ async function loadAboutInfo() {
 function updateScreenWidth() {
     const screenWidthEl = document.getElementById('aboutScreenWidth');
     if (screenWidthEl) {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        screenWidthEl.textContent = `${width} x ${height} px`;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const dpr = window.devicePixelRatio || 1;
+
+        // Show viewport and screen resolution (if different)
+        let displayText = `${viewportWidth} x ${viewportHeight} px`;
+        if (screenWidth !== viewportWidth || screenHeight !== viewportHeight) {
+            displayText += ` (${i18n.t('settings.screenResolution')}: ${screenWidth} x ${screenHeight})`;
+        }
+        if (dpr !== 1) {
+            displayText += ` @${dpr}x`;
+        }
+        screenWidthEl.textContent = displayText;
     }
 }
 

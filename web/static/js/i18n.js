@@ -281,6 +281,7 @@ const i18n = {
             'settings.commit': 'Commit',
             'settings.buildDate': 'Build Date',
             'settings.screenWidth': 'Screen Size',
+            'settings.screenResolution': 'Screen',
             'settings.appDescription': 'A web-based note application with Git version control.',
 
             // Syntax Help
@@ -769,6 +770,7 @@ const i18n = {
             'settings.commit': '커밋',
             'settings.buildDate': '빌드 날짜',
             'settings.screenWidth': '화면 크기',
+            'settings.screenResolution': '해상도',
             'settings.appDescription': 'Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.',
 
             // Syntax Help

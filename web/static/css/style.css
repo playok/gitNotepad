@@ -179,6 +179,7 @@ body {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile/tablet */
     overflow: hidden;
     font-size: 14px;
     line-height: 1.5;
@@ -190,6 +191,7 @@ body {
 .container {
     display: flex;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile/tablet */
     background: var(--bg-secondary);
 }
 
@@ -1817,7 +1819,7 @@ body {
 .preview-pane {
     flex: 1;
     padding: 0;
-    overflow-y: auto;
+    overflow: hidden; /* Let #previewContent handle scrolling */
     background-color: var(--bg-secondary);
     min-width: 200px;
     transition: background-color 0.2s ease;

@@ -51,12 +51,16 @@ To run Git Notepad behind nginx at a sub-path (e.g., %s):
        proxy_set_header X-Real-IP $remote_addr;
        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
        proxy_set_header X-Forwarded-Proto $scheme;
+       client_max_body_size 100M;  # File upload size limit
    }
 
 3. Reload nginx:
    $ nginx -s reload
 
 4. Access at: http://your-domain%s
+
+Note: client_max_body_size sets the maximum file upload size.
+      Default nginx limit is 1MB. Adjust as needed.
 `, basePath, port, basePath, basePath, port, basePath)
 }
 

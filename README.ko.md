@@ -361,8 +361,11 @@ location /note {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+    client_max_body_size 100M;  # 파일 업로드 크기 제한
 }
 ```
+
+> **참고:** `client_max_body_size`는 파일 업로드 최대 크기를 설정합니다. nginx 기본값은 1MB입니다.
 
 ## 키보드 단축키
 

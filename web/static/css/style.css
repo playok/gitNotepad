@@ -4320,6 +4320,20 @@ code.hljs[data-line-count^="1000"] .line-number {
     border-radius: 50%;
     opacity: 0.6;
     transition: opacity 0.15s ease;
+    /* Expand touch area for tablets */
+    position: relative;
+}
+
+.tag-item .tag-remove::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
 }
 
 .tag-item:hover .tag-remove {
@@ -4371,6 +4385,10 @@ code.hljs[data-line-count^="1000"] .line-number {
     font-size: 0.8125rem;
     color: var(--text);
     transition: background-color 0.15s ease;
+    /* Minimum touch area for tablets */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
 }
 
 .tag-suggestion-item:hover,

@@ -5629,15 +5629,33 @@ function renderTags() {
             <span class="tag-text">${escapeHtml(tag)}</span>
             <span class="tag-remove" data-tag="${escapeHtml(tag)}">×</span>
         `;
+        const tagText = tagEl.querySelector('.tag-text');
+        const tagRemove = tagEl.querySelector('.tag-remove');
+
         // Click on tag text to show notes with this tag
-        tagEl.querySelector('.tag-text').addEventListener('click', (e) => {
+        tagText.addEventListener('click', (e) => {
             e.stopPropagation();
             showNotesByTag(tag);
         });
-        tagEl.querySelector('.tag-remove').addEventListener('click', (e) => {
+        // Touch support for tag text
+        tagText.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showNotesByTag(tag);
+        });
+
+        // Click to remove tag
+        tagRemove.addEventListener('click', (e) => {
             e.stopPropagation();
             removeTag(tag);
         });
+        // Touch support for remove button
+        tagRemove.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            removeTag(tag);
+        });
+
         tagsList.appendChild(tagEl);
     });
 }
@@ -5773,7 +5791,18 @@ function showTagSuggestions(query) {
         item.className = 'tag-suggestion-item';
         item.textContent = tag;
         item.dataset.index = index;
+        // Use mousedown to prevent blur before click on touch devices
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
         item.addEventListener('click', () => {
+            addTag(tag);
+            document.getElementById('tagInput').value = '';
+            hideTagSuggestions();
+        });
+        // Touch support for tablets
+        item.addEventListener('touchend', (e) => {
+            e.preventDefault();
             addTag(tag);
             document.getElementById('tagInput').value = '';
             hideTagSuggestions();
@@ -5786,7 +5815,18 @@ function showTagSuggestions(query) {
         const createItem = document.createElement('div');
         createItem.className = 'tag-suggestion-item create-new';
         createItem.textContent = `${i18n.t('tags.createNew') || 'Create'}: "${query}"`;
+        // Use mousedown to prevent blur before click on touch devices
+        createItem.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
         createItem.addEventListener('click', () => {
+            addTag(query);
+            document.getElementById('tagInput').value = '';
+            hideTagSuggestions();
+        });
+        // Touch support for tablets
+        createItem.addEventListener('touchend', (e) => {
+            e.preventDefault();
             addTag(query);
             document.getElementById('tagInput').value = '';
             hideTagSuggestions();

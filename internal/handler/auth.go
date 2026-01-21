@@ -155,12 +155,15 @@ func (h *AuthHandler) Verify(c *gin.Context) {
 		storagePath = h.repo.GetPath()
 	}
 
+	// Notes are stored in the "notes" subdirectory
+	notesPath := filepath.Join(storagePath, "notes")
+
 	// Find the note file
 	var note *model.Note
 	var err error
 
-	for _, ext := range []string{".md", ".txt"} {
-		filePath := filepath.Join(storagePath, req.NoteID+ext)
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath := filepath.Join(notesPath, req.NoteID+ext)
 		note, err = model.ParseNoteFromFile(filePath)
 		if err == nil {
 			break

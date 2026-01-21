@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/user/gitnotepad/internal/model"
 )
 
 // Message types for WebSocket communication
@@ -123,8 +124,22 @@ func (h *Hub) BroadcastToUser(username string, msg Message) {
 // HandleWebSocket handles WebSocket upgrade and connection
 func (h *Hub) HandleWebSocket(c *gin.Context) {
 	// Get username from context (set by auth middleware)
-	username, exists := c.Get("username")
-	if !exists {
+	// Auth middleware sets "user" key with *model.User value
+	var username string
+	if userVal, exists := c.Get("user"); exists {
+		if user, ok := userVal.(*model.User); ok && user != nil {
+			username = user.Username
+		}
+	}
+	// Fallback: check for direct "username" key (used when auth is disabled)
+	if username == "" {
+		if usernameVal, exists := c.Get("username"); exists {
+			if un, ok := usernameVal.(string); ok {
+				username = un
+			}
+		}
+	}
+	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -137,7 +152,7 @@ func (h *Hub) HandleWebSocket(c *gin.Context) {
 	client := &Client{
 		hub:      h,
 		conn:     conn,
-		username: username.(string),
+		username: username,
 		send:     make(chan Message, 256),
 	}
 

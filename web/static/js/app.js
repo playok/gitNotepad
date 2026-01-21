@@ -3367,8 +3367,11 @@ async function handleImagePaste(e) {
 }
 
 async function uploadAndInsertImage(file) {
-    // Show uploading indicator
-    const placeholder = `![Uploading image...]()`;
+    // Show uploading indicator - use appropriate syntax based on note type
+    const isAsciiDoc = noteType.value === 'asciidoc';
+    const placeholder = isAsciiDoc
+        ? `image::uploading[Uploading image...]`
+        : `![Uploading image...]()`;
     insertAtCursor(placeholder);
     updatePreview();
 
@@ -3383,10 +3386,13 @@ async function uploadAndInsertImage(file) {
 
         if (response.ok) {
             const data = await response.json();
-            const imageMarkdown = `![image](${data.url})`;
+            // Use AsciiDoc syntax for asciidoc notes, Markdown otherwise
+            const imageMarkup = isAsciiDoc
+                ? `image::${data.url}[image]`
+                : `![image](${data.url})`;
 
             // Replace placeholder with actual image
-            replaceInEditor(placeholder, imageMarkdown);
+            replaceInEditor(placeholder, imageMarkup);
             updatePreview();
             triggerAutoSave();
         } else {
@@ -3717,10 +3723,20 @@ async function uploadAndAttachFile(file) {
 // Legacy function for backward compatibility (drag & drop images)
 async function uploadAndInsertFile(file) {
     const isImage = file.type.startsWith('image/');
+    const isAsciiDoc = noteType.value === 'asciidoc';
     const fileName = file.name;
-    const placeholder = isImage
-        ? `![Uploading ${fileName}...]()`
-        : `[Uploading ${fileName}...]()`;
+
+    // Use appropriate syntax based on note type
+    let placeholder;
+    if (isAsciiDoc) {
+        placeholder = isImage
+            ? `image::uploading[Uploading ${fileName}...]`
+            : `link:uploading[Uploading ${fileName}...]`;
+    } else {
+        placeholder = isImage
+            ? `![Uploading ${fileName}...]()`
+            : `[Uploading ${fileName}...]()`;
+    }
 
     insertAtCursor(placeholder);
     updatePreview();
@@ -3736,11 +3752,19 @@ async function uploadAndInsertFile(file) {
 
         if (response.ok) {
             const data = await response.json();
-            const markdown = isImage
-                ? `![${fileName}](${data.url})`
-                : `[${fileName}](${data.url})`;
+            // Use AsciiDoc syntax for asciidoc notes, Markdown otherwise
+            let markup;
+            if (isAsciiDoc) {
+                markup = isImage
+                    ? `image::${data.url}[${fileName}]`
+                    : `link:${data.url}[${fileName}]`;
+            } else {
+                markup = isImage
+                    ? `![${fileName}](${data.url})`
+                    : `[${fileName}](${data.url})`;
+            }
 
-            replaceInEditor(placeholder, markdown);
+            replaceInEditor(placeholder, markup);
 
             // Also add to attachments
             currentAttachments.push({
@@ -3826,11 +3850,22 @@ function insertAttachmentToContent(attachment) {
         ? attachment.url
         : `${attachment.url}?download=true`;
 
-    const markdown = attachment.isImage
-        ? `![${attachment.name}](${attachment.url})`
-        : `[${attachment.name}](${downloadUrl})`;
+    const isAsciiDoc = noteType.value === 'asciidoc';
+    let markup;
 
-    insertAtCursor(markdown);
+    if (isAsciiDoc) {
+        // AsciiDoc syntax: image::url[alt] or link:url[text]
+        markup = attachment.isImage
+            ? `image::${attachment.url}[${attachment.name}]`
+            : `link:${downloadUrl}[${attachment.name}]`;
+    } else {
+        // Markdown syntax: ![alt](url) or [text](url)
+        markup = attachment.isImage
+            ? `![${attachment.name}](${attachment.url})`
+            : `[${attachment.name}](${downloadUrl})`;
+    }
+
+    insertAtCursor(markup);
     updatePreview();
     triggerAutoSave();
 }

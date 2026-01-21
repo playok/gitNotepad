@@ -409,6 +409,7 @@ const i18n = {
             'context.move': 'Move to...',
             'context.changeIcon': 'Change Icon',
             'context.history': 'History',
+            'context.info': 'Info',
             'context.decrypt': 'Remove Encryption',
             'context.delete': 'Delete',
             'context.newNote': 'New Note',
@@ -423,6 +424,20 @@ const i18n = {
             'context.moveFolderUp': 'Move Up',
             'context.moveFolderDown': 'Move Down',
             'context.deleteFolder': 'Delete Folder',
+
+            // Note Info
+            'noteInfo.title': 'Note Info',
+            'noteInfo.location': 'Location',
+            'noteInfo.type': 'Type',
+            'noteInfo.attachments': 'Attachments',
+            'noteInfo.files': 'file(s)',
+            'noteInfo.none': 'None',
+            'noteInfo.encrypted': 'Encrypted',
+            'noteInfo.shared': 'Shared',
+            'noteInfo.yes': 'Yes',
+            'noteInfo.no': 'No',
+            'noteInfo.created': 'Created',
+            'noteInfo.modified': 'Modified',
 
             // Icon Picker
             'iconPicker.title': 'Select Icon',
@@ -898,6 +913,7 @@ const i18n = {
             'context.move': '이동...',
             'context.changeIcon': '아이콘 변경',
             'context.history': '히스토리',
+            'context.info': '정보',
             'context.decrypt': '암호화 해제',
             'context.delete': '삭제',
             'context.newNote': '새 노트',
@@ -912,6 +928,20 @@ const i18n = {
             'context.moveFolderUp': '위로 이동',
             'context.moveFolderDown': '아래로 이동',
             'context.deleteFolder': '폴더 삭제',
+
+            // Note Info
+            'noteInfo.title': '노트 정보',
+            'noteInfo.location': '위치',
+            'noteInfo.type': '유형',
+            'noteInfo.attachments': '첨부파일',
+            'noteInfo.files': '개',
+            'noteInfo.none': '없음',
+            'noteInfo.encrypted': '암호화',
+            'noteInfo.shared': '공유',
+            'noteInfo.yes': '예',
+            'noteInfo.no': '아니오',
+            'noteInfo.created': '생성일',
+            'noteInfo.modified': '수정일',
 
             // Icon Picker
             'iconPicker.title': '아이콘 선택',

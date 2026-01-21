@@ -1619,6 +1619,9 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="history">
             <span class="context-icon">&#128337;</span> <span data-i18n="context.history">History</span>
         </div>
+        <div class="context-menu-item" data-action="info">
+            <span class="context-icon">&#9432;</span> <span data-i18n="context.info">Info</span>
+        </div>
         <div class="context-menu-item" data-action="decrypt" id="context-decrypt-item" style="display: none;">
             <span class="context-icon">&#128275;</span> <span data-i18n="context.decrypt">Remove Encryption</span>
         </div>
@@ -1816,6 +1819,10 @@ async function handleContextMenuAction(e) {
                 await decryptNote(contextTarget);
             }
             break;
+
+        case 'info':
+            showNoteInfo(note);
+            break;
     }
 }
 
@@ -1836,6 +1843,105 @@ async function decryptNote(noteId) {
     } catch (error) {
         console.error('Error decrypting note:', error);
         showToast('Error decrypting note', 'error');
+    }
+}
+
+// Show note information modal
+async function showNoteInfo(note) {
+    // Get shortlink info
+    let shortlinkInfo = null;
+    try {
+        const response = await authFetch(`/api/notes/${encodeNoteId(note.id)}/shortlink`);
+        if (response.ok) {
+            shortlinkInfo = await response.json();
+        }
+    } catch (e) {
+        // No shortlink or error - ignore
+    }
+
+    // Format note type
+    const typeLabels = {
+        'markdown': 'Markdown',
+        'asciidoc': 'AsciiDoc',
+        'txt': 'Plain Text'
+    };
+    const noteTypeLabel = typeLabels[note.type] || note.type;
+
+    // Format file path
+    const filePath = note.id + (note.type === 'markdown' ? '.md' : note.type === 'asciidoc' ? '.adoc' : '.txt');
+
+    // Build info content
+    const attachmentCount = note.attachments ? note.attachments.length : 0;
+    const isEncrypted = note.encrypted || false;
+    const hasShortlink = shortlinkInfo && shortlinkInfo.code;
+
+    // Create modal content
+    const infoHtml = `
+        <div class="note-info-modal">
+            <div class="note-info-header">
+                <h3>${i18n.t('noteInfo.title') || 'Note Info'}</h3>
+                <button class="note-info-close" onclick="closeNoteInfoModal()">&times;</button>
+            </div>
+            <div class="note-info-content">
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.location') || 'Location'}:</span>
+                    <span class="note-info-value note-info-path">${filePath}</span>
+                </div>
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.type') || 'Type'}:</span>
+                    <span class="note-info-value">${noteTypeLabel}</span>
+                </div>
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.attachments') || 'Attachments'}:</span>
+                    <span class="note-info-value">${attachmentCount > 0 ? `${attachmentCount} ${i18n.t('noteInfo.files') || 'file(s)'}` : i18n.t('noteInfo.none') || 'None'}</span>
+                </div>
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.encrypted') || 'Encrypted'}:</span>
+                    <span class="note-info-value">${isEncrypted ? '🔒 ' + (i18n.t('noteInfo.yes') || 'Yes') : i18n.t('noteInfo.no') || 'No'}</span>
+                </div>
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.shared') || 'Shared'}:</span>
+                    <span class="note-info-value">${hasShortlink ? '🔗 ' + (i18n.t('noteInfo.yes') || 'Yes') + ` (/${shortlinkInfo.code})` : i18n.t('noteInfo.no') || 'No'}</span>
+                </div>
+                ${note.created ? `
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.created') || 'Created'}:</span>
+                    <span class="note-info-value">${new Date(note.created).toLocaleString()}</span>
+                </div>
+                ` : ''}
+                ${note.modified ? `
+                <div class="note-info-row">
+                    <span class="note-info-label">${i18n.t('noteInfo.modified') || 'Modified'}:</span>
+                    <span class="note-info-value">${new Date(note.modified).toLocaleString()}</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+
+    // Create and show modal
+    let modal = document.getElementById('noteInfoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'noteInfoModal';
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = infoHtml;
+    modal.style.display = 'flex';
+
+    // Close on backdrop click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            closeNoteInfoModal();
+        }
+    };
+}
+
+function closeNoteInfoModal() {
+    const modal = document.getElementById('noteInfoModal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
 

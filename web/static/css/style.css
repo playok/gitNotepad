@@ -3037,6 +3037,83 @@ body {
     margin: 0.25rem -0.25rem;
 }
 
+/* Note Info Modal */
+.note-info-modal {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    min-width: 320px;
+    max-width: 480px;
+}
+
+.note-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.note-info-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.note-info-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.note-info-close:hover {
+    color: var(--text-primary);
+}
+
+.note-info-content {
+    padding: 1rem 1.25rem;
+}
+
+.note-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.note-info-row:last-child {
+    border-bottom: none;
+}
+
+.note-info-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    flex-shrink: 0;
+    margin-right: 1rem;
+}
+
+.note-info-value {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-align: right;
+    word-break: break-all;
+}
+
+.note-info-path {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;

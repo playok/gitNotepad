@@ -5698,8 +5698,15 @@ async function showNotesByTag(tag) {
     modal.style.display = 'flex';
 
     try {
+        // Fetch fresh notes data from server
+        const response = await authFetch('/api/notes');
+        if (!response.ok) {
+            throw new Error('Failed to fetch notes');
+        }
+        const freshNotes = await response.json();
+
         // Filter notes that have this tag
-        const notesWithTag = notes.filter(note =>
+        const notesWithTag = freshNotes.filter(note =>
             note.tags && note.tags.includes(tag)
         );
 

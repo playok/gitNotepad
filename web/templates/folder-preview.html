@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Folder - Git Notepad</title>
+    <link rel="icon" type="image/svg+xml" href="{{.basePath}}/static/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="{{.basePath}}/static/favicon.ico">
+    <link rel="stylesheet" href="{{.basePath}}/static/css/style.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/highlight/github.min.css" id="hljs-light">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/highlight/github-dark.min.css" id="hljs-dark">
+    <link rel="stylesheet" href="{{.basePath}}/static/lib/katex/katex.min.css">
+    <style>
+        .folder-preview-container {
+            display: flex;
+            min-height: 100vh;
+            background: hsl(var(--background));
+        }
+
+        .folder-sidebar {
+            width: 300px;
+            min-width: 250px;
+            max-width: 400px;
+            border-right: 1px solid hsl(var(--border));
+            background: hsl(var(--card));
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .folder-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid hsl(var(--border));
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .folder-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .folder-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+            margin: 0;
+            word-break: break-word;
+        }
+
+        .folder-meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .note-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+
+        .note-tree-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: hsl(var(--foreground));
+            transition: background-color 0.15s;
+            font-size: 0.875rem;
+        }
+
+        .note-tree-item:hover {
+            background: hsl(var(--muted) / 0.5);
+        }
+
+        .note-tree-item.active {
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+        }
+
+        .note-tree-item .note-icon {
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .note-tree-item .note-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-tree-item .note-type {
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .note-tree-folder {
+            padding-left: 0.5rem;
+        }
+
+        .note-tree-folder-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: hsl(var(--muted-foreground));
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .note-tree-folder-header:hover {
+            color: hsl(var(--foreground));
+        }
+
+        .note-content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .note-content-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid hsl(var(--border));
+            background: hsl(var(--muted) / 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .note-content-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+            margin: 0;
+        }
+
+        .note-content-body {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .note-content-body .preview-body {
+            line-height: 1.7;
+            color: hsl(var(--foreground));
+            max-width: 900px;
+        }
+
+        .note-content-body .preview-body h1,
+        .note-content-body .preview-body h2,
+        .note-content-body .preview-body h3,
+        .note-content-body .preview-body h4,
+        .note-content-body .preview-body h5,
+        .note-content-body .preview-body h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .note-content-body .preview-body h1 { font-size: 2em; }
+        .note-content-body .preview-body h2 { font-size: 1.5em; }
+        .note-content-body .preview-body h3 { font-size: 1.25em; }
+
+        .note-content-body .preview-body p { margin: 1em 0; }
+
+        .note-content-body .preview-body pre {
+            background: hsl(var(--muted));
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+        }
+
+        .note-content-body .preview-body code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        .note-content-body .preview-body :not(pre) > code {
+            background: hsl(var(--muted));
+            padding: 0.2em 0.4em;
+            border-radius: var(--radius-sm);
+        }
+
+        .note-content-body .preview-body blockquote {
+            border-left: 4px solid hsl(var(--border));
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            color: hsl(var(--muted-foreground));
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .note-content-body .preview-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        .note-content-body .preview-body th,
+        .note-content-body .preview-body td {
+            border: 1px solid hsl(var(--border));
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+
+        .note-content-body .preview-body th {
+            background: hsl(var(--muted));
+            font-weight: 600;
+        }
+
+        .note-content-body .preview-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--radius);
+        }
+
+        .note-content-body .preview-body a {
+            color: hsl(var(--primary));
+            text-decoration: none;
+        }
+
+        .note-content-body .preview-body a:hover {
+            text-decoration: underline;
+        }
+
+        .note-content-body .preview-body ul,
+        .note-content-body .preview-body ol {
+            padding-left: 1.5em;
+            margin: 1em 0;
+        }
+
+        .note-content-body .preview-body li { margin: 0.25em 0; }
+
+        /* Plain text styling */
+        .preview-body.plain-text {
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: hsl(var(--muted-foreground));
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .error-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: hsl(var(--destructive));
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .theme-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-selector label {
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .theme-selector select {
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius);
+            border: 1px solid hsl(var(--border));
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .theme-selector select:focus {
+            outline: none;
+            border-color: hsl(var(--primary));
+        }
+
+        .powered-by {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid hsl(var(--border));
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .powered-by a {
+            color: hsl(var(--muted-foreground));
+            text-decoration: none;
+        }
+
+        .powered-by a:hover {
+            color: hsl(var(--primary));
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .folder-preview-container {
+                flex-direction: column;
+            }
+
+            .folder-sidebar {
+                width: 100%;
+                max-width: none;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid hsl(var(--border));
+            }
+
+            .note-content-area {
+                min-height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="folder-preview-container">
+        <div class="folder-sidebar">
+            <div class="folder-header">
+                <div class="folder-badge">
+                    <span>&#128193;</span>
+                    <span>Shared Folder</span>
+                </div>
+                <h1 class="folder-title" id="folderTitle">Loading...</h1>
+                <div class="folder-meta" id="folderMeta"></div>
+            </div>
+            <div class="note-tree" id="noteTree">
+                <div class="loading">Loading notes...</div>
+            </div>
+            <div class="powered-by">
+                <a href="https://github.com/playok/gitNotepad" target="_blank">Powered by Git Notepad</a>
+            </div>
+        </div>
+        <div class="note-content-area">
+            <div class="note-content-header">
+                <h2 class="note-content-title" id="noteTitle">Select a note</h2>
+                <div class="theme-selector">
+                    <label for="themeSelect">Theme:</label>
+                    <select id="themeSelect">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="dark-high-contrast">Dark (High Contrast)</option>
+                        <option value="dark-cyan">Dark (Cyan)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="note-content-body">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">&#128196;</div>
+                    <p>Select a note from the list to view its content</p>
+                </div>
+                <div class="loading" id="noteLoading" style="display: none;">Loading note...</div>
+                <div class="preview-body preview-pane" id="previewBody" style="display: none;"></div>
+                <div class="error-message" id="errorMessage" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{.basePath}}/static/lib/marked.min.js"></script>
+    <script src="{{.basePath}}/static/lib/highlight/highlight.min.js"></script>
+    <script src="{{.basePath}}/static/lib/katex/katex.min.js"></script>
+    <script src="{{.basePath}}/static/lib/katex/auto-render.min.js"></script>
+    <script src="{{.basePath}}/static/lib/asciidoctor.min.js"></script>
+    <script>
+        const basePath = '{{.basePath}}';
+        const code = '{{.code}}';
+        let folderNotes = [];
+        let selectedNoteId = null;
+
+        // Theme management
+        const themes = ['light', 'dark', 'dark-high-contrast', 'dark-cyan'];
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let theme = 'light';
+
+            if (savedTheme && themes.includes(savedTheme)) {
+                theme = savedTheme;
+            } else if (prefersDark) {
+                theme = 'dark';
+            }
+
+            setTheme(theme);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            const themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.value = theme;
+            }
+
+            const hljsLight = document.getElementById('hljs-light');
+            const hljsDark = document.getElementById('hljs-dark');
+            const isDark = theme !== 'light';
+
+            if (hljsLight) hljsLight.disabled = isDark;
+            if (hljsDark) hljsDark.disabled = !isDark;
+        }
+
+        function initThemeSelector() {
+            const themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.addEventListener('change', (e) => {
+                    setTheme(e.target.value);
+                });
+            }
+        }
+
+        async function loadFolder() {
+            const folderTitleEl = document.getElementById('folderTitle');
+            const folderMetaEl = document.getElementById('folderMeta');
+            const noteTreeEl = document.getElementById('noteTree');
+
+            try {
+                const response = await fetch(`${basePath}/api/public/folder/${code}`);
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to load folder');
+                }
+
+                const data = await response.json();
+                folderNotes = data.notes || [];
+
+                // Update folder title (show last part of path)
+                const folderPath = data.folderPath || '';
+                const folderName = folderPath.split(':>:').pop() || folderPath;
+                folderTitleEl.textContent = folderName || 'Shared Folder';
+                folderMetaEl.textContent = `${folderNotes.length} note(s)`;
+
+                // Render note tree
+                renderNoteTree(folderNotes, data.folderPath);
+
+            } catch (error) {
+                console.error('Error loading folder:', error);
+                folderTitleEl.textContent = 'Error';
+                noteTreeEl.innerHTML = `<div class="error-message">${error.message}</div>`;
+            }
+        }
+
+        function renderNoteTree(notes, baseFolderPath) {
+            const noteTreeEl = document.getElementById('noteTree');
+
+            if (notes.length === 0) {
+                noteTreeEl.innerHTML = '<div class="empty-state"><p>No notes in this folder</p></div>';
+                return;
+            }
+
+            // Build tree structure from notes
+            const tree = buildTree(notes, baseFolderPath);
+            noteTreeEl.innerHTML = renderTreeHTML(tree);
+
+            // Add click handlers
+            noteTreeEl.querySelectorAll('.note-tree-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const noteId = item.dataset.noteId;
+                    selectNote(noteId);
+                });
+            });
+        }
+
+        function buildTree(notes, baseFolderPath) {
+            const tree = { children: {}, notes: [] };
+            const basePrefix = baseFolderPath + ':>:';
+
+            notes.forEach(note => {
+                // Get relative path from base folder
+                let relativePath = note.title;
+                if (relativePath.startsWith(basePrefix)) {
+                    relativePath = relativePath.substring(basePrefix.length);
+                } else if (relativePath === baseFolderPath) {
+                    // Note at root of shared folder
+                    relativePath = note.id.split(':>:').pop();
+                }
+
+                const parts = relativePath.split(':>:');
+                const noteName = parts.pop();
+
+                // Navigate to or create folder structure
+                let current = tree;
+                parts.forEach(folder => {
+                    if (!current.children[folder]) {
+                        current.children[folder] = { children: {}, notes: [] };
+                    }
+                    current = current.children[folder];
+                });
+
+                // Add note
+                current.notes.push({
+                    ...note,
+                    displayName: noteName
+                });
+            });
+
+            return tree;
+        }
+
+        function renderTreeHTML(tree, indent = 0) {
+            let html = '';
+
+            // Render folders first
+            Object.keys(tree.children).sort().forEach(folderName => {
+                const folder = tree.children[folderName];
+                html += `
+                    <div class="note-tree-folder" style="padding-left: ${indent * 12}px;">
+                        <div class="note-tree-folder-header">
+                            <span>&#128193;</span>
+                            <span>${escapeHtml(folderName)}</span>
+                        </div>
+                        ${renderTreeHTML(folder, indent + 1)}
+                    </div>
+                `;
+            });
+
+            // Render notes
+            tree.notes.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(note => {
+                const icon = getTypeIcon(note.type);
+                html += `
+                    <div class="note-tree-item" data-note-id="${escapeHtml(note.id)}" style="padding-left: ${(indent * 12) + 16}px;">
+                        <span class="note-icon">${icon}</span>
+                        <span class="note-name">${escapeHtml(note.displayName)}</span>
+                        <span class="note-type">${escapeHtml(note.type || 'md')}</span>
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+
+        function getTypeIcon(type) {
+            switch (type) {
+                case 'markdown':
+                case 'md':
+                    return '&#128221;';
+                case 'asciidoc':
+                case 'adoc':
+                    return '&#128196;';
+                case 'text':
+                case 'txt':
+                    return '&#128462;';
+                default:
+                    return '&#128196;';
+            }
+        }
+
+        async function selectNote(noteId) {
+            const emptyStateEl = document.getElementById('emptyState');
+            const loadingEl = document.getElementById('noteLoading');
+            const bodyEl = document.getElementById('previewBody');
+            const errorEl = document.getElementById('errorMessage');
+            const titleEl = document.getElementById('noteTitle');
+
+            // Update UI state
+            document.querySelectorAll('.note-tree-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.noteId === noteId);
+            });
+
+            selectedNoteId = noteId;
+
+            emptyStateEl.style.display = 'none';
+            bodyEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            loadingEl.style.display = 'flex';
+
+            try {
+                // Base64 encode the note ID
+                const encodedNoteId = btoa(noteId).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                const response = await fetch(`${basePath}/api/public/folder/${code}/note/${encodedNoteId}`);
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to load note');
+                }
+
+                const note = await response.json();
+
+                // Update title
+                const displayTitle = note.title.split(':>:').pop() || note.title;
+                titleEl.textContent = displayTitle;
+
+                // Render content
+                let html = '';
+                if (note.type === 'markdown' || note.type === 'md') {
+                    html = renderMarkdown(note.content);
+                } else if (note.type === 'asciidoc' || note.type === 'adoc') {
+                    html = renderAsciiDoc(note.content);
+                } else {
+                    bodyEl.classList.add('plain-text');
+                    bodyEl.textContent = note.content;
+                    loadingEl.style.display = 'none';
+                    bodyEl.style.display = 'block';
+                    return;
+                }
+
+                bodyEl.classList.remove('plain-text');
+                bodyEl.innerHTML = html;
+
+                // Open links in new tab
+                bodyEl.querySelectorAll('a[href]').forEach((link) => {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                });
+
+                // Apply syntax highlighting
+                bodyEl.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+
+                // Render math
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(bodyEl, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                }
+
+                loadingEl.style.display = 'none';
+                bodyEl.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading note:', error);
+                loadingEl.style.display = 'none';
+                errorEl.textContent = error.message || 'Failed to load note';
+                errorEl.style.display = 'flex';
+                titleEl.textContent = 'Error';
+            }
+        }
+
+        function renderMarkdown(content) {
+            if (typeof marked === 'undefined') {
+                return escapeHtml(content);
+            }
+            const renderer = new marked.Renderer();
+            renderer.link = function(href, title, text) {
+                if (typeof href === 'object') {
+                    title = href.title;
+                    text = href.text;
+                    href = href.href;
+                }
+                const titleAttr = title ? ` title="${title}"` : '';
+                return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+            };
+            marked.setOptions({
+                gfm: true,
+                breaks: true,
+                renderer: renderer
+            });
+            return marked.parse(content);
+        }
+
+        function renderAsciiDoc(content) {
+            if (typeof Asciidoctor === 'undefined') {
+                return escapeHtml(content);
+            }
+            const asciidoctor = Asciidoctor();
+            if (typeof asciidoctor.MemoryLogger !== 'undefined') {
+                const memoryLogger = asciidoctor.MemoryLogger.create();
+                asciidoctor.LoggerManager.setLogger(memoryLogger);
+            }
+            return asciidoctor.convert(content, { safe: 'safe' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            initThemeSelector();
+            loadFolder();
+        });
+    </script>
+</body>
+</html>

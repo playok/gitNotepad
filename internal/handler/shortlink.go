@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,31 +21,34 @@ import (
 
 // ShortLinkInfo contains short link data with optional expiry
 type ShortLinkInfo struct {
-	NoteID    string     `json:"note_id"`
-	Username  string     `json:"username"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	IsPublic  bool       `json:"is_public"`
+	NoteID     string     `json:"note_id,omitempty"`
+	FolderPath string     `json:"folder_path,omitempty"` // For folder sharing (empty = note link)
+	Username   string     `json:"username"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	IsPublic   bool       `json:"is_public"`
 }
 
 type ShortLinkHandler struct {
-	repo        *git.Repository
-	config      *config.Config
-	links       map[string]*ShortLinkInfo // shortCode -> ShortLinkInfo
-	reverseMap  map[string]string         // noteId -> shortCode
-	mu          sync.RWMutex
-	storagePath string
-	basePath    string
+	repo             *git.Repository
+	config           *config.Config
+	links            map[string]*ShortLinkInfo // shortCode -> ShortLinkInfo
+	reverseMap       map[string]string         // noteId -> shortCode
+	folderReverseMap map[string]string         // folderPath -> shortCode
+	mu               sync.RWMutex
+	storagePath      string
+	basePath         string
 }
 
 func NewShortLinkHandler(repo *git.Repository, cfg *config.Config, basePath string) *ShortLinkHandler {
 	h := &ShortLinkHandler{
-		repo:        repo,
-		config:      cfg,
-		links:       make(map[string]*ShortLinkInfo),
-		reverseMap:  make(map[string]string),
-		storagePath: filepath.Join(repo.GetPath(), ".shortlinks.json"),
-		basePath:    basePath,
+		repo:             repo,
+		config:           cfg,
+		links:            make(map[string]*ShortLinkInfo),
+		reverseMap:       make(map[string]string),
+		folderReverseMap: make(map[string]string),
+		storagePath:      filepath.Join(repo.GetPath(), ".shortlinks.json"),
+		basePath:         basePath,
 	}
 	h.load()
 	h.startCleanupScheduler()
@@ -79,8 +83,13 @@ func (h *ShortLinkHandler) load() {
 	defer h.mu.Unlock()
 	h.links = links
 	h.reverseMap = make(map[string]string)
+	h.folderReverseMap = make(map[string]string)
 	for code, info := range links {
-		h.reverseMap[info.NoteID] = code
+		if info.FolderPath != "" {
+			h.folderReverseMap[info.FolderPath] = code
+		} else if info.NoteID != "" {
+			h.reverseMap[info.NoteID] = code
+		}
 	}
 }
 
@@ -126,7 +135,11 @@ func (h *ShortLinkHandler) cleanupExpiredLinks() {
 
 	for _, code := range expiredCodes {
 		info := h.links[code]
-		delete(h.reverseMap, info.NoteID)
+		if info.FolderPath != "" {
+			delete(h.folderReverseMap, info.FolderPath)
+		} else {
+			delete(h.reverseMap, info.NoteID)
+		}
 		delete(h.links, code)
 	}
 
@@ -281,7 +294,17 @@ func (h *ShortLinkHandler) Redirect(c *gin.Context) {
 		return
 	}
 
-	// For public links, redirect to public preview page
+	// For folder links
+	if info.FolderPath != "" {
+		if info.IsPublic {
+			c.Redirect(http.StatusFound, h.basePath+"/folder-preview/"+code)
+		} else {
+			c.Redirect(http.StatusFound, h.basePath+"/#folder="+info.FolderPath)
+		}
+		return
+	}
+
+	// For public note links, redirect to public preview page
 	if info.IsPublic {
 		c.Redirect(http.StatusFound, h.basePath+"/preview/"+code)
 		return
@@ -549,6 +572,381 @@ func (h *ShortLinkHandler) GetPublicNote(c *gin.Context) {
 	}
 
 	// Don't expose password-protected notes publicly
+	if note.Private {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This note is password protected"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":       note.ID,
+		"title":    note.Title,
+		"content":  note.Content,
+		"type":     note.Type,
+		"modified": note.Modified,
+	})
+}
+
+// FolderGenerateRequest represents the request body for generating a folder short link
+type FolderGenerateRequest struct {
+	FolderPath string `json:"folder_path"`
+	ExpiresIn  *int   `json:"expires_in"` // Days until expiry (nil = never expires)
+	IsPublic   *bool  `json:"is_public"`  // Whether the link is publicly accessible
+}
+
+// GenerateFolderLink creates or returns existing short link for a folder
+func (h *ShortLinkHandler) GenerateFolderLink(c *gin.Context) {
+	var req FolderGenerateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.FolderPath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Folder path required"})
+		return
+	}
+
+	// Get current user
+	user := middleware.GetCurrentUser(c)
+	username := ""
+	if user != nil {
+		username = user.Username
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	// Check if short link already exists for this folder
+	if code, exists := h.folderReverseMap[req.FolderPath]; exists {
+		info := h.links[code]
+		changed := false
+		// Update expiry if provided
+		if req.ExpiresIn != nil {
+			if *req.ExpiresIn == 0 {
+				info.ExpiresAt = nil
+			} else {
+				expiresAt := time.Now().AddDate(0, 0, *req.ExpiresIn)
+				info.ExpiresAt = &expiresAt
+			}
+			changed = true
+		}
+		// Update public flag if provided
+		if req.IsPublic != nil {
+			info.IsPublic = *req.IsPublic
+			changed = true
+		}
+		if changed {
+			go h.save()
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"code":       code,
+			"shortLink":  h.basePath + "/s/" + code,
+			"folderPath": info.FolderPath,
+			"expiresAt":  info.ExpiresAt,
+			"isPublic":   info.IsPublic,
+		})
+		return
+	}
+
+	// Generate new short code
+	code := generateShortCode()
+	for {
+		if _, exists := h.links[code]; !exists {
+			break
+		}
+		code = generateShortCode()
+	}
+
+	// Calculate expiry
+	var expiresAt *time.Time
+	if req.ExpiresIn != nil && *req.ExpiresIn > 0 {
+		t := time.Now().AddDate(0, 0, *req.ExpiresIn)
+		expiresAt = &t
+	}
+
+	// Determine public flag (default true for folder sharing)
+	isPublic := true
+	if req.IsPublic != nil {
+		isPublic = *req.IsPublic
+	}
+
+	h.links[code] = &ShortLinkInfo{
+		FolderPath: req.FolderPath,
+		Username:   username,
+		ExpiresAt:  expiresAt,
+		CreatedAt:  time.Now(),
+		IsPublic:   isPublic,
+	}
+	h.folderReverseMap[req.FolderPath] = code
+
+	go h.save()
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":       code,
+		"shortLink":  h.basePath + "/s/" + code,
+		"folderPath": req.FolderPath,
+		"expiresAt":  expiresAt,
+		"isPublic":   isPublic,
+	})
+}
+
+// GetFolderLink returns the short link for a folder if it exists
+func (h *ShortLinkHandler) GetFolderLink(c *gin.Context) {
+	folderPath := c.Query("path")
+	if folderPath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Folder path required"})
+		return
+	}
+
+	h.mu.RLock()
+	code, exists := h.folderReverseMap[folderPath]
+	var info *ShortLinkInfo
+	if exists {
+		info = h.links[code]
+	}
+	h.mu.RUnlock()
+
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No short link for this folder"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":       code,
+		"shortLink":  h.basePath + "/s/" + code,
+		"folderPath": info.FolderPath,
+		"expiresAt":  info.ExpiresAt,
+		"createdAt":  info.CreatedAt,
+		"isPublic":   info.IsPublic,
+	})
+}
+
+// DeleteFolderLink removes a folder short link
+func (h *ShortLinkHandler) DeleteFolderLink(c *gin.Context) {
+	folderPath := c.Query("path")
+	if folderPath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Folder path required"})
+		return
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	code, exists := h.folderReverseMap[folderPath]
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No short link for this folder"})
+		return
+	}
+
+	delete(h.links, code)
+	delete(h.folderReverseMap, folderPath)
+
+	go h.save()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder short link deleted"})
+}
+
+// FolderPreview renders the public preview page for a shared folder
+func (h *ShortLinkHandler) FolderPreview(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	h.mu.RLock()
+	info, exists := h.links[code]
+	h.mu.RUnlock()
+
+	if !exists || info.FolderPath == "" {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	// Check if link is public
+	if !info.IsPublic {
+		c.Redirect(http.StatusFound, h.basePath+"/")
+		return
+	}
+
+	// Check if link has expired
+	if info.ExpiresAt != nil && info.ExpiresAt.Before(time.Now()) {
+		c.HTML(http.StatusGone, "expired.html", gin.H{
+			"basePath": h.basePath,
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "folder-preview.html", gin.H{
+		"basePath": h.basePath,
+		"code":     code,
+	})
+}
+
+// FolderNoteListItem represents a note in the folder tree
+type FolderNoteListItem struct {
+	ID       string    `json:"id"`
+	Title    string    `json:"title"`
+	Type     string    `json:"type"`
+	Modified time.Time `json:"modified"`
+	Children []FolderNoteListItem `json:"children,omitempty"`
+	IsFolder bool      `json:"is_folder,omitempty"`
+}
+
+// GetPublicFolder returns folder notes for public preview
+func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code required"})
+		return
+	}
+
+	h.mu.RLock()
+	info, exists := h.links[code]
+	h.mu.RUnlock()
+
+	if !exists || info.FolderPath == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Folder link not found"})
+		return
+	}
+
+	// Check if link is public
+	if !info.IsPublic {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This link is not public"})
+		return
+	}
+
+	// Check if link has expired
+	if info.ExpiresAt != nil && info.ExpiresAt.Before(time.Now()) {
+		c.JSON(http.StatusGone, gin.H{"error": "Link has expired"})
+		return
+	}
+
+	// Get all notes in the folder
+	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
+	folderPrefix := info.FolderPath + ":>:"
+
+	notes := []FolderNoteListItem{}
+
+	// Walk through files
+	entries, err := os.ReadDir(notesPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read folder"})
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		ext := filepath.Ext(entry.Name())
+		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+			continue
+		}
+
+		filePath := filepath.Join(notesPath, entry.Name())
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		note, err := model.ParseNoteFromBytes(data, filePath)
+		if err != nil {
+			continue
+		}
+
+		// Check if note is in the shared folder
+		noteID := strings.TrimSuffix(entry.Name(), ext)
+		if !strings.HasPrefix(note.Title, folderPrefix) && note.Title != info.FolderPath {
+			// Also check if the noteID matches folder path pattern
+			if !strings.HasPrefix(noteID, info.FolderPath+":>:") {
+				continue
+			}
+		}
+
+		// Skip password-protected notes
+		if note.Private {
+			continue
+		}
+
+		notes = append(notes, FolderNoteListItem{
+			ID:       noteID,
+			Title:    note.Title,
+			Type:     note.Type,
+			Modified: note.Modified,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"folderPath": info.FolderPath,
+		"notes":      notes,
+	})
+}
+
+// GetPublicFolderNote returns a specific note from a shared folder
+func (h *ShortLinkHandler) GetPublicFolderNote(c *gin.Context) {
+	code := c.Param("code")
+	noteID := c.Param("noteId")
+
+	if code == "" || noteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Code and note ID required"})
+		return
+	}
+
+	h.mu.RLock()
+	info, exists := h.links[code]
+	h.mu.RUnlock()
+
+	if !exists || info.FolderPath == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Folder link not found"})
+		return
+	}
+
+	// Check if link is public
+	if !info.IsPublic {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This link is not public"})
+		return
+	}
+
+	// Check if link has expired
+	if info.ExpiresAt != nil && info.ExpiresAt.Before(time.Now()) {
+		c.JSON(http.StatusGone, gin.H{"error": "Link has expired"})
+		return
+	}
+
+	// Decode note ID
+	decodedNoteID := decodeNoteIDParam(noteID)
+
+	// Verify note belongs to the shared folder
+	if !strings.HasPrefix(decodedNoteID, info.FolderPath+":>:") && decodedNoteID != info.FolderPath {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Note not in shared folder"})
+		return
+	}
+
+	// Read the note
+	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
+
+	var note *model.Note
+	for _, ext := range []string{".md", ".txt", ".adoc"} {
+		filePath := filepath.Join(notesPath, decodedNoteID+ext)
+		data, readErr := os.ReadFile(filePath)
+		if readErr != nil {
+			continue
+		}
+		note, _ = model.ParseNoteFromBytes(data, filePath)
+		if note != nil {
+			note.ID = decodedNoteID
+			break
+		}
+	}
+
+	if note == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		return
+	}
+
+	// Don't expose password-protected notes
 	if note.Private {
 		c.JSON(http.StatusForbidden, gin.H{"error": "This note is password protected"})
 		return

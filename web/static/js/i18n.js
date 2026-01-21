@@ -423,7 +423,17 @@ const i18n = {
             'context.renameFolder': 'Rename Folder',
             'context.moveFolderUp': 'Move Up',
             'context.moveFolderDown': 'Move Down',
+            'context.shareFolder': 'Share Folder',
             'context.deleteFolder': 'Delete Folder',
+
+            // Folder Share
+            'folderShare.title': 'Share Folder',
+            'folderShare.description': 'Share all notes in this folder:',
+            'folderShare.descriptionWithName': 'Share all notes in "{folder}":',
+            'folderShare.deleteLink': 'Delete Link',
+            'folderShare.confirmDelete': 'Delete this folder share link?',
+            'folderShare.deleted': 'Link deleted',
+            'folderShare.deleteFailed': 'Failed to delete link',
 
             // Note Info
             'noteInfo.title': 'Note Info',
@@ -927,7 +937,17 @@ const i18n = {
             'context.renameFolder': '폴더 이름 변경',
             'context.moveFolderUp': '위로 이동',
             'context.moveFolderDown': '아래로 이동',
+            'context.shareFolder': '폴더 공유',
             'context.deleteFolder': '폴더 삭제',
+
+            // Folder Share
+            'folderShare.title': '폴더 공유',
+            'folderShare.description': '이 폴더의 모든 노트를 공유:',
+            'folderShare.descriptionWithName': '"{folder}" 폴더의 모든 노트를 공유:',
+            'folderShare.deleteLink': '링크 삭제',
+            'folderShare.confirmDelete': '이 폴더 공유 링크를 삭제하시겠습니까?',
+            'folderShare.deleted': '링크가 삭제되었습니다',
+            'folderShare.deleteFailed': '링크 삭제 실패',
 
             // Note Info
             'noteInfo.title': '노트 정보',

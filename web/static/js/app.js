@@ -1161,6 +1161,280 @@ function createShareModal() {
     });
 }
 
+// Folder Share Modal
+let currentShareFolderPath = '';
+
+function createFolderShareModal() {
+    const modal = document.createElement('div');
+    modal.id = 'folderShareModal';
+    modal.className = 'modal';
+    modal.style.display = 'none';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3 data-i18n="folderShare.title">Share Folder</h3>
+            <p id="folderShareDescription" data-i18n="folderShare.description">Share all notes in this folder:</p>
+            <div class="share-link-container">
+                <input type="text" id="folderShareLinkInput" readonly>
+                <button id="copyFolderLinkBtn" class="btn btn-primary" data-i18n="share.copy">Copy</button>
+            </div>
+            <div class="share-expiry-container" style="margin-top: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);" data-i18n="share.expiration">Link expiration:</label>
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="folderExpiryType" id="folderExpiryNever" value="never" checked style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.never">Never</span>
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="folderExpiryType" id="folderExpiryDate" value="date" style="margin: 0; vertical-align: middle;">
+                        <span style="font-size: 0.875rem; line-height: 1;" data-i18n="share.expiresOn">Expires on:</span>
+                    </label>
+                    <input type="date" id="folderShareExpiryDate" style="padding: 0.375rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.875rem;" disabled>
+                </div>
+            </div>
+            <div id="folderShareExpiryInfo" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);"></div>
+            <div id="folderShareStatus" class="share-status"></div>
+            <div class="modal-actions">
+                <button id="deleteFolderLinkBtn" class="btn btn-secondary" data-i18n="folderShare.deleteLink">Delete Link</button>
+                <button id="folderShareCloseBtn" class="btn btn-secondary" data-i18n="common.close">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Apply i18n to the modal
+    if (typeof i18n !== 'undefined') {
+        i18n.updateUI();
+    }
+
+    // Event listeners
+    document.getElementById('copyFolderLinkBtn').addEventListener('click', copyFolderShortLink);
+    document.getElementById('deleteFolderLinkBtn').addEventListener('click', deleteFolderShortLink);
+    document.getElementById('folderShareCloseBtn').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Expiry type radio buttons
+    const expiryNever = document.getElementById('folderExpiryNever');
+    const expiryDate = document.getElementById('folderExpiryDate');
+    const expiryDateInput = document.getElementById('folderShareExpiryDate');
+
+    expiryNever.addEventListener('change', () => {
+        expiryDateInput.disabled = true;
+        updateFolderShareLinkExpiry();
+    });
+
+    expiryDate.addEventListener('change', () => {
+        expiryDateInput.disabled = false;
+        if (!expiryDateInput.value) {
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 7);
+            expiryDateInput.value = defaultDate.toISOString().split('T')[0];
+        }
+        updateFolderShareLinkExpiry();
+    });
+
+    expiryDateInput.addEventListener('change', updateFolderShareLinkExpiry);
+
+    // Set min date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+async function showFolderShareModal(folderPath) {
+    if (!folderPath) return;
+
+    currentShareFolderPath = folderPath;
+
+    // Ensure modal exists
+    if (!document.getElementById('folderShareModal')) {
+        createFolderShareModal();
+    }
+
+    const modal = document.getElementById('folderShareModal');
+    const input = document.getElementById('folderShareLinkInput');
+    const status = document.getElementById('folderShareStatus');
+    const expiryNever = document.getElementById('folderExpiryNever');
+    const expiryDateRadio = document.getElementById('folderExpiryDate');
+    const expiryDateInput = document.getElementById('folderShareExpiryDate');
+    const expiryInfo = document.getElementById('folderShareExpiryInfo');
+    const description = document.getElementById('folderShareDescription');
+
+    // Update description with folder name
+    const folderName = folderPath.split(':>:').pop() || folderPath;
+    description.textContent = (i18n ? i18n.t('folderShare.descriptionWithName', { folder: folderName }) : `Share all notes in "${folderName}":`);
+
+    modal.style.display = 'flex';
+    input.value = i18n ? i18n.t('share.generating') : 'Generating...';
+    status.textContent = '';
+    expiryInfo.textContent = '';
+    expiryNever.checked = true;
+    expiryDateInput.disabled = true;
+    expiryDateInput.value = '';
+
+    try {
+        // Try to get existing folder link first
+        let response = await authFetch(`/api/folders/shortlink?path=${encodeURIComponent(folderPath)}`);
+
+        if (response.status === 404) {
+            // Generate new folder link (default to public for folder sharing)
+            response = await authFetch(`/api/folders/shortlink`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folder_path: folderPath,
+                    expires_in: 0,
+                    is_public: true
+                })
+            });
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            const fullUrl = `${window.location.origin}${data.shortLink}`;
+            input.value = fullUrl;
+
+            // Update expiry info and UI
+            if (data.expiresAt) {
+                const expiryDate = new Date(data.expiresAt);
+                expiryInfo.textContent = i18n ? i18n.t('share.expires', { date: expiryDate.toLocaleDateString() }) : `Expires: ${expiryDate.toLocaleDateString()}`;
+                expiryDateRadio.checked = true;
+                expiryDateInput.disabled = false;
+                expiryDateInput.value = expiryDate.toISOString().split('T')[0];
+            } else {
+                expiryInfo.textContent = i18n ? i18n.t('share.neverExpires') : 'Never expires';
+                expiryNever.checked = true;
+                expiryDateInput.disabled = true;
+            }
+        } else {
+            input.value = '';
+            status.textContent = i18n ? i18n.t('share.failedToGenerate') : 'Failed to generate link';
+            status.className = 'share-status error';
+        }
+    } catch (error) {
+        console.error('Failed to get folder short link:', error);
+        input.value = '';
+        status.textContent = i18n ? i18n.t('share.errorGenerating') : 'Error generating link';
+        status.className = 'share-status error';
+    }
+}
+
+function getFolderExpiryDays() {
+    const expiryNever = document.getElementById('folderExpiryNever');
+    const expiryDateInput = document.getElementById('folderShareExpiryDate');
+
+    if (expiryNever.checked) {
+        return 0;
+    }
+
+    if (expiryDateInput.value) {
+        const selectedDate = new Date(expiryDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffTime = selectedDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(1, diffDays);
+    }
+
+    return 7;
+}
+
+async function updateFolderShareLinkExpiry() {
+    const expiryInfo = document.getElementById('folderShareExpiryInfo');
+    const status = document.getElementById('folderShareStatus');
+    const expiryDays = getFolderExpiryDays();
+
+    status.textContent = i18n ? i18n.t('share.updating') : 'Updating...';
+    status.className = 'share-status';
+
+    try {
+        const response = await authFetch(`/api/folders/shortlink`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                folder_path: currentShareFolderPath,
+                expires_in: expiryDays,
+                is_public: true
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.expiresAt) {
+                const expiryDate = new Date(data.expiresAt);
+                expiryInfo.textContent = i18n ? i18n.t('share.expires', { date: expiryDate.toLocaleDateString() }) : `Expires: ${expiryDate.toLocaleDateString()}`;
+            } else {
+                expiryInfo.textContent = i18n ? i18n.t('share.neverExpires') : 'Never expires';
+            }
+            status.textContent = i18n ? i18n.t('share.updated') : 'Updated';
+            status.className = 'share-status success';
+            setTimeout(() => { status.textContent = ''; }, 2000);
+        } else {
+            status.textContent = i18n ? i18n.t('share.updateFailed') : 'Update failed';
+            status.className = 'share-status error';
+        }
+    } catch (error) {
+        console.error('Failed to update folder link expiry:', error);
+        status.textContent = i18n ? i18n.t('share.errorUpdating') : 'Error updating';
+        status.className = 'share-status error';
+    }
+}
+
+async function copyFolderShortLink() {
+    const input = document.getElementById('folderShareLinkInput');
+    const status = document.getElementById('folderShareStatus');
+
+    try {
+        await navigator.clipboard.writeText(input.value);
+        status.textContent = i18n ? i18n.t('share.copied') : 'Copied!';
+        status.className = 'share-status success';
+        setTimeout(() => { status.textContent = ''; }, 2000);
+    } catch (error) {
+        input.select();
+        document.execCommand('copy');
+        status.textContent = i18n ? i18n.t('share.copied') : 'Copied!';
+        status.className = 'share-status success';
+        setTimeout(() => { status.textContent = ''; }, 2000);
+    }
+}
+
+async function deleteFolderShortLink() {
+    const confirmMsg = i18n ? i18n.t('folderShare.confirmDelete') : 'Delete this folder share link?';
+    if (!confirm(confirmMsg)) return;
+
+    const input = document.getElementById('folderShareLinkInput');
+    const status = document.getElementById('folderShareStatus');
+
+    try {
+        const response = await authFetch(`/api/folders/shortlink?path=${encodeURIComponent(currentShareFolderPath)}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            input.value = '';
+            status.textContent = i18n ? i18n.t('folderShare.deleted') : 'Link deleted';
+            status.className = 'share-status success';
+            setTimeout(() => {
+                document.getElementById('folderShareModal').style.display = 'none';
+            }, 1500);
+        } else {
+            status.textContent = i18n ? i18n.t('folderShare.deleteFailed') : 'Failed to delete';
+            status.className = 'share-status error';
+        }
+    } catch (error) {
+        console.error('Failed to delete folder link:', error);
+        status.textContent = i18n ? i18n.t('share.errorDeleting') : 'Error deleting';
+        status.className = 'share-status error';
+    }
+}
+
 async function showShareModal() {
     if (!currentNote) return;
 
@@ -1684,6 +1958,10 @@ function initContextMenu() {
             <span class="context-icon">&#9650;</span> <span data-i18n="context.collapseAll">Collapse All</span>
         </div>
         <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="share-folder">
+            <span class="context-icon">&#128279;</span> <span data-i18n="context.shareFolder">Share Folder</span>
+        </div>
+        <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete-folder">
             <span class="context-icon">&#128465;</span> <span data-i18n="context.deleteFolder">Delete Folder</span>
         </div>
@@ -2109,6 +2387,10 @@ async function handleFolderContextMenuAction(e) {
 
         case 'move-folder-down':
             await moveFolderOrder(currentFolderPath, 1);
+            break;
+
+        case 'share-folder':
+            await showFolderShareModal(currentFolderPath);
             break;
 
         case 'delete-folder':

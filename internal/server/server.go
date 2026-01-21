@@ -193,6 +193,11 @@ func (s *Server) setupRoutes() {
 	base.GET("/preview/:code", shortLinkHandler.PublicPreview)
 	base.GET("/api/public/note/:code", shortLinkHandler.GetPublicNote)
 
+	// Public folder preview page and API (no authentication required)
+	base.GET("/folder-preview/:code", shortLinkHandler.FolderPreview)
+	base.GET("/api/public/folder/:code", shortLinkHandler.GetPublicFolder)
+	base.GET("/api/public/folder/:code/note/:noteId", shortLinkHandler.GetPublicFolderNote)
+
 	// Config endpoint (public)
 	base.GET("/api/config", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -277,6 +282,11 @@ func (s *Server) setupRoutes() {
 			api.GET("/shortlinks", shortLinkHandler.List)
 			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
 			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
+
+			// Folder short links
+			api.POST("/folders/shortlink", shortLinkHandler.GenerateFolderLink)
+			api.GET("/folders/shortlink", shortLinkHandler.GetFolderLink)
+			api.DELETE("/folders/shortlink", shortLinkHandler.DeleteFolderLink)
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)
@@ -367,6 +377,11 @@ func (s *Server) setupRoutes() {
 			api.GET("/shortlinks", shortLinkHandler.List)
 			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
 			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
+
+			// Folder short links
+			api.POST("/folders/shortlink", shortLinkHandler.GenerateFolderLink)
+			api.GET("/folders/shortlink", shortLinkHandler.GetFolderLink)
+			api.DELETE("/folders/shortlink", shortLinkHandler.DeleteFolderLink)
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)

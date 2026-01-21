@@ -18,19 +18,22 @@ import (
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
+	"github.com/user/gitnotepad/internal/websocket"
 )
 
 type NoteHandler struct {
 	repo     *git.Repository
 	config   *config.Config
 	basePath string
+	wsHub    *websocket.Hub
 }
 
-func NewNoteHandler(repo *git.Repository, cfg *config.Config) *NoteHandler {
+func NewNoteHandler(repo *git.Repository, cfg *config.Config, wsHub *websocket.Hub) *NoteHandler {
 	return &NoteHandler{
 		repo:     repo,
 		config:   cfg,
 		basePath: cfg.Storage.Path,
+		wsHub:    wsHub,
 	}
 }
 
@@ -634,6 +637,9 @@ func (h *NoteHandler) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, note)
+
+	// Broadcast note creation to other clients of the same user
+	h.broadcastNoteChange(c, websocket.MsgTypeNoteCreated, note.ID)
 }
 
 type UpdateNoteRequest struct {
@@ -767,6 +773,9 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, note)
+
+	// Broadcast note update to other clients of the same user
+	h.broadcastNoteChange(c, websocket.MsgTypeNoteUpdated, note.ID)
 }
 
 func (h *NoteHandler) Delete(c *gin.Context) {
@@ -814,6 +823,25 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Note deleted"})
+
+	// Broadcast note deletion to other clients of the same user
+	h.broadcastNoteChange(c, websocket.MsgTypeNoteDeleted, id)
+}
+
+// broadcastNoteChange sends a WebSocket message to all clients of the current user
+func (h *NoteHandler) broadcastNoteChange(c *gin.Context, msgType string, noteID string) {
+	if h.wsHub == nil {
+		return
+	}
+	username := "default" // Used when auth is disabled
+	user := middleware.GetCurrentUser(c)
+	if user != nil {
+		username = user.Username
+	}
+	h.wsHub.BroadcastToUser(username, websocket.Message{
+		Type:   msgType,
+		NoteID: noteID,
+	})
 }
 
 // DecryptNote removes encryption from a note file

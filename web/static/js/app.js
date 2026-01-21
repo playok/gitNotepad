@@ -98,6 +98,74 @@ let originalContent = {
     tags: []
 };
 
+// WebSocket for real-time updates
+let ws = null;
+let wsReconnectTimer = null;
+const WS_RECONNECT_DELAY = 3000; // 3 seconds
+
+// Initialize WebSocket connection
+function initWebSocket() {
+    // Determine WebSocket URL based on current page URL
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}${basePath}/ws`;
+
+    try {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            // Clear any pending reconnect timer
+            if (wsReconnectTimer) {
+                clearTimeout(wsReconnectTimer);
+                wsReconnectTimer = null;
+            }
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                handleWebSocketMessage(message);
+            } catch (e) {
+                console.error('WebSocket message parse error:', e);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            // Attempt to reconnect after delay
+            if (!wsReconnectTimer) {
+                wsReconnectTimer = setTimeout(() => {
+                    wsReconnectTimer = null;
+                    initWebSocket();
+                }, WS_RECONNECT_DELAY);
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    } catch (e) {
+        console.error('WebSocket initialization error:', e);
+    }
+}
+
+// Handle incoming WebSocket messages
+function handleWebSocketMessage(message) {
+    switch (message.type) {
+        case 'note_created':
+        case 'note_updated':
+        case 'note_deleted':
+        case 'notes_refresh':
+            // Reload notes list to reflect changes
+            loadNotes().then(() => {
+                renderMiniCalendar();
+            });
+            break;
+        default:
+            console.log('Unknown WebSocket message type:', message.type);
+    }
+}
+
 // DOM Elements
 const noteList = document.getElementById('noteList');
 const searchInput = document.getElementById('searchInput');
@@ -268,6 +336,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initLocaleSelector();
     initEditorHeaderScroll();
     initFontSize();
+    initWebSocket(); // Real-time sync
     await loadFolderOrder();
     await loadAllTags();
     // Load notes (includes folder icons)

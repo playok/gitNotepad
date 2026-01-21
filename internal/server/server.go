@@ -15,6 +15,7 @@ import (
 	"github.com/user/gitnotepad/internal/handler"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/repository"
+	"github.com/user/gitnotepad/internal/websocket"
 	"github.com/user/gitnotepad/web"
 )
 
@@ -24,6 +25,7 @@ type Server struct {
 	repo    *git.Repository
 	db      *database.DB
 	version string
+	wsHub   *websocket.Hub
 }
 
 // VersionInfo holds build version information
@@ -98,11 +100,16 @@ func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Serv
 	// GZip compression for text-based responses (HTML, JS, CSS, JSON)
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
+	// Initialize WebSocket hub for real-time updates
+	wsHub := websocket.NewHub()
+	go wsHub.Run()
+
 	s := &Server{
 		config: cfg,
 		router: router,
 		repo:   repo,
 		db:     db,
+		wsHub:  wsHub,
 	}
 
 	s.setupRoutes()
@@ -118,7 +125,7 @@ func (s *Server) setupRoutes() {
 	authMiddleware := middleware.NewAuthMiddleware(userRepo, sessionRepo, s.config.Server.BasePath)
 
 	// Create handlers
-	noteHandler := handler.NewNoteHandler(s.repo, s.config)
+	noteHandler := handler.NewNoteHandler(s.repo, s.config, s.wsHub)
 	gitHandler := handler.NewGitHandler(s.repo)
 	authHandler := handler.NewAuthHandler(s.repo, userRepo, sessionRepo, s.config)
 	shortLinkHandler := handler.NewShortLinkHandler(s.repo, s.config, s.config.Server.BasePath)
@@ -215,6 +222,9 @@ func (s *Server) setupRoutes() {
 			})
 		})
 
+		// WebSocket endpoint for real-time updates
+		base.GET("/ws", authMiddleware.RequireAuth(), s.wsHub.HandleWebSocket)
+
 		// Protected API routes
 		api := base.Group("/api")
 		api.Use(authMiddleware.RequireAuth())
@@ -301,6 +311,12 @@ func (s *Server) setupRoutes() {
 			c.HTML(200, "popout-preview.html", gin.H{
 				"basePath": basePath,
 			})
+		})
+
+		// WebSocket endpoint for real-time updates (no auth - use default username)
+		base.GET("/ws", func(c *gin.Context) {
+			c.Set("username", "default")
+			s.wsHub.HandleWebSocket(c)
 		})
 
 		api := base.Group("/api")

@@ -398,11 +398,18 @@ func (h *NoteHandler) List(c *gin.Context) {
 			return nil
 		}
 
-		// Search filter: check title and content
+		// Search filter: check title, content, and attachments
 		if searchQuery != "" {
 			titleMatch := strings.Contains(strings.ToLower(note.Title), searchQuery)
 			contentMatch := strings.Contains(strings.ToLower(note.Content), searchQuery)
-			if !titleMatch && !contentMatch {
+			attachmentMatch := false
+			for _, att := range note.Attachments {
+				if strings.Contains(strings.ToLower(att.Name), searchQuery) {
+					attachmentMatch = true
+					break
+				}
+			}
+			if !titleMatch && !contentMatch && !attachmentMatch {
 				return nil // Skip notes that don't match
 			}
 		}

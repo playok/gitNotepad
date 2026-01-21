@@ -1848,6 +1848,17 @@ async function decryptNote(noteId) {
 
 // Show note information modal
 async function showNoteInfo(note) {
+    // Get full note details (including attachments)
+    let noteDetail = note;
+    try {
+        const detailResponse = await authFetch(`/api/notes/${encodeNoteId(note.id)}`);
+        if (detailResponse.ok) {
+            noteDetail = await detailResponse.json();
+        }
+    } catch (e) {
+        // Use basic note info if detail fetch fails
+    }
+
     // Get shortlink info
     let shortlinkInfo = null;
     try {
@@ -1865,14 +1876,14 @@ async function showNoteInfo(note) {
         'asciidoc': 'AsciiDoc',
         'txt': 'Plain Text'
     };
-    const noteTypeLabel = typeLabels[note.type] || note.type;
+    const noteTypeLabel = typeLabels[noteDetail.type] || noteDetail.type;
 
     // Format file path
-    const filePath = note.id + (note.type === 'markdown' ? '.md' : note.type === 'asciidoc' ? '.adoc' : '.txt');
+    const filePath = noteDetail.id + (noteDetail.type === 'markdown' ? '.md' : noteDetail.type === 'asciidoc' ? '.adoc' : '.txt');
 
     // Build info content
-    const attachmentCount = note.attachments ? note.attachments.length : 0;
-    const isEncrypted = note.encrypted || false;
+    const attachmentCount = noteDetail.attachments ? noteDetail.attachments.length : 0;
+    const isEncrypted = noteDetail.encrypted || false;
     const hasShortlink = shortlinkInfo && shortlinkInfo.code;
 
     // Create modal content
@@ -1903,16 +1914,16 @@ async function showNoteInfo(note) {
                     <span class="note-info-label">${i18n.t('noteInfo.shared') || 'Shared'}:</span>
                     <span class="note-info-value">${hasShortlink ? '🔗 ' + (i18n.t('noteInfo.yes') || 'Yes') + ` (/${shortlinkInfo.code})` : i18n.t('noteInfo.no') || 'No'}</span>
                 </div>
-                ${note.created ? `
+                ${noteDetail.created ? `
                 <div class="note-info-row">
                     <span class="note-info-label">${i18n.t('noteInfo.created') || 'Created'}:</span>
-                    <span class="note-info-value">${new Date(note.created).toLocaleString()}</span>
+                    <span class="note-info-value">${new Date(noteDetail.created).toLocaleString()}</span>
                 </div>
                 ` : ''}
-                ${note.modified ? `
+                ${noteDetail.modified ? `
                 <div class="note-info-row">
                     <span class="note-info-label">${i18n.t('noteInfo.modified') || 'Modified'}:</span>
-                    <span class="note-info-value">${new Date(note.modified).toLocaleString()}</span>
+                    <span class="note-info-value">${new Date(noteDetail.modified).toLocaleString()}</span>
                 </div>
                 ` : ''}
             </div>

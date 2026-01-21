@@ -92,6 +92,11 @@ func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Serv
 		fmt.Printf("Warning: folder separator migration failed: %v\n", err)
 	}
 
+	// Run migration for attachment metadata (restore original filenames)
+	if err := handler.MigrateAttachmentMetadata(cfg.Storage.Path); err != nil {
+		fmt.Printf("Warning: attachment metadata migration failed: %v\n", err)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.UseRawPath = true

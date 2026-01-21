@@ -299,3 +299,225 @@ func (h *FileHandler) ServeLegacy(c *gin.Context) {
 
 	c.File(filePath)
 }
+
+// MigrateAttachmentMetadata migrates attachment filenames from notes to metadata files
+// This ensures old attachments without metadata get their original filenames restored
+func MigrateAttachmentMetadata(storagePath string) error {
+	fmt.Println("Starting attachment metadata migration...")
+
+	// Read all user directories
+	entries, err := os.ReadDir(storagePath)
+	if err != nil {
+		return fmt.Errorf("failed to read storage directory: %w", err)
+	}
+
+	totalMigrated := 0
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		username := entry.Name()
+		// Skip special directories
+		if username == "files" || username == "images" || strings.HasPrefix(username, ".") {
+			continue
+		}
+
+		notesPath := filepath.Join(storagePath, username, "notes")
+		if _, err := os.Stat(notesPath); os.IsNotExist(err) {
+			continue
+		}
+
+		// Load existing metadata
+		fileMeta := loadMetadataFile(filepath.Join(storagePath, username, "files", ".filemeta.json"))
+		imageMeta := loadMetadataFile(filepath.Join(storagePath, username, "files", ".imagemeta.json"))
+
+		userMigrated := 0
+
+		// Walk through all notes
+		filepath.WalkDir(notesPath, func(path string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+
+			ext := filepath.Ext(path)
+			if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+				return nil
+			}
+
+			// Read note file
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+
+			// Parse YAML frontmatter to get attachments
+			attachments := parseAttachmentsFromNote(string(content))
+
+			for _, att := range attachments {
+				if att.Name == "" || att.URL == "" {
+					continue
+				}
+
+				// Extract UUID filename from URL
+				// URL patterns: /u/{username}/files/{uuid.ext} or /u/{username}/images/{uuid.ext}
+				uuidFilename := extractUUIDFromURL(att.URL)
+				if uuidFilename == "" {
+					continue
+				}
+
+				// Determine if it's a file or image based on URL
+				isImage := strings.Contains(att.URL, "/images/")
+
+				if isImage {
+					if _, exists := imageMeta[uuidFilename]; !exists {
+						imageMeta[uuidFilename] = att.Name
+						userMigrated++
+					}
+				} else {
+					if _, exists := fileMeta[uuidFilename]; !exists {
+						fileMeta[uuidFilename] = att.Name
+						userMigrated++
+					}
+				}
+			}
+
+			return nil
+		})
+
+		// Save updated metadata
+		if userMigrated > 0 {
+			saveMetadataFile(filepath.Join(storagePath, username, "files", ".filemeta.json"), fileMeta)
+			saveMetadataFile(filepath.Join(storagePath, username, "files", ".imagemeta.json"), imageMeta)
+			totalMigrated += userMigrated
+			fmt.Printf("  User %s: migrated %d attachment(s)\n", username, userMigrated)
+		}
+	}
+
+	if totalMigrated > 0 {
+		fmt.Printf("Attachment metadata migration completed: %d total\n", totalMigrated)
+	} else {
+		fmt.Println("Attachment metadata migration: no migration needed")
+	}
+
+	return nil
+}
+
+// loadMetadataFile loads metadata from a JSON file
+func loadMetadataFile(path string) map[string]string {
+	data := make(map[string]string)
+	content, err := os.ReadFile(path)
+	if err == nil {
+		json.Unmarshal(content, &data)
+	}
+	return data
+}
+
+// saveMetadataFile saves metadata to a JSON file
+func saveMetadataFile(path string, data map[string]string) error {
+	// Ensure directory exists
+	dir := filepath.Dir(path)
+	os.MkdirAll(dir, 0755)
+
+	content, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, content, 0644)
+}
+
+// extractUUIDFromURL extracts the UUID filename from an attachment URL
+func extractUUIDFromURL(urlStr string) string {
+	// Handle both absolute and relative URLs
+	// Examples:
+	// /u/username/files/abc123.pdf
+	// /note/u/username/images/abc123.jpg
+	// https://example.com/note/u/username/files/abc123.pdf
+
+	parts := strings.Split(urlStr, "/")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	// Get the last part (filename)
+	filename := parts[len(parts)-1]
+
+	// Verify it looks like a UUID-based filename (should not contain spaces, should have extension)
+	if strings.Contains(filename, " ") || !strings.Contains(filename, ".") {
+		return ""
+	}
+
+	return filename
+}
+
+// parseAttachmentsFromNote extracts attachments from note YAML frontmatter
+func parseAttachmentsFromNote(content string) []attachmentInfo {
+	var attachments []attachmentInfo
+
+	// Check for YAML frontmatter
+	if !strings.HasPrefix(content, "---") {
+		return attachments
+	}
+
+	// Find end of frontmatter
+	endIdx := strings.Index(content[3:], "\n---")
+	if endIdx == -1 {
+		return attachments
+	}
+
+	frontmatter := content[3 : endIdx+3]
+
+	// Simple YAML parsing for attachments
+	// Look for attachments: section
+	lines := strings.Split(frontmatter, "\n")
+	inAttachments := false
+	currentAttachment := attachmentInfo{}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		if trimmed == "attachments:" {
+			inAttachments = true
+			continue
+		}
+
+		if inAttachments {
+			// Check if we're still in attachments section
+			if len(line) > 0 && line[0] != ' ' && line[0] != '-' {
+				break
+			}
+
+			if strings.HasPrefix(trimmed, "- name:") || strings.HasPrefix(trimmed, "-name:") {
+				// New attachment entry with name on same line
+				if currentAttachment.Name != "" {
+					attachments = append(attachments, currentAttachment)
+				}
+				currentAttachment = attachmentInfo{}
+				currentAttachment.Name = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(trimmed, "- name:"), "-name:"))
+			} else if strings.HasPrefix(trimmed, "name:") {
+				currentAttachment.Name = strings.TrimSpace(strings.TrimPrefix(trimmed, "name:"))
+			} else if strings.HasPrefix(trimmed, "url:") {
+				currentAttachment.URL = strings.TrimSpace(strings.TrimPrefix(trimmed, "url:"))
+			} else if trimmed == "-" {
+				// New attachment entry
+				if currentAttachment.Name != "" {
+					attachments = append(attachments, currentAttachment)
+				}
+				currentAttachment = attachmentInfo{}
+			}
+		}
+	}
+
+	// Don't forget the last attachment
+	if currentAttachment.Name != "" {
+		attachments = append(attachments, currentAttachment)
+	}
+
+	return attachments
+}
+
+type attachmentInfo struct {
+	Name string
+	URL  string
+}

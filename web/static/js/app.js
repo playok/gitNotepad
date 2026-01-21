@@ -1392,6 +1392,14 @@ function setTheme(theme) {
 
     // Recreate CodeMirror editor with new theme
     reinitCodeMirror();
+
+    // Sync theme to popout window if open
+    if (layoutState && layoutState.popoutWindow && !layoutState.popoutWindow.closed) {
+        layoutState.popoutWindow.postMessage({
+            type: 'theme-update',
+            theme: theme
+        }, '*');
+    }
 }
 
 function isDarkTheme() {
@@ -2528,10 +2536,22 @@ function initLayoutControls() {
         });
     }
 
-    // Listen for popout window close
+    // Listen for popout window messages
     window.addEventListener('message', (e) => {
         if (e.data === 'popout-closed') {
             onPopoutClosed();
+        } else if (e.data && e.data.type === 'popout-theme-change') {
+            // Sync theme from popout window (avoid infinite loop by not sending back)
+            const theme = e.data.theme;
+            if (theme && themes.includes(theme)) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                const themeSelect = document.getElementById('settingsTheme');
+                if (themeSelect && themeSelect.value !== theme) {
+                    themeSelect.value = theme;
+                }
+                reinitCodeMirror();
+            }
         }
     });
 }
@@ -2770,12 +2790,14 @@ function sendContentToPopout() {
     const noteTypeValue = document.getElementById('noteType').value;
     const content = getEditorContent();
     const title = noteTitle.value || 'Preview';
+    const theme = localStorage.getItem('theme') || 'light';
 
     layoutState.popoutWindow.postMessage({
         type: 'preview-update',
         content: content,
         noteType: noteTypeValue,
-        title: title
+        title: title,
+        theme: theme
     }, '*');
 }
 

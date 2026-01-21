@@ -237,7 +237,12 @@
         // Listen for messages from parent window
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'preview-update') {
-                const { content, noteType, title } = e.data;
+                const { content, noteType, title, theme } = e.data;
+
+                // Apply theme from parent window
+                if (theme) {
+                    setTheme(theme);
+                }
 
                 // Update title
                 const titleEl = document.getElementById('previewTitle');
@@ -251,6 +256,11 @@
 
                 // Update connection status
                 updateConnectionStatus(true);
+            } else if (e.data && e.data.type === 'theme-update') {
+                // Handle theme-only update
+                if (e.data.theme) {
+                    setTheme(e.data.theme);
+                }
             }
         });
 
@@ -274,11 +284,19 @@
             initTheme();
             initMarked();
 
-            // Theme selector
+            // Theme selector - sync with parent window
             const themeSelect = document.getElementById('themeSelect');
             if (themeSelect) {
                 themeSelect.addEventListener('change', (e) => {
-                    setTheme(e.target.value);
+                    const newTheme = e.target.value;
+                    setTheme(newTheme);
+                    // Notify parent window of theme change
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({
+                            type: 'popout-theme-change',
+                            theme: newTheme
+                        }, '*');
+                    }
                 });
             }
 

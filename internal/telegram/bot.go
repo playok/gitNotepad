@@ -220,11 +220,17 @@ func (b *Bot) createNoteFromMessage(content string, msg *tgbotapi.Message) (stri
 		fullID = folder + "/" + id
 	}
 
+	// Build full title with folder path (required for folder sharing to work)
+	fullTitle := title
+	if folder != "" {
+		fullTitle = folder + ":>:" + title
+	}
+
 	// Create note
 	note := &model.Note{
 		ID:         fullID,
 		FolderPath: folder,
-		Title:      title,
+		Title:      fullTitle,
 		Content:    content,
 		Type:       "markdown",
 		Tags:       []string{"telegram"},

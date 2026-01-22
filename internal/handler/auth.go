@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
@@ -51,7 +51,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user, err := h.userRepo.GetByUsername(req.Username)
 	if err != nil || user == nil || !user.CheckPassword(req.Password) {
-		log.Printf("[AUTH] Login failed: username=%s, ip=%s, reason=invalid_credentials", req.Username, clientIP)
+		encoding.Warn("Login failed: username=%s, ip=%s, reason=invalid_credentials", req.Username, clientIP)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -82,7 +82,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		true,  // httpOnly
 	)
 
-	log.Printf("[AUTH] Login success: username=%s, ip=%s, is_admin=%v", user.Username, clientIP, user.IsAdmin)
+	encoding.Info("Login success: username=%s, ip=%s, is_admin=%v", user.Username, clientIP, user.IsAdmin)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
@@ -111,7 +111,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.sessionRepo.Delete(cookie)
 	}
 
-	log.Printf("[AUTH] Logout: username=%s, ip=%s", username, clientIP)
+	encoding.Info("Logout: username=%s, ip=%s", username, clientIP)
 
 	c.SetCookie(middleware.SessionCookieName, "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})

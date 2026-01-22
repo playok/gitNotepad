@@ -89,7 +89,7 @@ func (d *Daemon) SetupLogging() {
 
 	// Create log directory
 	if err := os.MkdirAll(d.cfg.Logging.Dir, 0755); err != nil {
-		log.Printf("Failed to create log directory: %v", err)
+		fmt.Printf("Failed to create log directory: %v\n", err)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (d *Daemon) SetupLogging() {
 		rotatelogs.WithRotationTime(24*time.Hour),                               // rotate daily
 	)
 	if err != nil {
-		log.Printf("Failed to create log rotator: %v", err)
+		fmt.Printf("Failed to create log rotator: %v\n", err)
 		return
 	}
 

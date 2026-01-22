@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -11,12 +12,39 @@ import (
 	"golang.org/x/text/transform"
 )
 
+// Log levels
+const (
+	LevelDebug = iota
+	LevelInfo
+	LevelWarn
+	LevelError
+)
+
 var (
 	// LogEncoding is the encoding used for console logging output
 	LogEncoding = "utf-8"
+
+	// CurrentLevel is the current log level
+	CurrentLevel = LevelInfo
+
+	// levelNames maps level constants to their string names
+	levelNames = map[int]string{
+		LevelDebug: "DEBUG",
+		LevelInfo:  "INFO",
+		LevelWarn:  "WARN",
+		LevelError: "ERROR",
+	}
+
+	// levelFromString maps string names to level constants
+	levelFromString = map[string]int{
+		"debug": LevelDebug,
+		"info":  LevelInfo,
+		"warn":  LevelWarn,
+		"error": LevelError,
+	}
 )
 
-// Init initializes the log encoding based on config or LANG environment variable
+// Init initializes the log encoding and level based on config
 func Init(configEncoding string) {
 	if configEncoding != "" {
 		LogEncoding = strings.ToLower(configEncoding)
@@ -27,6 +55,18 @@ func Init(configEncoding string) {
 			LogEncoding = "euc-kr"
 		}
 	}
+}
+
+// SetLevel sets the current log level from string
+func SetLevel(level string) {
+	if l, ok := levelFromString[strings.ToLower(level)]; ok {
+		CurrentLevel = l
+	}
+}
+
+// GetLevel returns the current log level as string
+func GetLevel() string {
+	return levelNames[CurrentLevel]
 }
 
 // ToEUCKR converts UTF-8 string to EUC-KR bytes
@@ -45,7 +85,46 @@ func FromEUCKR(data []byte) (string, error) {
 	return string(result), nil
 }
 
-// Log prints a message with proper encoding conversion for console output
+// logWithLevel logs a message with the specified level
+func logWithLevel(level int, format string, args ...interface{}) {
+	if level < CurrentLevel {
+		return
+	}
+
+	prefix := fmt.Sprintf("[%s] ", levelNames[level])
+	msg := prefix + fmt.Sprintf(format, args...)
+
+	if strings.ToLower(LogEncoding) == "euc-kr" {
+		if encoded, err := ToEUCKR(msg); err == nil {
+			log.Print(string(encoded))
+			return
+		}
+	}
+
+	log.Print(msg)
+}
+
+// Debug logs a debug level message
+func Debug(format string, args ...interface{}) {
+	logWithLevel(LevelDebug, format, args...)
+}
+
+// Info logs an info level message
+func Info(format string, args ...interface{}) {
+	logWithLevel(LevelInfo, format, args...)
+}
+
+// Warn logs a warning level message
+func Warn(format string, args ...interface{}) {
+	logWithLevel(LevelWarn, format, args...)
+}
+
+// Error logs an error level message
+func Error(format string, args ...interface{}) {
+	logWithLevel(LevelError, format, args...)
+}
+
+// Log prints a message with proper encoding conversion for console output (legacy)
 func Log(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 
@@ -59,7 +138,7 @@ func Log(format string, args ...interface{}) {
 	fmt.Print(msg)
 }
 
-// Logln prints a message with newline and proper encoding conversion
+// Logln prints a message with newline and proper encoding conversion (legacy)
 func Logln(args ...interface{}) {
 	msg := fmt.Sprintln(args...)
 
@@ -73,7 +152,7 @@ func Logln(args ...interface{}) {
 	fmt.Print(msg)
 }
 
-// Logf prints a formatted message with proper encoding conversion
+// Logf prints a formatted message with proper encoding conversion (legacy)
 func Logf(format string, args ...interface{}) {
 	Log(format, args...)
 }

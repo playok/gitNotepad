@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/middleware"
 	"github.com/user/gitnotepad/internal/model"
 	"github.com/user/gitnotepad/internal/repository"
@@ -75,7 +75,7 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 	if adminUser != nil {
 		adminName = adminUser.Username
 	}
-	log.Printf("[ADMIN] User created: username=%s, is_admin=%v, by=%s, ip=%s", user.Username, user.IsAdmin, adminName, c.ClientIP())
+	encoding.Info("User created: username=%s, is_admin=%v, by=%s, ip=%s", user.Username, user.IsAdmin, adminName, c.ClientIP())
 
 	c.JSON(http.StatusCreated, gin.H{
 		"id":       user.ID,
@@ -155,7 +155,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	if adminUser != nil {
 		adminName = adminUser.Username
 	}
-	log.Printf("[ADMIN] User deleted: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
+	encoding.Info("User deleted: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
@@ -202,7 +202,7 @@ func (h *AdminHandler) UpdatePassword(c *gin.Context) {
 	if adminUser != nil {
 		adminName = adminUser.Username
 	}
-	log.Printf("[ADMIN] Password changed: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
+	encoding.Info("Password changed: username=%s, by=%s, ip=%s", user.Username, adminName, c.ClientIP())
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated"})
 }

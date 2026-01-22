@@ -201,8 +201,9 @@ func main() {
 		d.SetupLogging()
 	}
 
-	// Initialize logging encoding (for EUC-KR console output support)
+	// Initialize logging encoding and level
 	encoding.Init(cfg.Logging.Encoding)
+	encoding.SetLevel(cfg.Logging.Level)
 
 	// Use log.Println in daemon mode, fmt.Println in foreground mode
 	if *daemonChild {

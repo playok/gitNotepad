@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/user/gitnotepad/internal/config"
 	"github.com/user/gitnotepad/internal/database"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/handler"
 	"github.com/user/gitnotepad/internal/middleware"
@@ -89,12 +90,12 @@ func New(cfg *config.Config) (*Server, error) {
 func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Server, error) {
 	// Run migration for folder separator change (/ -> :>:)
 	if err := handler.MigrateFolderSeparator(cfg.Storage.Path, cfg.Encryption.Enabled, cfg.Encryption.Salt); err != nil {
-		fmt.Printf("Warning: folder separator migration failed: %v\n", err)
+		encoding.Warn("Folder separator migration failed: %v", err)
 	}
 
 	// Run migration for attachment metadata (restore original filenames)
 	if err := handler.MigrateAttachmentMetadata(cfg.Storage.Path); err != nil {
-		fmt.Printf("Warning: attachment metadata migration failed: %v\n", err)
+		encoding.Warn("Attachment metadata migration failed: %v", err)
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -410,7 +411,7 @@ func (s *Server) setupRoutes() {
 
 func (s *Server) Run() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
-	fmt.Printf("Server starting at http://%s\n", addr)
+	encoding.Info("Server starting at http://%s (log level: %s)", addr, encoding.GetLevel())
 	return s.router.Run(addr)
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/user/gitnotepad/internal/config"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/encryption"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/middleware"
@@ -194,7 +195,7 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 	entries, err := os.ReadDir(storagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("No data directory found, skipping migration.")
+			encoding.Debug("No data directory found, skipping migration.")
 			return nil // No data directory yet
 		}
 		return err
@@ -215,7 +216,7 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 		}
 
 		userDir := filepath.Join(storagePath, entry.Name())
-		fmt.Printf("Scanning user directory: %s\n", entry.Name())
+		encoding.Debug("Scanning user directory: %s", entry.Name())
 
 		// Walk through all note files in user directory
 		err := filepath.WalkDir(userDir, func(path string, d fs.DirEntry, walkErr error) error {
@@ -242,7 +243,7 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			// Get relative path from user directory
 			relPath, err := filepath.Rel(userDir, path)
 			if err != nil {
-				fmt.Printf("  Skip (rel path error): %s\n", path)
+				encoding.Debug("  Skip (rel path error): %s", path)
 				skippedCount++
 				return nil
 			}
@@ -251,7 +252,7 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			// Load the note
 			note, err := model.ParseNoteFromFile(path)
 			if err != nil {
-				fmt.Printf("  Skip (parse error): %s - %v\n", relPath, err)
+				encoding.Debug("  Skip (parse error): %s - %v", relPath, err)
 				skippedCount++
 				return nil
 			}
@@ -300,34 +301,33 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 			// Save the note with new format
 			content, err := note.ToFileContent()
 			if err != nil {
-				fmt.Printf("  Warning (serialize): %s - %v\n", relPath, err)
+				encoding.Debug("  Warning (serialize): %s - %v", relPath, err)
 				skippedCount++
 				return nil
 			}
 			if err := os.WriteFile(path, content, 0644); err != nil {
-				fmt.Printf("  Warning (save): %s - %v\n", relPath, err)
+				encoding.Debug("  Warning (save): %s - %v", relPath, err)
 				skippedCount++
 				return nil
 			}
 
 			migratedCount++
 			if oldFolderPath != note.FolderPath || oldTitle != note.Title {
-				fmt.Printf("  Migrated: title='%s' -> folder_path='%s', title='%s'\n", oldTitle, note.FolderPath, note.Title)
+				encoding.Debug("  Migrated: title='%s' -> folder_path='%s', title='%s'", oldTitle, note.FolderPath, note.Title)
 			} else {
-				fmt.Printf("  Migrated: %s (added folder_path field)\n", relPath)
+				encoding.Debug("  Migrated: %s (added folder_path field)", relPath)
 			}
 			return nil
 		})
 
 		if err != nil {
-			fmt.Printf("Warning: error walking %s: %v\n", userDir, err)
+			encoding.Warn("Error walking %s: %v", userDir, err)
 		}
 	}
 
-	fmt.Printf("\nMigration summary:\n")
-	fmt.Printf("  Scanned: %d files\n", scannedCount)
-	fmt.Printf("  Migrated: %d files\n", migratedCount)
-	fmt.Printf("  Skipped: %d files\n", skippedCount)
+	if migratedCount > 0 {
+		encoding.Info("Migration summary: scanned=%d, migrated=%d, skipped=%d", scannedCount, migratedCount, skippedCount)
+	}
 
 	return nil
 }
@@ -758,7 +758,7 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	// Git commit
 	if repoErr == nil {
 		if err := userRepo.AddAndCommit(newFilePath, fmt.Sprintf("Update note: %s", note.Title)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			encoding.Debug("Git commit error: %v", err)
 		}
 	}
 
@@ -818,7 +818,7 @@ func (h *NoteHandler) Delete(c *gin.Context) {
 	// Git commit - use user-specific repo
 	if userRepo, err := h.getUserRepo(c); err == nil {
 		if err := userRepo.RemoveAndCommit(filePath, fmt.Sprintf("Delete note: %s", note.Title)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			encoding.Debug("Git commit error: %v", err)
 		}
 	}
 
@@ -890,7 +890,7 @@ func (h *NoteHandler) DecryptNote(c *gin.Context) {
 	// Git commit
 	if userRepo, err := h.getUserRepo(c); err == nil {
 		if err := userRepo.AddAndCommit(filePath, fmt.Sprintf("Decrypt note: %s", note.Title)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			encoding.Debug("Git commit error: %v", err)
 		}
 	}
 
@@ -1028,7 +1028,7 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 	// Git commit
 	if userRepo, err := h.getUserRepo(c); err == nil {
 		if err := userRepo.AddAndCommit(gitkeepPath, fmt.Sprintf("Create folder: %s", folderName)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			encoding.Debug("Git commit error: %v", err)
 		}
 	}
 
@@ -1094,7 +1094,7 @@ func (h *NoteHandler) DeleteFolder(c *gin.Context) {
 	if userRepo, err := h.getUserRepo(c); err == nil {
 		gitkeepPath := filepath.Join(fullPath, ".gitkeep")
 		if err := userRepo.RemoveAndCommit(gitkeepPath, fmt.Sprintf("Delete folder: %s", folderPath)); err != nil {
-			fmt.Printf("Git commit error: %v\n", err)
+			encoding.Debug("Git commit error: %v", err)
 		}
 	}
 

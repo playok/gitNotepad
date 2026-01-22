@@ -41,6 +41,7 @@ type StorageConfig struct {
 }
 
 type LoggingConfig struct {
+	Level    string `yaml:"level"`    // "debug", "info", "warn", "error" (default: "info")
 	Encoding string `yaml:"encoding"` // "utf-8" (default) or "euc-kr" for console output
 	File     bool   `yaml:"file"`     // Enable file logging
 	Dir      string `yaml:"dir"`      // Log directory
@@ -97,6 +98,9 @@ func Load(path string) (*Config, error) {
 	if cfg.Auth.SessionTimeout == 0 {
 		cfg.Auth.SessionTimeout = 168 // 7 days
 	}
+	if cfg.Logging.Level == "" {
+		cfg.Logging.Level = "info"
+	}
 	if cfg.Logging.Encoding == "" {
 		cfg.Logging.Encoding = getDefaultEncoding()
 	}
@@ -146,6 +150,7 @@ func Default() *Config {
 			Path: "./data/gitnotepad.db",
 		},
 		Logging: LoggingConfig{
+			Level:    "info",
 			Encoding: getDefaultEncoding(),
 			File:     false,
 			Dir:      "./logs",

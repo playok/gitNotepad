@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/middleware"
 )
 
@@ -391,14 +392,12 @@ func MigrateAttachmentMetadata(storagePath string) error {
 			saveMetadataFile(filepath.Join(storagePath, username, "files", ".filemeta.json"), fileMeta)
 			saveMetadataFile(filepath.Join(storagePath, username, "files", ".imagemeta.json"), imageMeta)
 			totalMigrated += userMigrated
-			fmt.Printf("  User %s: migrated %d attachment(s)\n", username, userMigrated)
+			encoding.Debug("User %s: migrated %d attachment(s)", username, userMigrated)
 		}
 	}
 
 	if totalMigrated > 0 {
-		fmt.Printf("Attachment metadata migration completed: %d total\n", totalMigrated)
-	} else {
-		fmt.Println("Attachment metadata migration: no migration needed")
+		encoding.Info("Attachment metadata migration completed: %d total", totalMigrated)
 	}
 
 	return nil

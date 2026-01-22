@@ -68,11 +68,30 @@ type DatabaseConfig struct {
 	Path string `yaml:"path"`
 }
 
+// LoadResult contains the loaded config and migration status
+type LoadResult struct {
+	Config        *Config
+	NeedsMigration bool // true if config file needs to be updated with new fields
+}
+
 func Load(path string) (*Config, error) {
+	result, err := LoadWithMigrationCheck(path)
+	if err != nil {
+		return nil, err
+	}
+	return result.Config, nil
+}
+
+// LoadWithMigrationCheck loads config and checks if migration is needed
+func LoadWithMigrationCheck(path string) (*LoadResult, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
+
+	// Check for missing fields before parsing
+	content := string(data)
+	needsMigration := !strings.Contains(content, "level:")
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
@@ -114,7 +133,10 @@ func Load(path string) (*Config, error) {
 		cfg.Daemon.PidFile = "./gitnotepad.pid"
 	}
 
-	return &cfg, nil
+	return &LoadResult{
+		Config:        &cfg,
+		NeedsMigration: needsMigration,
+	}, nil
 }
 
 // getDefaultEncoding returns the default encoding based on LANG environment variable

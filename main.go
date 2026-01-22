@@ -176,15 +176,18 @@ func main() {
 
 	var cfg *config.Config
 	var err error
+	var configNeedsMigration bool
 
 	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
 		fmt.Printf("Config file not found at %s, using defaults\n", *configPath)
 		cfg = config.Default()
 	} else {
-		cfg, err = config.Load(*configPath)
-		if err != nil {
-			log.Fatalf("Failed to load config: %v", err)
+		result, loadErr := config.LoadWithMigrationCheck(*configPath)
+		if loadErr != nil {
+			log.Fatalf("Failed to load config: %v", loadErr)
 		}
+		cfg = result.Config
+		configNeedsMigration = result.NeedsMigration
 	}
 
 	// Setup logging
@@ -220,7 +223,7 @@ func main() {
 	}
 
 	// Generate encryption salt if encryption is enabled but salt is empty
-	configChanged := false
+	configChanged := configNeedsMigration
 	if cfg.Encryption.Enabled && cfg.Encryption.Salt == "" {
 		salt, err := encryption.GenerateSalt()
 		if err != nil {

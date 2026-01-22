@@ -13,6 +13,7 @@ import (
 	"github.com/user/gitnotepad/internal/encoding"
 	"github.com/user/gitnotepad/internal/git"
 	"github.com/user/gitnotepad/internal/model"
+	"github.com/user/gitnotepad/internal/websocket"
 )
 
 // Bot represents a Telegram bot instance
@@ -20,6 +21,7 @@ type Bot struct {
 	api    *tgbotapi.BotAPI
 	config *config.Config
 	stopCh chan struct{}
+	wsHub  *websocket.Hub
 }
 
 // New creates a new Telegram bot instance
@@ -96,6 +98,13 @@ func (b *Bot) Stop() {
 	close(b.stopCh)
 	b.api.StopReceivingUpdates()
 	encoding.Info("Telegram bot stopped")
+}
+
+// SetHub sets the WebSocket hub for broadcasting note updates
+func (b *Bot) SetHub(hub *websocket.Hub) {
+	if b != nil {
+		b.wsHub = hub
+	}
 }
 
 // isUserAllowed checks if the user is in the allowed list
@@ -247,6 +256,15 @@ func (b *Bot) createNoteFromMessage(content string, msg *tgbotapi.Message) (stri
 				encoding.Warn("Telegram: Failed to commit: %v", err)
 			}
 		}
+	}
+
+	// Broadcast note creation via WebSocket
+	if b.wsHub != nil {
+		b.wsHub.BroadcastToUser(username, websocket.Message{
+			Type:   websocket.MsgTypeNoteCreated,
+			NoteID: fullID,
+		})
+		encoding.Debug("Telegram: Broadcasted note creation to user %s", username)
 	}
 
 	encoding.Info("Telegram: Note saved - %s/%s", folder, title)

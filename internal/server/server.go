@@ -421,3 +421,8 @@ func (s *Server) Close() error {
 	}
 	return nil
 }
+
+// GetHub returns the WebSocket hub for external use (e.g., Telegram bot)
+func (s *Server) GetHub() *websocket.Hub {
+	return s.wsHub
+}

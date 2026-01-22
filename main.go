@@ -273,6 +273,8 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Failed to create Telegram bot: %v", err)
 	} else if bot != nil {
+		// Set WebSocket hub for real-time note list updates
+		bot.SetHub(srv.GetHub())
 		go bot.Start()
 		defer bot.Stop()
 	}

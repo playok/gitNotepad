@@ -146,8 +146,13 @@ func (h *Hub) HandleWebSocket(c *gin.Context) {
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
+		// Don't write any response - connection is already hijacked or failed
+		c.Abort()
 		return
 	}
+
+	// Prevent Gin middleware from writing to hijacked connection
+	c.Abort()
 
 	client := &Client{
 		hub:      h,

@@ -148,6 +148,14 @@ func LoadWithMigrationCheck(path string) (*LoadResult, error) {
 		cfg.Telegram.DefaultUsername = "admin"
 	}
 
+	// Normalize base_path: ensure it starts with "/" if not empty
+	if cfg.Server.BasePath != "" {
+		cfg.Server.BasePath = strings.TrimSuffix(cfg.Server.BasePath, "/")
+		if !strings.HasPrefix(cfg.Server.BasePath, "/") {
+			cfg.Server.BasePath = "/" + cfg.Server.BasePath
+		}
+	}
+
 	return &LoadResult{
 		Config:        &cfg,
 		NeedsMigration: needsMigration,

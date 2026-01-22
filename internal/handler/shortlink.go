@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -822,7 +823,7 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 		return
 	}
 
-	// Get all notes in the folder
+	// Get all notes in the folder (including subdirectories)
 	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
 	folderPrefix := info.FolderPath + ":>:"
 
@@ -832,10 +833,8 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 
 	notes := []FolderNoteListItem{}
 
-	// Walk through files in the target folder
-	entries, err := os.ReadDir(targetFolderPath)
-	if err != nil {
-		// If folder doesn't exist, return empty list
+	// Check if folder exists
+	if _, err := os.Stat(targetFolderPath); os.IsNotExist(err) {
 		c.JSON(http.StatusOK, gin.H{
 			"folderPath": info.FolderPath,
 			"notes":      notes,
@@ -843,40 +842,50 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 		return
 	}
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+	// Walk through all files recursively in the target folder
+	filepath.WalkDir(targetFolderPath, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return nil
 		}
 
-		ext := filepath.Ext(entry.Name())
+		if d.IsDir() {
+			// Skip .git directories
+			if d.Name() == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		ext := filepath.Ext(d.Name())
 		if ext != ".md" && ext != ".txt" && ext != ".adoc" {
-			continue
+			return nil
 		}
 
-		filePath := filepath.Join(targetFolderPath, entry.Name())
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(path)
 		if err != nil {
-			continue
+			return nil
 		}
 
-		note, err := model.ParseNoteFromBytes(data, filePath)
+		note, err := model.ParseNoteFromBytes(data, path)
 		if err != nil {
-			continue
+			return nil
 		}
 
 		// Check if note title has the folder prefix (for folder sharing to work correctly)
-		fileNameWithoutExt := strings.TrimSuffix(entry.Name(), ext)
 		if !strings.HasPrefix(note.Title, folderPrefix) && note.Title != info.FolderPath {
-			continue
+			return nil
 		}
 
 		// Skip password-protected notes
 		if note.Private {
-			continue
+			return nil
 		}
 
-		// Build full note ID including folder path
-		noteID := info.FolderPath + "/" + fileNameWithoutExt
+		// Build note ID from relative path
+		relPath, _ := filepath.Rel(notesPath, path)
+		relPath = filepath.ToSlash(relPath) // Convert to forward slash for consistency
+		fileNameWithoutExt := strings.TrimSuffix(relPath, ext)
+		noteID := fileNameWithoutExt
 
 		notes = append(notes, FolderNoteListItem{
 			ID:       noteID,
@@ -884,7 +893,9 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 			Type:     note.Type,
 			Modified: note.Modified,
 		})
-	}
+
+		return nil
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"folderPath": info.FolderPath,

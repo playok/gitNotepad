@@ -33,6 +33,7 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션
 - **단일 바이너리**: 템플릿/정적 파일 임베디드 (go:embed)
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status)
 - **로그 롤링**: 일단위 로그 파일 생성 (`gitnotepad.log.YYYY-MM-DD`)
+- **텔레그램 봇**: 텔레그램 메시지를 노트로 자동 저장 (Long Polling 방식)
 
 ## 스크린샷
 
@@ -319,6 +320,13 @@ encryption:
 
 daemon:
   pid_file: "./gitnotepad.pid" # PID 파일 경로
+
+telegram:
+  enabled: false              # 텔레그램 봇 활성화
+  token: ""                   # @BotFather에서 받은 봇 토큰
+  allowed_users: []           # 허용된 텔레그램 사용자 ID 목록
+  default_folder: "Telegram"  # 노트 저장 기본 폴더
+  default_username: "admin"   # 노트 저장 대상 사용자명
 ```
 
 ### 환경별 설정
@@ -446,7 +454,8 @@ gitNotepad/
 │   ├── middleware/         # 인증 미들웨어
 │   ├── model/              # 데이터 모델
 │   ├── repository/         # DB 레포지토리
-│   └── server/             # 서버 설정
+│   ├── server/             # 서버 설정
+│   └── telegram/           # 텔레그램 봇 연동
 ├── web/
 │   ├── static/
 │   │   ├── css/            # 스타일시트
@@ -556,6 +565,65 @@ encryption:
 - 암호화 활성화 후에는 비밀번호 분실 시 데이터 복구 불가
 - salt가 변경되면 기존 암호화된 파일 복호화 불가
 - 여러 사용자가 같은 암호화된 노트에 접근하려면 같은 비밀번호 필요
+
+## 텔레그램 봇 연동
+
+텔레그램 메시지를 Git Notepad 노트로 자동 저장합니다.
+
+### 동작 방식
+
+봇은 **Long Polling** 방식을 사용합니다 - 봇이 텔레그램 서버로 아웃바운드 연결을 하므로 포트 포워딩이나 공인 IP가 필요 없습니다. NAT/방화벽 뒤에서도 동작합니다.
+
+```
+┌─────────────────┐                      ┌─────────────────┐
+│   로컬 서버      │  ───(아웃바운드)───▶  │  Telegram API   │
+│  (gitnotepad)   │  ◀───(응답)────────  │   (telegram.org)│
+└─────────────────┘                      └─────────────────┘
+```
+
+### 설정 방법
+
+1. **봇 생성**: 텔레그램에서 [@BotFather](https://t.me/BotFather)에게 메시지
+   - `/newbot` 전송
+   - 안내에 따라 봇 토큰 획득
+
+2. **텔레그램 ID 확인**: [@userinfobot](https://t.me/userinfobot)에게 메시지
+   - 본인의 숫자 ID를 알려줌
+
+3. **config.yaml 설정**:
+```yaml
+telegram:
+  enabled: true
+  token: "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+  allowed_users:
+    - 123456789  # 본인 텔레그램 사용자 ID
+  default_folder: "Telegram"
+  default_username: "admin"
+```
+
+4. **gitnotepad 재시작**
+
+### 봇 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `/start` | 도움말 표시 |
+| `/info` | 봇 설정 정보 (폴더, 사용자, 본인 ID) |
+
+### 사용법
+
+1. 봇에게 텍스트 메시지 전송
+2. Markdown 노트로 자동 저장
+3. 노트 제목 = 메시지 첫 줄 (최대 50자)
+4. `telegram` 태그 자동 추가
+5. 설정된 폴더에 저장 (기본: `Telegram`)
+
+### 특징
+
+- **보안**: 허용된 사용자만 노트 생성 가능
+- **Git 자동 커밋**: 각 노트가 자동으로 커밋됨
+- **폴더 정리**: 모든 텔레그램 노트가 한 폴더에
+- **제목 자동 생성**: 메시지 첫 줄이 제목이 됨
 
 ## 문제 해결
 

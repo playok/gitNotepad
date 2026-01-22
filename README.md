@@ -33,6 +33,7 @@ A web-based note application with integrated Git version control
 - **Single Binary**: Templates/static files embedded (go:embed)
 - **Daemon Mode**: Background execution (start/stop/restart/status)
 - **Log Rolling**: Daily log file creation (`gitnotepad.log.YYYY-MM-DD`)
+- **Telegram Bot**: Auto-save Telegram messages as notes (Long Polling)
 
 ## Screenshots
 
@@ -319,6 +320,13 @@ encryption:
 
 daemon:
   pid_file: "./gitnotepad.pid" # PID file path
+
+telegram:
+  enabled: false              # Enable Telegram bot
+  token: ""                   # Bot token from @BotFather
+  allowed_users: []           # Allowed Telegram user IDs
+  default_folder: "Telegram"  # Default folder for notes
+  default_username: "admin"   # GitNotepad username to save notes as
 ```
 
 ### Environment-specific Settings
@@ -446,7 +454,8 @@ gitNotepad/
 │   ├── middleware/         # Auth middleware
 │   ├── model/              # Data models
 │   ├── repository/         # DB repositories
-│   └── server/             # Server setup
+│   ├── server/             # Server setup
+│   └── telegram/           # Telegram bot integration
 ├── web/
 │   ├── static/
 │   │   ├── css/            # Stylesheets
@@ -556,6 +565,65 @@ encryption:
 - Data unrecoverable if password lost after enabling encryption
 - Existing encrypted files unreadable if salt changes
 - Same password required for multiple users to access same encrypted notes
+
+## Telegram Bot Integration
+
+Save Telegram messages as Git Notepad notes automatically.
+
+### How It Works
+
+The bot uses **Long Polling** - it connects outbound to Telegram servers, so no port forwarding or public IP is required. Works behind NAT/firewall.
+
+```
+┌─────────────────┐                      ┌─────────────────┐
+│   Local Server  │  ───(outbound)────▶  │  Telegram API   │
+│  (gitnotepad)   │  ◀───(response)────  │   (telegram.org)│
+└─────────────────┘                      └─────────────────┘
+```
+
+### Setup
+
+1. **Create Bot**: Message [@BotFather](https://t.me/BotFather) on Telegram
+   - Send `/newbot`
+   - Follow prompts to get your bot token
+
+2. **Get Your Telegram ID**: Message [@userinfobot](https://t.me/userinfobot)
+   - It will reply with your numeric user ID
+
+3. **Configure** `config.yaml`:
+```yaml
+telegram:
+  enabled: true
+  token: "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+  allowed_users:
+    - 123456789  # Your Telegram user ID
+  default_folder: "Telegram"
+  default_username: "admin"
+```
+
+4. **Restart** gitnotepad
+
+### Bot Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Show help message |
+| `/info` | Show bot settings (folder, user, your ID) |
+
+### Usage
+
+1. Send any text message to your bot
+2. Bot saves it as a Markdown note
+3. Note title = first line (max 50 chars)
+4. Auto-tagged with `telegram`
+5. Saved in configured folder (default: `Telegram`)
+
+### Features
+
+- **Security**: Only allowed users can create notes
+- **Auto Git Commit**: Each note is automatically committed
+- **Folder Organization**: All Telegram notes in one folder
+- **Title Generation**: First line of message becomes title
 
 ## Troubleshooting
 

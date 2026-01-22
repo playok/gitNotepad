@@ -1961,6 +1961,12 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="share-folder">
             <span class="context-icon">&#128279;</span> <span data-i18n="context.shareFolder">Share Folder</span>
         </div>
+        <div class="context-menu-item" data-action="export-folder">
+            <span class="context-icon">&#128230;</span> <span data-i18n="context.exportFolder">Export Folder</span>
+        </div>
+        <div class="context-menu-item" data-action="import-to-folder">
+            <span class="context-icon">&#128229;</span> <span data-i18n="context.importToFolder">Import to Folder</span>
+        </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item context-menu-danger" data-action="delete-folder">
             <span class="context-icon">&#128465;</span> <span data-i18n="context.deleteFolder">Delete Folder</span>
@@ -2391,6 +2397,14 @@ async function handleFolderContextMenuAction(e) {
 
         case 'share-folder':
             await showFolderShareModal(currentFolderPath);
+            break;
+
+        case 'export-folder':
+            await exportFolder(currentFolderPath);
+            break;
+
+        case 'import-to-folder':
+            await importToFolder(currentFolderPath);
             break;
 
         case 'delete-folder':
@@ -8468,6 +8482,102 @@ async function handleImportFile(e) {
         }
         e.target.value = '';
     }
+}
+
+// Folder Export/Import Functions
+async function exportFolder(folderPath) {
+    if (!folderPath) return;
+
+    try {
+        const folderName = folderPath.split(':>:').pop() || folderPath;
+        const confirmMsg = i18n ? i18n.t('folderExport.confirm', { folder: folderName }) : `Export all notes from "${folderName}"?`;
+        if (!confirm(confirmMsg)) return;
+
+        const response = await authFetch(`/api/notes/export?folder=${encodeURIComponent(folderPath)}`);
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // Sanitize folder name for filename
+        const safeFolderName = folderName.replace(/[\/\\:*?"<>|]/g, '-');
+        a.download = `folder-${safeFolderName}-export-${new Date().toISOString().split('T')[0]}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        const successMsg = i18n ? i18n.t('folderExport.success', { folder: folderName }) : `Folder "${folderName}" exported successfully.`;
+        alert(successMsg);
+    } catch (err) {
+        console.error('Folder export error:', err);
+        const errorMsg = i18n ? i18n.t('error.exportFailed') : 'Export failed';
+        alert(errorMsg);
+    }
+}
+
+async function importToFolder(folderPath) {
+    if (!folderPath) return;
+
+    // Create hidden file input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.zip';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            document.body.removeChild(fileInput);
+            return;
+        }
+
+        if (!file.name.endsWith('.zip')) {
+            alert(i18n ? i18n.t('import.selectZipFile') : 'Please select a ZIP file');
+            document.body.removeChild(fileInput);
+            return;
+        }
+
+        const folderName = folderPath.split(':>:').pop() || folderPath;
+        const confirmMsg = i18n ? i18n.t('folderImport.confirm', { folder: folderName }) : `Import notes into "${folderName}"?`;
+        if (!confirm(confirmMsg)) {
+            document.body.removeChild(fileInput);
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', folderPath);
+
+            const response = await authFetch('/api/notes/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Import failed');
+            }
+
+            const result = await response.json();
+            const successMsg = i18n ? i18n.t('folderImport.success', { count: result.imported, folder: folderName }) : `Imported ${result.imported} note(s) into "${folderName}".`;
+            alert(successMsg);
+
+            // Reload notes list
+            await loadNotes();
+        } catch (err) {
+            console.error('Folder import error:', err);
+            const errorMsg = i18n ? i18n.t('error.importFailed') : 'Import failed';
+            alert(errorMsg + ': ' + err.message);
+        } finally {
+            document.body.removeChild(fileInput);
+        }
+    });
+
+    fileInput.click();
 }
 
 async function deleteAllNotes() {

@@ -424,6 +424,8 @@ const i18n = {
             'context.moveFolderUp': 'Move Up',
             'context.moveFolderDown': 'Move Down',
             'context.shareFolder': 'Share Folder',
+            'context.exportFolder': 'Export Folder',
+            'context.importToFolder': 'Import to Folder',
             'context.deleteFolder': 'Delete Folder',
 
             // Folder Share
@@ -434,6 +436,14 @@ const i18n = {
             'folderShare.confirmDelete': 'Delete this folder share link?',
             'folderShare.deleted': 'Link deleted',
             'folderShare.deleteFailed': 'Failed to delete link',
+
+            // Folder Export/Import
+            'folderExport.confirm': 'Export all notes in "{folder}"?',
+            'folderExport.success': 'Folder exported successfully',
+            'folderExport.failed': 'Failed to export folder',
+            'folderImport.confirm': 'Import notes to "{folder}"?',
+            'folderImport.success': 'Successfully imported {count} notes to folder',
+            'folderImport.failed': 'Failed to import to folder',
 
             // Note Info
             'noteInfo.title': 'Note Info',
@@ -938,6 +948,8 @@ const i18n = {
             'context.moveFolderUp': '위로 이동',
             'context.moveFolderDown': '아래로 이동',
             'context.shareFolder': '폴더 공유',
+            'context.exportFolder': '폴더 내보내기',
+            'context.importToFolder': '폴더로 가져오기',
             'context.deleteFolder': '폴더 삭제',
 
             // Folder Share
@@ -948,6 +960,14 @@ const i18n = {
             'folderShare.confirmDelete': '이 폴더 공유 링크를 삭제하시겠습니까?',
             'folderShare.deleted': '링크가 삭제되었습니다',
             'folderShare.deleteFailed': '링크 삭제 실패',
+
+            // Folder Export/Import
+            'folderExport.confirm': '"{folder}" 폴더의 모든 노트를 내보내시겠습니까?',
+            'folderExport.success': '폴더가 내보내졌습니다',
+            'folderExport.failed': '폴더 내보내기 실패',
+            'folderImport.confirm': '"{folder}" 폴더로 노트를 가져오시겠습니까?',
+            'folderImport.success': '{count}개의 노트를 폴더로 가져왔습니다',
+            'folderImport.failed': '폴더로 가져오기 실패',
 
             // Note Info
             'noteInfo.title': '노트 정보',

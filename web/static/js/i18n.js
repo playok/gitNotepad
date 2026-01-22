@@ -467,6 +467,22 @@ const i18n = {
             'prompt.enterFolderName': 'Enter folder name:',
             'prompt.enterNewFolderName': 'Enter new folder name:',
             'prompt.enterNewPath': 'Enter new path (e.g., folder/note):',
+            'prompt.enterNewTitle': 'Enter new title:',
+
+            // Context Menu Actions
+            'contextMenu.rename': 'Rename',
+            'contextMenu.delete': 'Delete Note',
+            'contextMenu.decrypt': 'Remove Encryption',
+            'contextMenu.newFolder': 'New Folder',
+            'contextMenu.newSubfolder': 'New Subfolder',
+            'contextMenu.renameFolder': 'Rename Folder',
+            'contextMenu.deleteFolder': 'Delete Folder',
+
+            // Placeholders
+            'placeholder.folderName': 'Folder name',
+
+            // Common additions
+            'common.input': 'Input',
 
             // Move
             'move.title': 'Move Note',
@@ -478,7 +494,7 @@ const i18n = {
             'move.failed': 'Failed to move note',
 
             // Confirm
-            'confirm.deleteFolder': 'Delete this folder? (Must be empty)',
+            'confirm.deleteFolder': 'Delete folder "{folder}"? (Must be empty)',
             'confirm.decryptNote': 'Remove encryption from this note? The file will be stored in plain text.',
 
             // Toast
@@ -991,6 +1007,22 @@ const i18n = {
             'prompt.enterFolderName': '폴더 이름을 입력하세요:',
             'prompt.enterNewFolderName': '새 폴더 이름을 입력하세요:',
             'prompt.enterNewPath': '새 경로를 입력하세요 (예: 폴더/노트):',
+            'prompt.enterNewTitle': '새 제목을 입력하세요:',
+
+            // Context Menu Actions
+            'contextMenu.rename': '이름 변경',
+            'contextMenu.delete': '노트 삭제',
+            'contextMenu.decrypt': '암호화 해제',
+            'contextMenu.newFolder': '새 폴더',
+            'contextMenu.newSubfolder': '하위 폴더',
+            'contextMenu.renameFolder': '폴더 이름 변경',
+            'contextMenu.deleteFolder': '폴더 삭제',
+
+            // Placeholders
+            'placeholder.folderName': '폴더 이름',
+
+            // Common additions
+            'common.input': '입력',
 
             // Move
             'move.title': '노트 이동',
@@ -1002,7 +1034,7 @@ const i18n = {
             'move.failed': '노트 이동에 실패했습니다',
 
             // Confirm
-            'confirm.deleteFolder': '이 폴더를 삭제하시겠습니까? (비어있어야 합니다)',
+            'confirm.deleteFolder': '"{folder}" 폴더를 삭제하시겠습니까? (비어있어야 합니다)',
             'confirm.decryptNote': '이 노트의 암호화를 해제하시겠습니까? 파일이 평문으로 저장됩니다.',
 
             // Toast

@@ -2084,6 +2084,74 @@ body {
     max-width: 360px;
 }
 
+/* Confirm Modal */
+.confirm-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.confirm-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.confirm-modal-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.confirm-modal-message {
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+    line-height: 1.5;
+}
+
+/* Confirm Modal - Danger variant */
+.confirm-modal-danger .confirm-modal-icon {
+    color: var(--error);
+}
+
+.confirm-modal-danger #confirmModalOk {
+    background: var(--error);
+    border-color: var(--error);
+}
+
+.confirm-modal-danger #confirmModalOk:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+/* Prompt Modal */
+.prompt-modal-message {
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.prompt-modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.prompt-modal-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.prompt-modal-input::placeholder {
+    color: var(--text-muted);
+}
+
 /* New Note Location Modal */
 .new-note-location-options {
     display: flex;

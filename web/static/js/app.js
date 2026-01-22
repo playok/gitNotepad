@@ -14,6 +14,149 @@ function debounce(func, wait) {
     };
 }
 
+// Custom Confirm Modal - returns Promise<boolean>
+// Options: { title, message, confirmText, cancelText, icon, danger }
+function showConfirmModal(options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const modalContent = modal.querySelector('.modal-content');
+        const title = document.getElementById('confirmModalTitle');
+        const message = document.getElementById('confirmModalMessage');
+        const icon = document.getElementById('confirmModalIcon');
+        const okBtn = document.getElementById('confirmModalOk');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+
+        // Set content
+        title.textContent = options.title || (i18n ? i18n.t('common.confirm') : 'Confirm');
+        message.textContent = options.message || '';
+        icon.textContent = options.icon || (options.danger ? '⚠️' : 'ℹ️');
+        okBtn.textContent = options.confirmText || (i18n ? i18n.t('common.confirm') : 'OK');
+        cancelBtn.textContent = options.cancelText || (i18n ? i18n.t('common.cancel') : 'Cancel');
+
+        // Apply danger styling
+        if (options.danger) {
+            modalContent.classList.add('confirm-modal-danger');
+        } else {
+            modalContent.classList.remove('confirm-modal-danger');
+        }
+
+        // Show modal
+        modal.style.display = 'flex';
+
+        // Cleanup function
+        const cleanup = () => {
+            modal.style.display = 'none';
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleBackdrop);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+
+        const handleOk = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const handleBackdrop = (e) => {
+            if (e.target === modal) {
+                cleanup();
+                resolve(false);
+            }
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                resolve(false);
+            } else if (e.key === 'Enter') {
+                cleanup();
+                resolve(true);
+            }
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleBackdrop);
+        document.addEventListener('keydown', handleKeydown);
+    });
+}
+
+// Custom Prompt Modal - returns Promise<string|null>
+// Options: { title, message, placeholder, defaultValue, confirmText, cancelText }
+function showPromptModal(options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('promptModal');
+        const title = document.getElementById('promptModalTitle');
+        const message = document.getElementById('promptModalMessage');
+        const input = document.getElementById('promptModalInput');
+        const okBtn = document.getElementById('promptModalOk');
+        const cancelBtn = document.getElementById('promptModalCancel');
+
+        // Set content
+        title.textContent = options.title || (i18n ? i18n.t('common.input') : 'Input');
+        message.textContent = options.message || '';
+        input.placeholder = options.placeholder || '';
+        input.value = options.defaultValue || '';
+        okBtn.textContent = options.confirmText || (i18n ? i18n.t('common.confirm') : 'OK');
+        cancelBtn.textContent = options.cancelText || (i18n ? i18n.t('common.cancel') : 'Cancel');
+
+        // Show modal and focus input
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 50);
+
+        // Cleanup function
+        const cleanup = () => {
+            modal.style.display = 'none';
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleBackdrop);
+            input.removeEventListener('keydown', handleKeydown);
+        };
+
+        const handleOk = () => {
+            const value = input.value.trim();
+            cleanup();
+            resolve(value || null);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleBackdrop = (e) => {
+            if (e.target === modal) {
+                cleanup();
+                resolve(null);
+            }
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                resolve(null);
+            } else if (e.key === 'Enter') {
+                const value = input.value.trim();
+                cleanup();
+                resolve(value || null);
+            }
+        };
+
+        input.addEventListener('keydown', handleKeydown);
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleBackdrop);
+    });
+}
+
 // Helper to encode note IDs for URLs (handles folder paths with slashes)
 // Uses URL-safe base64 encoding (+ → -, / → _) to avoid issues with slashes in URLs
 function encodeNoteId(id) {
@@ -2069,9 +2212,18 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'rename':
-            const newTitle = prompt('Enter new title:', note.title);
-            if (newTitle && newTitle !== note.title) {
-                await renameNote(contextTarget, newTitle);
+            const noteName = extractNoteName(note.title);
+            const newTitle = await showPromptModal({
+                title: i18n ? i18n.t('contextMenu.rename') : 'Rename',
+                message: i18n ? i18n.t('prompt.enterNewTitle') : 'Enter new title:',
+                defaultValue: noteName,
+                placeholder: noteName
+            });
+            if (newTitle && newTitle !== noteName) {
+                // Preserve folder path when renaming
+                const folderPath = extractFolderPath(note.title);
+                const fullNewTitle = folderPath ? buildTitleWithFolder(folderPath, newTitle) : newTitle;
+                await renameNote(contextTarget, fullNewTitle);
             }
             break;
 
@@ -2093,13 +2245,26 @@ async function handleContextMenuAction(e) {
             break;
 
         case 'delete':
-            if (confirm(i18n.t('confirm.deleteNote', { title: extractNoteName(note.title) }))) {
+            const deleteConfirmed = await showConfirmModal({
+                title: i18n ? i18n.t('contextMenu.delete') : 'Delete Note',
+                message: i18n ? i18n.t('confirm.deleteNote', { title: extractNoteName(note.title) }) : `Delete "${extractNoteName(note.title)}"?`,
+                confirmText: i18n ? i18n.t('common.delete') : 'Delete',
+                icon: '🗑️',
+                danger: true
+            });
+            if (deleteConfirmed) {
                 await deleteNoteById(contextTarget);
             }
             break;
 
         case 'decrypt':
-            if (confirm(i18n.t('confirm.decryptNote') || `Remove encryption from "${extractNoteName(note.title)}"?`)) {
+            const decryptConfirmed = await showConfirmModal({
+                title: i18n ? i18n.t('contextMenu.decrypt') : 'Remove Encryption',
+                message: i18n ? i18n.t('confirm.decryptNote') : `Remove encryption from "${extractNoteName(note.title)}"?`,
+                confirmText: i18n ? i18n.t('common.confirm') : 'Confirm',
+                icon: '🔓'
+            });
+            if (decryptConfirmed) {
                 await decryptNote(contextTarget);
             }
             break;
@@ -2305,7 +2470,11 @@ async function handleSidebarContextMenuAction(e) {
             break;
 
         case 'new-folder':
-            const folderName = prompt(i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:');
+            const folderName = await showPromptModal({
+                title: i18n ? i18n.t('contextMenu.newFolder') : 'New Folder',
+                message: i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:',
+                placeholder: i18n ? i18n.t('placeholder.folderName') : 'Folder name'
+            });
             if (folderName) {
                 await createFolder(folderName, '');
             }
@@ -2352,7 +2521,11 @@ async function handleFolderContextMenuAction(e) {
             break;
 
         case 'new-subfolder':
-            const subfolderName = prompt(i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:');
+            const subfolderName = await showPromptModal({
+                title: i18n ? i18n.t('contextMenu.newSubfolder') : 'New Subfolder',
+                message: i18n ? i18n.t('prompt.enterFolderName') : 'Enter folder name:',
+                placeholder: i18n ? i18n.t('placeholder.folderName') : 'Folder name'
+            });
             if (subfolderName) {
                 await createFolder(subfolderName, currentFolderPath);
             }
@@ -2379,9 +2552,13 @@ async function handleFolderContextMenuAction(e) {
             break;
 
         case 'rename-folder':
-            const renamePrompt = i18n ? i18n.t('prompt.enterNewFolderName') : 'Enter new folder name:';
             const currentFolderName = currentFolderPath.split('/').pop();
-            const newFolderName = prompt(renamePrompt, currentFolderName);
+            const newFolderName = await showPromptModal({
+                title: i18n ? i18n.t('contextMenu.renameFolder') : 'Rename Folder',
+                message: i18n ? i18n.t('prompt.enterNewFolderName') : 'Enter new folder name:',
+                defaultValue: currentFolderName,
+                placeholder: currentFolderName
+            });
             if (newFolderName && newFolderName !== currentFolderName) {
                 await renameFolder(currentFolderPath, newFolderName);
             }
@@ -2408,8 +2585,15 @@ async function handleFolderContextMenuAction(e) {
             break;
 
         case 'delete-folder':
-            const confirmMsg = i18n ? i18n.t('confirm.deleteFolder') : 'Delete this folder? (Must be empty)';
-            if (confirm(confirmMsg)) {
+            const deleteFolderName = currentFolderPath.split('/').pop();
+            const deleteFolderConfirmed = await showConfirmModal({
+                title: i18n ? i18n.t('contextMenu.deleteFolder') : 'Delete Folder',
+                message: i18n ? i18n.t('confirm.deleteFolder', { folder: deleteFolderName }) : `Delete folder "${deleteFolderName}"? (Must be empty)`,
+                confirmText: i18n ? i18n.t('common.delete') : 'Delete',
+                icon: '🗑️',
+                danger: true
+            });
+            if (deleteFolderConfirmed) {
                 await deleteFolder(currentFolderPath);
             }
             break;

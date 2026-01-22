@@ -314,6 +314,34 @@
                 </div>
             </div>
 
+            <!-- Confirm Modal -->
+            <div id="confirmModal" class="modal" style="display: none;">
+                <div class="modal-content modal-small">
+                    <div class="confirm-modal-header">
+                        <span id="confirmModalIcon" class="confirm-modal-icon">⚠️</span>
+                        <h3 id="confirmModalTitle">Confirm</h3>
+                    </div>
+                    <p id="confirmModalMessage" class="confirm-modal-message"></p>
+                    <div class="modal-actions">
+                        <button id="confirmModalCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="confirmModalOk" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Modal -->
+            <div id="promptModal" class="modal" style="display: none;">
+                <div class="modal-content modal-small">
+                    <h3 id="promptModalTitle">Input</h3>
+                    <p id="promptModalMessage" class="prompt-modal-message"></p>
+                    <input type="text" id="promptModalInput" class="prompt-modal-input" placeholder="">
+                    <div class="modal-actions">
+                        <button id="promptModalCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+                        <button id="promptModalOk" class="btn btn-primary" data-i18n="common.confirm">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- New Note Location Modal -->
             <div id="newNoteLocationModal" class="modal" style="display: none;">
                 <div class="modal-content modal-small">

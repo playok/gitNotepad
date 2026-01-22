@@ -185,8 +185,8 @@ func (h *StatsHandler) ExportNotes(c *gin.Context) {
 
 	// If folder is specified, only export notes from that folder
 	if folderPath != "" {
-		// Export only notes from the specified folder
-		folderPrefix := folderPath + ":>:"
+		// Normalize folder path - frontend sends "/" separator, internal uses "/" for FolderPath
+		normalizedFolder := strings.ReplaceAll(folderPath, ":>:", "/")
 
 		err := filepath.Walk(notesPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -208,15 +208,16 @@ func (h *StatsHandler) ExportNotes(c *gin.Context) {
 				return nil
 			}
 
-			// Parse the note to check its title/path
+			// Parse the note to check its folder path
 			note, parseErr := model.ParseNoteFromFile(path)
 			if parseErr != nil {
 				return nil
 			}
 
-			// Check if note belongs to the folder
-			noteID := strings.TrimSuffix(info.Name(), ext)
-			if !strings.HasPrefix(note.Title, folderPrefix) && note.Title != folderPath && !strings.HasPrefix(noteID, folderPrefix) && noteID != folderPath {
+			// Check if note belongs to the folder by checking FolderPath
+			// Match exact folder or subfolder
+			noteFolderPath := note.FolderPath
+			if noteFolderPath != normalizedFolder && !strings.HasPrefix(noteFolderPath, normalizedFolder+"/") {
 				return nil
 			}
 

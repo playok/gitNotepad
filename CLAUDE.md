@@ -175,6 +175,7 @@ storage:
   path: "./data"
   auto_init_git: true
 logging:
+  level: "info"        # 로그 레벨: "debug", "info", "warn", "error" (기본: info)
   encoding: ""         # "utf-8" (기본) 또는 "euc-kr" 콘솔 출력용 (LANG 환경변수에서 자동 감지)
   file: false          # 파일 로깅 활성화
   dir: "./logs"        # 로그 디렉토리 (일단위 롤링: gitnotepad.log.YYYY-MM-DD)
@@ -220,6 +221,7 @@ daemon:
 - **다국어 지원 (i18n)**: 영어/한국어 전체 UI 적용 (메뉴, 모달, alert/confirm 메시지)
 - **전체 노트 내용 검색**: searchInput에서 제목+내용 서버 검색
 - **Ctrl+F 영역별 검색**: 에디터(CodeMirror), 프리뷰(브라우저 검색) 지원
+- **로그 레벨**: config.yaml에서 로그 레벨 설정 (debug, info, warn, error), 하위 버전 자동 마이그레이션
 - **로깅 인코딩**: 콘솔 출력 EUC-KR 지원 (파일은 항상 UTF-8), LANG 환경변수 자동 감지
 - **데몬 모드**: 백그라운드 실행 (start/stop/restart/status), PID 파일 관리
 - **로그 롤링**: file-rotatelogs 기반 일단위 로깅, 자동 롤링 (`gitnotepad.log.YYYY-MM-DD`)
@@ -238,10 +240,16 @@ daemon:
 - **handler/note.go**: 노트 CRUD API, 비밀번호 검증
   - 폴더 경로 처리: 타이틀에서 폴더 경로 추출, 파일 이동
   - 절대 경로 사용: `filepath.Abs()` 적용으로 Git 경로 일관성 보장
-- **encoding/encoding.go**: 콘솔 로깅 인코딩 유틸리티
-  - `Log()`, `Logln()`, `Logf()`: EUC-KR 인코딩 지원 로깅 함수
+- **config/config.go**: 설정 파일 로딩 및 마이그레이션
+  - `Load()`, `LoadWithMigrationCheck()`: 설정 파일 로딩
+  - `NeedsMigration`: 누락된 설정 키 자동 감지 (하위 버전 호환성)
+  - 프로그램 시작 시 새 설정 키가 없으면 자동으로 config.yaml에 추가
+- **encoding/encoding.go**: 로그 레벨 및 인코딩 유틸리티
+  - `Debug()`, `Info()`, `Warn()`, `Error()`: 레벨별 로깅 함수
+  - `SetLevel()`, `GetLevel()`: 로그 레벨 설정/조회
   - `Init()`: config 또는 LANG 환경변수에서 인코딩 초기화
   - 파일 저장은 항상 UTF-8, 콘솔 출력만 EUC-KR 변환 지원
+  - 레벨: LevelDebug(0) < LevelInfo(1) < LevelWarn(2) < LevelError(3)
 - **daemon/daemon.go**: 데몬 프로세스 관리
   - `Start()`: 백그라운드 프로세스 시작 (fork, setsid)
   - `Stop()`: SIGTERM 후 SIGKILL 전송, PID 파일 삭제

@@ -825,7 +825,6 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 
 	// Get all notes in the folder (including subdirectories)
 	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
-	folderPrefix := info.FolderPath + ":>:"
 
 	// Convert folder path separator (:>:) to file system path separator
 	folderDirPath := strings.ReplaceAll(info.FolderPath, ":>:", string(filepath.Separator))
@@ -871,8 +870,14 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 			return nil
 		}
 
-		// Check if note title has the folder prefix (for folder sharing to work correctly)
-		if !strings.HasPrefix(note.Title, folderPrefix) && note.Title != info.FolderPath {
+		// Check if note belongs to the shared folder
+		// The folder path in note uses "/" separator (e.g., "note3/sub_note")
+		// The shared folder path uses ":>:" separator (e.g., "note3" or "note3:>:sub_note")
+		sharedFolderWithSlash := strings.ReplaceAll(info.FolderPath, ":>:", "/")
+		noteFolderPath := note.FolderPath
+
+		// Note must be in the shared folder or a subfolder of it
+		if noteFolderPath != sharedFolderWithSlash && !strings.HasPrefix(noteFolderPath, sharedFolderWithSlash+"/") {
 			return nil
 		}
 
@@ -937,30 +942,37 @@ func (h *ShortLinkHandler) GetPublicFolderNote(c *gin.Context) {
 	// Decode note ID (format: "FolderPath/uuid" with / separator)
 	decodedNoteID := decodeNoteIDParam(noteID)
 
+	// Convert shared folder path from :>: to / separator for comparison
+	sharedFolderWithSlash := strings.ReplaceAll(info.FolderPath, ":>:", "/")
+
 	// Verify note belongs to the shared folder
-	// Note ID format: "Telegram/uuid" or "folder:>:subfolder/uuid"
-	if !strings.HasPrefix(decodedNoteID, info.FolderPath+"/") && decodedNoteID != info.FolderPath {
+	// Note ID format: "note2/uuid" or "note3/sub_note/uuid"
+	if !strings.HasPrefix(decodedNoteID, sharedFolderWithSlash+"/") && decodedNoteID != sharedFolderWithSlash {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Note not in shared folder"})
 		return
 	}
 
-	// Extract the actual file UUID from the note ID
-	// e.g., "Telegram/uuid" -> "uuid"
-	var fileID string
-	if strings.HasPrefix(decodedNoteID, info.FolderPath+"/") {
-		fileID = strings.TrimPrefix(decodedNoteID, info.FolderPath+"/")
+	// Extract the relative path after the shared folder
+	// e.g., "note3/sub_note/uuid" with shared folder "note3" -> "sub_note/uuid"
+	var relativePath string
+	if strings.HasPrefix(decodedNoteID, sharedFolderWithSlash+"/") {
+		relativePath = strings.TrimPrefix(decodedNoteID, sharedFolderWithSlash+"/")
 	} else {
-		fileID = decodedNoteID
+		relativePath = decodedNoteID
 	}
 
 	// Build the actual file path
+	// relativePath could be just "uuid" or "sub_note/uuid" for nested folders
 	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
 	folderDirPath := strings.ReplaceAll(info.FolderPath, ":>:", string(filepath.Separator))
 	targetFolderPath := filepath.Join(notesPath, folderDirPath)
 
+	// Convert relative path separators to OS-specific
+	relativeFilePath := filepath.FromSlash(relativePath)
+
 	var note *model.Note
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath := filepath.Join(targetFolderPath, fileID+ext)
+		filePath := filepath.Join(targetFolderPath, relativeFilePath+ext)
 		data, readErr := os.ReadFile(filePath)
 		if readErr != nil {
 			continue

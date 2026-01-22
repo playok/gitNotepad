@@ -33,6 +33,16 @@ func New(cfg *config.Config) (*Bot, error) {
 		return nil, fmt.Errorf("failed to create Telegram bot: %w", err)
 	}
 
+	// Delete any existing webhook to use Long Polling
+	deleteWebhook := tgbotapi.DeleteWebhookConfig{
+		DropPendingUpdates: false,
+	}
+	if _, err := api.Request(deleteWebhook); err != nil {
+		encoding.Warn("Telegram: Failed to delete webhook: %v", err)
+	} else {
+		encoding.Debug("Telegram: Webhook deleted, using Long Polling")
+	}
+
 	encoding.Info("Telegram bot authorized as @%s", api.Self.UserName)
 
 	return &Bot{

@@ -111,6 +111,7 @@ Examples:
 
 func main() {
 	// Check for daemon commands first (before flag parsing)
+	explicitRun := false // Track if "run" command was explicitly given
 	if len(os.Args) > 1 {
 		cmd := os.Args[1]
 		switch cmd {
@@ -119,6 +120,7 @@ func main() {
 			return
 		case "run":
 			// Run in foreground mode - continue with normal execution
+			explicitRun = true
 			os.Args = append([]string{os.Args[0]}, os.Args[2:]...)
 		case "help", "-h", "--help":
 			fmt.Print(usageHelp)
@@ -163,7 +165,7 @@ func main() {
 
 	// If no command given (not run, not daemon-child), check if setup is needed
 	// If setup is done, default to "start" command
-	if len(os.Args) == 1 || (len(os.Args) == 3 && os.Args[1] == "-config") {
+	if !explicitRun && (len(os.Args) == 1 || (len(os.Args) == 3 && os.Args[1] == "-config")) {
 		if !needsInitialSetup(*configPath) {
 			// Setup is complete, default to daemon mode
 			fmt.Println("Starting Git Notepad daemon...")

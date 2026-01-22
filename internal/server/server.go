@@ -284,10 +284,10 @@ func (s *Server) setupRoutes() {
 			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
 			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
 
-			// Folder short links
-			api.POST("/folders/shortlink", shortLinkHandler.GenerateFolderLink)
-			api.GET("/folders/shortlink", shortLinkHandler.GetFolderLink)
-			api.DELETE("/folders/shortlink", shortLinkHandler.DeleteFolderLink)
+			// Folder short links (use /folder-shortlinks to avoid conflict with /folders/*path)
+			api.POST("/folder-shortlinks", shortLinkHandler.GenerateFolderLink)
+			api.GET("/folder-shortlinks", shortLinkHandler.GetFolderLink)
+			api.DELETE("/folder-shortlinks", shortLinkHandler.DeleteFolderLink)
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)
@@ -379,10 +379,10 @@ func (s *Server) setupRoutes() {
 			api.PUT("/shortlinks/:code", shortLinkHandler.UpdateByCode)
 			api.DELETE("/shortlinks/:code", shortLinkHandler.DeleteByCode)
 
-			// Folder short links
-			api.POST("/folders/shortlink", shortLinkHandler.GenerateFolderLink)
-			api.GET("/folders/shortlink", shortLinkHandler.GetFolderLink)
-			api.DELETE("/folders/shortlink", shortLinkHandler.DeleteFolderLink)
+			// Folder short links (use /folder-shortlinks to avoid conflict with /folders/*path)
+			api.POST("/folder-shortlinks", shortLinkHandler.GenerateFolderLink)
+			api.GET("/folder-shortlinks", shortLinkHandler.GetFolderLink)
+			api.DELETE("/folder-shortlinks", shortLinkHandler.DeleteFolderLink)
 
 			// Image routes
 			api.POST("/images", imageHandler.Upload)

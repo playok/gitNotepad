@@ -1281,11 +1281,11 @@ async function showFolderShareModal(folderPath) {
 
     try {
         // Try to get existing folder link first
-        let response = await authFetch(`/api/folders/shortlink?path=${encodeURIComponent(folderPath)}`);
+        let response = await authFetch(`/api/folder-shortlinks?path=${encodeURIComponent(folderPath)}`);
 
         if (response.status === 404) {
             // Generate new folder link (default to public for folder sharing)
-            response = await authFetch(`/api/folders/shortlink`, {
+            response = await authFetch(`/api/folder-shortlinks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1355,7 +1355,7 @@ async function updateFolderShareLinkExpiry() {
     status.className = 'share-status';
 
     try {
-        const response = await authFetch(`/api/folders/shortlink`, {
+        const response = await authFetch(`/api/folder-shortlinks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1413,7 +1413,7 @@ async function deleteFolderShortLink() {
     const status = document.getElementById('folderShareStatus');
 
     try {
-        const response = await authFetch(`/api/folders/shortlink?path=${encodeURIComponent(currentShareFolderPath)}`, {
+        const response = await authFetch(`/api/folder-shortlinks?path=${encodeURIComponent(currentShareFolderPath)}`, {
             method: 'DELETE'
         });
 

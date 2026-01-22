@@ -1551,6 +1551,7 @@ body {
     display: flex;
     overflow: hidden;
     position: relative;
+    min-height: 0; /* Important for flex child to shrink properly */
 }
 
 .editor-pane {
@@ -1818,10 +1819,13 @@ body {
 /* Preview Pane - GitHub Markdown Style */
 .preview-pane {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     padding: 0;
     overflow: hidden; /* Let #previewContent handle scrolling */
     background-color: var(--bg-secondary);
     min-width: 200px;
+    min-height: 0; /* Important for flex child to shrink properly */
     transition: background-color 0.2s ease;
 }
 
@@ -3395,6 +3399,7 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 0.5rem;
+    min-height: 0; /* Important for flex child to allow scrolling */
 }
 
 /* Share Modal Styles */

@@ -100,7 +100,7 @@ func LoadWithMigrationCheck(path string) (*LoadResult, error) {
 
 	// Check for missing fields before parsing
 	content := string(data)
-	needsMigration := !strings.Contains(content, "level:")
+	needsMigration := !strings.Contains(content, "level:") || !strings.Contains(content, "telegram:")
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {

@@ -78,6 +78,7 @@ gitnotepad --nginx                     # nginx 프록시 설정 가이드 출력
 gitnotepad -config my.yaml             # 설정 파일 지정
 gitnotepad --reset-password <username> # 사용자 비밀번호 리셋
 gitnotepad -migrate-paths              # 폴더 구분자 마이그레이션 수동 실행
+gitnotepad -migrate-titles             # 노트 제목에 폴더 경로 접두사 추가 마이그레이션
 ```
 
 **데몬 명령어:**
@@ -427,6 +428,14 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - **마이그레이션 조건**: 노트 제목이 폴더 구조와 일치하는 경우에만 변환
   - 예: `folder/note.md` 파일의 제목이 `folder/note`인 경우 → `folder:>:note`로 변환
 - **구현**: `handler/note.go`의 `MigrateFolderSeparator()` 함수
+
+### 노트 제목 마이그레이션
+하위 폴더에 있는 노트의 제목에 폴더 경로 접두사 추가 (폴더 공유 기능 필요):
+- **수동 실행**: `gitnotepad -migrate-titles` 옵션으로 실행
+- **용도**: 기존 노트(예: 텔레그램 봇으로 생성된 노트)의 제목에 폴더 경로가 누락된 경우 복구
+- **마이그레이션 조건**: 하위 폴더에 있으면서 제목에 폴더 경로가 없는 노트만 변환
+  - 예: `Telegram/` 폴더의 `My Note` → `Telegram:>:My Note`로 변환
+- **구현**: `handler/note.go`의 `MigrateNoteTitleFolderPath()` 함수
 
 ## 캘린더 뷰
 

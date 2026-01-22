@@ -332,6 +332,137 @@ func MigrateFolderSeparator(storagePath string, encryptionEnabled bool, encrypti
 	return nil
 }
 
+// MigrateNoteTitleFolderPath adds folder path prefix to note titles for notes in subfolders.
+// This fixes notes created by Telegram bot (or other methods) that have folder_path set
+// but title doesn't include the folder path prefix (required for folder sharing to work).
+func MigrateNoteTitleFolderPath(storagePath string) error {
+	entries, err := os.ReadDir(storagePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			encoding.Debug("No data directory found, skipping title migration.")
+			return nil
+		}
+		return err
+	}
+
+	migratedCount := 0
+	scannedCount := 0
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Skip special directories
+		if entry.Name() == ".git" || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+
+		userDir := filepath.Join(storagePath, entry.Name())
+		notesDir := filepath.Join(userDir, "notes")
+
+		// Check if notes directory exists
+		if _, err := os.Stat(notesDir); os.IsNotExist(err) {
+			continue
+		}
+
+		encoding.Debug("Scanning user directory for title migration: %s", entry.Name())
+
+		// Walk through all subdirectories in notes folder
+		err := filepath.WalkDir(notesDir, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+
+			if d.IsDir() {
+				if d.Name() == ".git" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			// Only process note files
+			ext := filepath.Ext(path)
+			if ext != ".md" && ext != ".txt" && ext != ".adoc" {
+				return nil
+			}
+
+			scannedCount++
+
+			// Get relative path from notes directory
+			relPath, err := filepath.Rel(notesDir, path)
+			if err != nil {
+				return nil
+			}
+			relPath = filepath.ToSlash(relPath)
+
+			// Check if note is in a subdirectory
+			dir := filepath.Dir(relPath)
+			if dir == "." {
+				// Note is in root notes directory, skip
+				return nil
+			}
+
+			// Convert directory path to folder path format
+			folderPath := strings.ReplaceAll(dir, "/", FolderSeparator)
+
+			// Load the note
+			note, err := model.ParseNoteFromFile(path)
+			if err != nil {
+				encoding.Debug("  Skip (parse error): %s - %v", relPath, err)
+				return nil
+			}
+
+			// Check if title already has folder path prefix
+			expectedPrefix := folderPath + FolderSeparator
+			if strings.HasPrefix(note.Title, expectedPrefix) {
+				// Already has correct prefix
+				return nil
+			}
+
+			// Check if title contains any folder separator (might have different folder)
+			if strings.Contains(note.Title, FolderSeparator) {
+				// Title already has some folder path, skip
+				return nil
+			}
+
+			// Add folder path prefix to title
+			oldTitle := note.Title
+			note.Title = expectedPrefix + note.Title
+
+			// Also ensure folder_path is set correctly
+			note.FolderPath = strings.ReplaceAll(folderPath, FolderSeparator, "/")
+
+			// Save the note
+			content, err := note.ToFileContent()
+			if err != nil {
+				encoding.Debug("  Warning (serialize): %s - %v", relPath, err)
+				return nil
+			}
+			if err := os.WriteFile(path, content, 0644); err != nil {
+				encoding.Debug("  Warning (save): %s - %v", relPath, err)
+				return nil
+			}
+
+			migratedCount++
+			encoding.Info("  Migrated title: '%s' -> '%s'", oldTitle, note.Title)
+			return nil
+		})
+
+		if err != nil {
+			encoding.Warn("Error walking %s: %v", userDir, err)
+		}
+	}
+
+	if migratedCount > 0 {
+		encoding.Info("Title migration summary: scanned=%d, migrated=%d", scannedCount, migratedCount)
+	} else {
+		encoding.Debug("Title migration: no notes needed migration (scanned=%d)", scannedCount)
+	}
+
+	return nil
+}
+
 // getUserRepo returns a git repository for the user's storage path
 func (h *NoteHandler) getUserRepo(c *gin.Context) (*git.Repository, error) {
 	storagePath := h.getUserStoragePath(c)

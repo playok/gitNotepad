@@ -93,6 +93,8 @@ Options:
         Reset password for specified username
   -migrate-paths
         Migrate note paths from old separator (/) to new separator (:>:)
+  -migrate-titles
+        Migrate note titles to include folder path prefix (for folder sharing)
   -help
         Show this help message
 
@@ -108,6 +110,7 @@ Examples:
   gitnotepad status             # Check daemon status
   gitnotepad -config my.yaml    # Use custom config
   gitnotepad -migrate-paths     # Manually run path migration
+  gitnotepad -migrate-titles    # Migrate note titles for folder sharing
 `
 
 func main() {
@@ -133,6 +136,7 @@ func main() {
 	showNginx := flag.Bool("nginx", false, "Show nginx reverse proxy configuration")
 	resetPassword := flag.String("reset-password", "", "Reset password for specified username")
 	migratePaths := flag.Bool("migrate-paths", false, "Migrate note paths from old separator (/) to new separator (:>:)")
+	migrateTitles := flag.Bool("migrate-titles", false, "Migrate note titles to include folder path prefix (for folder sharing)")
 	daemonChild := flag.Bool("daemon-child", false, "Internal flag for daemon child process")
 	flag.Parse()
 
@@ -161,6 +165,12 @@ func main() {
 	// Handle path migration
 	if *migratePaths {
 		handlePathMigration(*configPath)
+		return
+	}
+
+	// Handle title migration
+	if *migrateTitles {
+		handleTitleMigration(*configPath)
 		return
 	}
 
@@ -448,4 +458,31 @@ func handlePathMigration(configPath string) {
 	}
 
 	fmt.Println("Migration completed successfully.")
+}
+
+// handleTitleMigration runs the note title folder path migration manually
+func handleTitleMigration(configPath string) {
+	// Load config
+	var cfg *config.Config
+
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
+		cfg = config.Default()
+	} else {
+		var loadErr error
+		cfg, loadErr = config.Load(configPath)
+		if loadErr != nil {
+			log.Fatalf("Failed to load config: %v", loadErr)
+		}
+	}
+
+	fmt.Println("Running note title migration...")
+	fmt.Printf("Storage path: %s\n", cfg.Storage.Path)
+	fmt.Println("Adding folder path prefix to note titles in subfolders...")
+	fmt.Println()
+
+	if err := handler.MigrateNoteTitleFolderPath(cfg.Storage.Path); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
+	fmt.Println("Title migration completed successfully.")
 }

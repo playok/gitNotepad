@@ -284,14 +284,15 @@ telegram:
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
 - **telegram/bot.go**: 텔레그램 봇 연동 모듈
-  - `New()`: 봇 인스턴스 생성, 토큰 검증
-  - `Start()`: 메시지 리스닝 시작 (goroutine)
+  - `New()`: 봇 인스턴스 생성, 토큰 검증, webhook 자동 삭제
+  - `Start()`: 메시지 리스닝 시작 (Long Polling, goroutine)
   - `Stop()`: 봇 종료
+  - `SetHub()`: WebSocket Hub 설정 (실시간 노트 목록 갱신용)
   - `handleMessage()`: 텍스트/사진/문서 메시지 처리
-  - `createNoteFromMessage()`: 메시지 내용으로 노트 생성
+  - `createNoteFromMessage()`: 메시지 내용으로 노트 생성, WebSocket 브로드캐스트
   - 지원 명령어: `/start` (도움말), `/info` (봇 정보)
   - 허용된 사용자만 노트 생성 가능 (`allowed_users`)
-  - 자동 Git 커밋
+  - 자동 Git 커밋, 실시간 노트 목록 갱신
 - **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
   - 편집 툴바: `applyFormat()`, `applyAsciiDocFormat()` - Markdown/AsciiDoc 서식 적용
@@ -507,3 +508,8 @@ telegram:
 - `telegram` 태그 자동 추가
 - Markdown 형식으로 저장
 - 파일명: UUID 기반
+
+### 실시간 동기화
+- 노트 생성 시 WebSocket으로 브라우저에 알림
+- 브라우저에서 노트 목록 자동 갱신
+- `Server.GetHub()`, `Bot.SetHub()` 메서드로 연동

@@ -624,6 +624,7 @@ telegram:
 - **Auto Git Commit**: Each note is automatically committed
 - **Folder Organization**: All Telegram notes in one folder
 - **Title Generation**: First line of message becomes title
+- **Real-time Sync**: Browser note list auto-refreshes via WebSocket
 
 ## Troubleshooting
 

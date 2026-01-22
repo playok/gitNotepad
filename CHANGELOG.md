@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.13.0](https://github.com/playok/gitNotepad/releases/tag/v0.13.0) - Telegram Bot Integration
+
+**New Features:**
+- Telegram bot integration for note creation
+  - Send messages to bot → auto-save as notes
+  - Long Polling mode (no port forwarding required)
+  - Auto-delete webhook on startup
+  - Allowed users whitelist for security
+  - Configurable default folder and username
+  - `/start` and `/info` bot commands
+- Real-time note list sync via WebSocket
+  - Browser auto-refreshes when note created via Telegram
+- Config auto-migration for telegram settings
+
+**Configuration:**
+```yaml
+telegram:
+  enabled: true
+  token: "YOUR_BOT_TOKEN"
+  allowed_users:
+    - 123456789
+  default_folder: "Telegram"
+  default_username: "admin"
+```
+
 ## [v0.11.0](https://github.com/playok/gitNotepad/releases/tag/v0.11.0) - Tablet Responsive Improvements
 
 **New Features:**

@@ -187,11 +187,21 @@
             padding: 1rem;
             border-radius: var(--radius);
             overflow-x: auto;
+            margin: 1em 0;
+        }
+
+        .note-content-body .preview-body pre code {
+            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
         }
 
         .note-content-body .preview-body code {
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9em;
+            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
         }
 
         .note-content-body .preview-body :not(pre) > code {
@@ -199,6 +209,102 @@
             padding: 0.2em 0.4em;
             border-radius: var(--radius-sm);
         }
+
+        /* Highlight.js syntax colors - Light theme */
+        .note-content-body .preview-body .hljs { background: transparent; color: #24292f; }
+        .note-content-body .preview-body .hljs-keyword,
+        .note-content-body .preview-body .hljs-selector-tag,
+        .note-content-body .preview-body .hljs-literal,
+        .note-content-body .preview-body .hljs-deletion { color: #cf222e; }
+        .note-content-body .preview-body .hljs-string,
+        .note-content-body .preview-body .hljs-doctag,
+        .note-content-body .preview-body .hljs-regexp,
+        .note-content-body .preview-body .hljs-addition { color: #0a3069; }
+        .note-content-body .preview-body .hljs-number { color: #0550ae; }
+        .note-content-body .preview-body .hljs-built_in,
+        .note-content-body .preview-body .hljs-type,
+        .note-content-body .preview-body .hljs-title.class_ { color: #953800; }
+        .note-content-body .preview-body .hljs-title,
+        .note-content-body .preview-body .hljs-title.function_,
+        .note-content-body .preview-body .hljs-section { color: #8250df; }
+        .note-content-body .preview-body .hljs-variable,
+        .note-content-body .preview-body .hljs-attr,
+        .note-content-body .preview-body .hljs-attribute { color: #0550ae; }
+        .note-content-body .preview-body .hljs-comment,
+        .note-content-body .preview-body .hljs-quote { color: #6e7781; font-style: italic; }
+        .note-content-body .preview-body .hljs-tag,
+        .note-content-body .preview-body .hljs-name { color: #116329; }
+
+        /* Highlight.js syntax colors - Dark themes */
+        [data-theme="dark"] .note-content-body .preview-body .hljs,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs { color: #e6edf3; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-keyword,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-selector-tag,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-literal,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-deletion,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-keyword,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-selector-tag,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-literal,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-deletion,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-keyword,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-selector-tag,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-literal,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-deletion { color: #ff7b72; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-string,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-doctag,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-regexp,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-addition,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-string,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-doctag,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-regexp,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-addition,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-string,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-doctag,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-regexp,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-addition { color: #a5d6ff; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-number,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-number,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-number { color: #79c0ff; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-built_in,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-type,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-title.class_,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-built_in,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-type,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-title.class_,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-built_in,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-type,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-title.class_ { color: #ffa657; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-title,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-title.function_,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-section,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-title,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-title.function_,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-section,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-title,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-title.function_,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-section { color: #d2a8ff; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-variable,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-attr,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-attribute,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-variable,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-attr,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-attribute,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-variable,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-attr,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-attribute { color: #79c0ff; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-comment,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-quote,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-comment,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-quote,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-comment,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-quote { color: #8b949e; }
+        [data-theme="dark"] .note-content-body .preview-body .hljs-tag,
+        [data-theme="dark"] .note-content-body .preview-body .hljs-name,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-tag,
+        [data-theme="dark-high-contrast"] .note-content-body .preview-body .hljs-name,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-tag,
+        [data-theme="dark-cyan"] .note-content-body .preview-body .hljs-name { color: #7ee787; }
 
         .note-content-body .preview-body blockquote {
             border-left: 4px solid hsl(var(--border));

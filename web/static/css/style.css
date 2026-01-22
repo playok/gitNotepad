@@ -2114,16 +2114,15 @@ body {
     color: var(--error);
 }
 
-.confirm-modal-danger #confirmModalOk {
-    background: var(--error);
-    border-color: var(--error);
-    color: #fff;
+.modal-content.confirm-modal-danger .btn#confirmModalOk {
+    background: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: #fff !important;
 }
 
-.confirm-modal-danger #confirmModalOk:hover {
-    background: #c0392b;
-    border-color: #c0392b;
-    color: #fff;
+.modal-content.confirm-modal-danger .btn#confirmModalOk:hover {
+    background: #c0392b !important;
+    border-color: #c0392b !important;
 }
 
 /* Prompt Modal */

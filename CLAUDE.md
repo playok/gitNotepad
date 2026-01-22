@@ -38,7 +38,8 @@ Git 버전 관리가 통합된 웹 기반 노트 애플리케이션.
 │   ├── encoding/encoding.go # 파일 인코딩 변환 (UTF-8/EUC-KR)
 │   ├── middleware/         # 인증 미들웨어
 │   ├── repository/         # DB 레포지토리
-│   └── server/server.go    # HTTP 서버 및 라우팅
+│   ├── server/server.go    # HTTP 서버 및 라우팅
+│   └── telegram/bot.go     # 텔레그램 봇 연동
 ├── web/
 │   ├── static/
 │   │   ├── css/style.css   # 스타일시트
@@ -195,6 +196,12 @@ encryption:
   salt: ""        # PBKDF2 salt (최초 실행 시 자동 생성)
 daemon:
   pid_file: "./gitnotepad.pid"  # PID 파일 경로
+telegram:
+  enabled: false              # 텔레그램 봇 활성화
+  token: ""                   # @BotFather에서 받은 봇 토큰
+  allowed_users: []           # 허용된 텔레그램 사용자 ID 목록
+  default_folder: "Telegram"  # 노트 저장 기본 폴더
+  default_username: "admin"   # 노트 저장 대상 사용자명
 ```
 
 ## 주요 기능
@@ -229,6 +236,7 @@ daemon:
 - **태그 기능**: YAML frontmatter 저장, 자동완성, 태그별 노트 필터링 팝업
 - **노트/캘린더 Splitter**: 노트 목록과 캘린더 영역 크기 조절 가능
 - **에디터 헤더 스와이프**: 태블릿에서 헤더 좌우 스와이프 스크롤, 모멘텀 효과
+- **텔레그램 봇 연동**: 텔레그램 메시지를 노트로 자동 저장, 사용자 인증, 폴더 지정 가능
 
 ## 핵심 모듈
 
@@ -275,6 +283,15 @@ daemon:
 - **handler/shortlink.go**: 단축 URL 생성/조회, 만료일 관리, 자정 정리 스케줄러
 - **handler/admin.go**: 사용자 관리 (목록/생성/삭제/비밀번호 변경)
 - **handler/stats.go**: 통계 조회, 노트 내보내기/가져오기
+- **telegram/bot.go**: 텔레그램 봇 연동 모듈
+  - `New()`: 봇 인스턴스 생성, 토큰 검증
+  - `Start()`: 메시지 리스닝 시작 (goroutine)
+  - `Stop()`: 봇 종료
+  - `handleMessage()`: 텍스트/사진/문서 메시지 처리
+  - `createNoteFromMessage()`: 메시지 내용으로 노트 생성
+  - 지원 명령어: `/start` (도움말), `/info` (봇 정보)
+  - 허용된 사용자만 노트 생성 가능 (`allowed_users`)
+  - 자동 Git 커밋
 - **server/server.go**: Gin 라우터 설정, base_path 그룹 라우팅, 임베디드 정적 파일 서빙
 - **web/static/js/app.js**: CodeMirror 에디터, getEditorContent()/setEditorContent() 헬퍼
   - 편집 툴바: `applyFormat()`, `applyAsciiDocFormat()` - Markdown/AsciiDoc 서식 적용
@@ -458,3 +475,35 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - `addTag(tag)`: 태그 추가 및 자동 저장
 - `removeTag(tag)`: 태그 삭제 및 자동 저장
 - `showNotesByTag(tag)`: 태그별 노트 목록 팝업
+
+## 텔레그램 봇
+
+### 기능
+- 텔레그램 메시지를 Git Notepad 노트로 자동 저장
+- 허용된 사용자만 봇 사용 가능 (보안)
+- 지정된 폴더에 노트 자동 분류
+- Git 자동 커밋
+
+### 설정 방법
+1. [@BotFather](https://t.me/BotFather)에서 봇 생성하여 토큰 획득
+2. 본인의 텔레그램 ID 확인 ([@userinfobot](https://t.me/userinfobot) 사용)
+3. config.yaml 설정:
+```yaml
+telegram:
+  enabled: true
+  token: "YOUR_BOT_TOKEN"
+  allowed_users:
+    - 123456789  # 텔레그램 사용자 ID
+  default_folder: "Telegram"
+  default_username: "admin"
+```
+
+### 봇 명령어
+- `/start` - 도움말 표시
+- `/info` - 봇 설정 정보 (폴더, 사용자, 본인 ID)
+
+### 노트 저장 형식
+- 메시지 첫 줄 또는 첫 50자가 노트 제목
+- `telegram` 태그 자동 추가
+- Markdown 형식으로 저장
+- 파일명: UUID 기반

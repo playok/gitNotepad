@@ -15,6 +15,7 @@ import (
 	"github.com/user/gitnotepad/internal/handler"
 	"github.com/user/gitnotepad/internal/repository"
 	"github.com/user/gitnotepad/internal/server"
+	"github.com/user/gitnotepad/internal/telegram"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/term"
 )
@@ -265,6 +266,15 @@ func main() {
 	srv, err := server.NewWithAdminPassword(cfg, adminPassword)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
+	}
+
+	// Start Telegram bot if enabled
+	bot, err := telegram.New(cfg)
+	if err != nil {
+		log.Printf("Warning: Failed to create Telegram bot: %v", err)
+	} else if bot != nil {
+		go bot.Start()
+		defer bot.Stop()
 	}
 
 	if err := srv.Run(); err != nil {

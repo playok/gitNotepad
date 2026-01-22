@@ -22,6 +22,7 @@ type Config struct {
 	Logging    LoggingConfig    `yaml:"logging"`
 	Encryption EncryptionConfig `yaml:"encryption"`
 	Daemon     DaemonConfig     `yaml:"daemon"`
+	Telegram   TelegramConfig   `yaml:"telegram"`
 }
 
 type EncryptionConfig struct {
@@ -66,6 +67,14 @@ type AuthConfig struct {
 
 type DatabaseConfig struct {
 	Path string `yaml:"path"`
+}
+
+type TelegramConfig struct {
+	Enabled         bool    `yaml:"enabled"`
+	Token           string  `yaml:"token"`             // Telegram bot token from @BotFather
+	AllowedUsers    []int64 `yaml:"allowed_users"`     // List of allowed Telegram user IDs
+	DefaultFolder   string  `yaml:"default_folder"`    // Default folder for notes (e.g., "Telegram")
+	DefaultUsername string  `yaml:"default_username"`  // GitNotepad username to save notes as
 }
 
 // LoadResult contains the loaded config and migration status
@@ -132,6 +141,12 @@ func LoadWithMigrationCheck(path string) (*LoadResult, error) {
 	if cfg.Daemon.PidFile == "" {
 		cfg.Daemon.PidFile = "./gitnotepad.pid"
 	}
+	if cfg.Telegram.DefaultFolder == "" {
+		cfg.Telegram.DefaultFolder = "Telegram"
+	}
+	if cfg.Telegram.DefaultUsername == "" {
+		cfg.Telegram.DefaultUsername = "admin"
+	}
 
 	return &LoadResult{
 		Config:        &cfg,
@@ -184,6 +199,13 @@ func Default() *Config {
 		},
 		Daemon: DaemonConfig{
 			PidFile: "./gitnotepad.pid",
+		},
+		Telegram: TelegramConfig{
+			Enabled:         false,
+			Token:           "",
+			AllowedUsers:    []int64{},
+			DefaultFolder:   "Telegram",
+			DefaultUsername: "admin",
 		},
 	}
 }

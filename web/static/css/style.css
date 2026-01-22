@@ -2117,11 +2117,13 @@ body {
 .confirm-modal-danger #confirmModalOk {
     background: var(--error);
     border-color: var(--error);
+    color: #fff;
 }
 
 .confirm-modal-danger #confirmModalOk:hover {
     background: #c0392b;
     border-color: #c0392b;
+    color: #fff;
 }
 
 /* Prompt Modal */

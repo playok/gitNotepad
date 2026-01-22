@@ -678,19 +678,23 @@ func (h *NoteHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Check password for private notes
-	if note.Private {
-		password := c.GetHeader("X-Note-Password")
-		if !note.CheckPassword(password) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
-			return
-		}
-	}
-
 	var req UpdateNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Check password for private notes (only when content is being modified)
+	// Allow folder move, date change, tags update without password
+	if note.Private {
+		contentChanged := req.Content != note.Content
+		if contentChanged {
+			password := c.GetHeader("X-Note-Password")
+			if !note.CheckPassword(password) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+				return
+			}
+		}
 	}
 
 	// Update fields

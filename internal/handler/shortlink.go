@@ -826,12 +826,20 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
 	folderPrefix := info.FolderPath + ":>:"
 
+	// Convert folder path separator (:>:) to file system path separator
+	folderDirPath := strings.ReplaceAll(info.FolderPath, ":>:", string(filepath.Separator))
+	targetFolderPath := filepath.Join(notesPath, folderDirPath)
+
 	notes := []FolderNoteListItem{}
 
-	// Walk through files
-	entries, err := os.ReadDir(notesPath)
+	// Walk through files in the target folder
+	entries, err := os.ReadDir(targetFolderPath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read folder"})
+		// If folder doesn't exist, return empty list
+		c.JSON(http.StatusOK, gin.H{
+			"folderPath": info.FolderPath,
+			"notes":      notes,
+		})
 		return
 	}
 
@@ -845,7 +853,7 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 			continue
 		}
 
-		filePath := filepath.Join(notesPath, entry.Name())
+		filePath := filepath.Join(targetFolderPath, entry.Name())
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			continue
@@ -856,19 +864,19 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 			continue
 		}
 
-		// Check if note is in the shared folder
-		noteID := strings.TrimSuffix(entry.Name(), ext)
+		// Check if note title has the folder prefix (for folder sharing to work correctly)
+		fileNameWithoutExt := strings.TrimSuffix(entry.Name(), ext)
 		if !strings.HasPrefix(note.Title, folderPrefix) && note.Title != info.FolderPath {
-			// Also check if the noteID matches folder path pattern
-			if !strings.HasPrefix(noteID, info.FolderPath+":>:") {
-				continue
-			}
+			continue
 		}
 
 		// Skip password-protected notes
 		if note.Private {
 			continue
 		}
+
+		// Build full note ID including folder path
+		noteID := info.FolderPath + "/" + fileNameWithoutExt
 
 		notes = append(notes, FolderNoteListItem{
 			ID:       noteID,
@@ -915,21 +923,33 @@ func (h *ShortLinkHandler) GetPublicFolderNote(c *gin.Context) {
 		return
 	}
 
-	// Decode note ID
+	// Decode note ID (format: "FolderPath/uuid" with / separator)
 	decodedNoteID := decodeNoteIDParam(noteID)
 
 	// Verify note belongs to the shared folder
-	if !strings.HasPrefix(decodedNoteID, info.FolderPath+":>:") && decodedNoteID != info.FolderPath {
+	// Note ID format: "Telegram/uuid" or "folder:>:subfolder/uuid"
+	if !strings.HasPrefix(decodedNoteID, info.FolderPath+"/") && decodedNoteID != info.FolderPath {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Note not in shared folder"})
 		return
 	}
 
-	// Read the note
+	// Extract the actual file UUID from the note ID
+	// e.g., "Telegram/uuid" -> "uuid"
+	var fileID string
+	if strings.HasPrefix(decodedNoteID, info.FolderPath+"/") {
+		fileID = strings.TrimPrefix(decodedNoteID, info.FolderPath+"/")
+	} else {
+		fileID = decodedNoteID
+	}
+
+	// Build the actual file path
 	notesPath := filepath.Join(h.config.Storage.Path, info.Username, "notes")
+	folderDirPath := strings.ReplaceAll(info.FolderPath, ":>:", string(filepath.Separator))
+	targetFolderPath := filepath.Join(notesPath, folderDirPath)
 
 	var note *model.Note
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
-		filePath := filepath.Join(notesPath, decodedNoteID+ext)
+		filePath := filepath.Join(targetFolderPath, fileID+ext)
 		data, readErr := os.ReadFile(filePath)
 		if readErr != nil {
 			continue

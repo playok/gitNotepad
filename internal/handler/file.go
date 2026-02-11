@@ -181,7 +181,32 @@ func (h *FileHandler) Serve(c *gin.Context) {
 		return
 	}
 
+	// Security: verify user owns the file (IDOR protection)
+	// Allow access if: user is the owner, user is admin, or accessing legacy shared files
+	user := middleware.GetCurrentUser(c)
+	if user != nil && user.Username != username && !user.IsAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
 	filePath := filepath.Join(h.storagePath, username, "files", filename)
+
+	// Security: verify path stays within storage directory (path containment)
+	absBase, err := filepath.Abs(h.storagePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+	if !strings.HasPrefix(absPath, absBase+string(os.PathSeparator)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path"})
+		return
+	}
+
 	isLegacy := false
 
 	// Check if file exists

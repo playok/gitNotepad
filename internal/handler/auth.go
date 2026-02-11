@@ -71,15 +71,19 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 	}
 
-	// Set cookie
+	// Set cookie with security settings
+	// SameSite=Lax prevents CSRF in most cases while allowing normal navigation
+	// Secure should be true when behind HTTPS (detected via X-Forwarded-Proto or config)
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(
 		middleware.SessionCookieName,
 		session.Token,
 		int(SessionDuration.Seconds()),
 		"/",
 		"",
-		false, // secure (set true in production with HTTPS)
-		true,  // httpOnly
+		isSecure, // secure: true when HTTPS detected
+		true,     // httpOnly
 	)
 
 	encoding.Info("Login success: username=%s, ip=%s, is_admin=%v", user.Username, clientIP, user.IsAdmin)

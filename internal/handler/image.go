@@ -121,16 +121,31 @@ func (h *ImageHandler) Upload(c *gin.Context) {
 	// Get original filename
 	originalName := header.Filename
 
-	// Validate content type
-	contentType := header.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type"})
+	// Read first 512 bytes to detect content type from magic bytes
+	buf := make([]byte, 512)
+	n, err := file.Read(buf)
+	if err != nil && err != io.EOF {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file"})
+		return
+	}
+	buf = buf[:n]
+
+	// Detect actual content type from file content (magic bytes)
+	detectedType := http.DetectContentType(buf)
+	if !strings.HasPrefix(detectedType, "image/") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type: not an image"})
 		return
 	}
 
-	// Determine file extension
+	// Reset file reader to beginning
+	if _, err := file.Seek(0, 0); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process file"})
+		return
+	}
+
+	// Determine file extension from detected content type
 	ext := ".png"
-	switch contentType {
+	switch detectedType {
 	case "image/jpeg":
 		ext = ".jpg"
 	case "image/gif":
@@ -196,7 +211,32 @@ func (h *ImageHandler) Serve(c *gin.Context) {
 		return
 	}
 
+	// Security: verify user owns the file (IDOR protection)
+	// Allow access if: user is the owner, user is admin, or accessing legacy shared files
+	user := middleware.GetCurrentUser(c)
+	if user != nil && user.Username != username && !user.IsAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+
 	filePath := filepath.Join(h.storagePath, username, "files", filename)
+
+	// Security: verify path stays within storage directory (path containment)
+	absBase, err := filepath.Abs(h.storagePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+	if !strings.HasPrefix(absPath, absBase+string(os.PathSeparator)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path"})
+		return
+	}
+
 	isLegacy := false
 
 	// Check if file exists

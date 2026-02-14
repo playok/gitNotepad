@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"io/fs"
@@ -37,6 +38,7 @@ type ShortLinkHandler struct {
 	reverseMap       map[string]string         // noteId -> shortCode
 	folderReverseMap map[string]string         // folderPath -> shortCode
 	mu               sync.RWMutex
+	saveMu           sync.Mutex
 	storagePath      string
 	basePath         string
 }
@@ -101,6 +103,8 @@ func (h *ShortLinkHandler) save() error {
 	if err != nil {
 		return err
 	}
+	h.saveMu.Lock()
+	defer h.saveMu.Unlock()
 	return os.WriteFile(h.storagePath, data, 0644)
 }
 
@@ -150,8 +154,11 @@ func (h *ShortLinkHandler) cleanupExpiredLinks() {
 }
 
 func generateShortCode() string {
-	bytes := make([]byte, 4)
-	rand.Read(bytes)
+	bytes := make([]byte, 8)
+	if _, err := rand.Read(bytes); err != nil {
+		// fallback: use timestamp
+		binary.BigEndian.PutUint64(bytes, uint64(time.Now().UnixNano()))
+	}
 	return hex.EncodeToString(bytes)
 }
 
@@ -194,6 +201,12 @@ func (h *ShortLinkHandler) Generate(c *gin.Context) {
 	// Parse request body for expiry
 	var req GenerateRequest
 	c.ShouldBindJSON(&req)
+
+	// ExpiresIn 범위 제한 (최대 10년)
+	if req.ExpiresIn != nil && *req.ExpiresIn > 3650 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Expiry cannot exceed 10 years"})
+		return
+	}
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -607,6 +620,12 @@ func (h *ShortLinkHandler) GenerateFolderLink(c *gin.Context) {
 		return
 	}
 
+	// ExpiresIn 범위 제한 (최대 10년)
+	if req.ExpiresIn != nil && *req.ExpiresIn > 3650 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Expiry cannot exceed 10 years"})
+		return
+	}
+
 	// Get current user
 	user := middleware.GetCurrentUser(c)
 	username := ""
@@ -828,6 +847,12 @@ func (h *ShortLinkHandler) GetPublicFolder(c *gin.Context) {
 
 	// Convert folder path separator (:>:) to file system path separator
 	folderDirPath := strings.ReplaceAll(info.FolderPath, ":>:", string(filepath.Separator))
+	// 경로 탐색 방어
+	cleanPath := filepath.Clean(folderDirPath)
+	if strings.Contains(cleanPath, "..") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
+		return
+	}
 	targetFolderPath := filepath.Join(notesPath, folderDirPath)
 
 	notes := []FolderNoteListItem{}
@@ -969,10 +994,22 @@ func (h *ShortLinkHandler) GetPublicFolderNote(c *gin.Context) {
 
 	// Convert relative path separators to OS-specific
 	relativeFilePath := filepath.FromSlash(relativePath)
+	// 경로 탐색 방어
+	if strings.Contains(filepath.Clean(relativeFilePath), "..") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid path"})
+		return
+	}
 
 	var note *model.Note
 	for _, ext := range []string{".md", ".txt", ".adoc"} {
 		filePath := filepath.Join(targetFolderPath, relativeFilePath+ext)
+		// filePath containment 체크
+		absTarget, _ := filepath.Abs(targetFolderPath)
+		absFile, _ := filepath.Abs(filePath)
+		if !strings.HasPrefix(absFile, absTarget+string(filepath.Separator)) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			return
+		}
 		data, readErr := os.ReadFile(filePath)
 		if readErr != nil {
 			continue

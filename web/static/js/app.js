@@ -2373,7 +2373,7 @@ async function showNoteInfo(note) {
                 </div>
                 <div class="note-info-row">
                     <span class="note-info-label">${i18n.t('noteInfo.shared') || 'Shared'}:</span>
-                    <span class="note-info-value">${hasShortlink ? '🔗 ' + (i18n.t('noteInfo.yes') || 'Yes') + ` (/${shortlinkInfo.code})` : i18n.t('noteInfo.no') || 'No'}</span>
+                    <span class="note-info-value">${hasShortlink ? '🔗 ' + (i18n.t('noteInfo.yes') || 'Yes') + ` (/${escapeHtml(shortlinkInfo.code)})` : i18n.t('noteInfo.no') || 'No'}</span>
                 </div>
                 ${noteDetail.created ? `
                 <div class="note-info-row">
@@ -4593,14 +4593,18 @@ function removeNoteFromList(noteId) {
     }
 }
 
+let loadNoteController = null;
+
 async function loadNote(id) {
+    if (loadNoteController) loadNoteController.abort();
+    loadNoteController = new AbortController();
     try {
         const headers = {};
         if (currentPassword) {
             headers['X-Note-Password'] = currentPassword;
         }
 
-        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers });
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(id)}`, { headers, signal: loadNoteController.signal });
 
         // Check response status before parsing JSON
         if (!response.ok) {
@@ -4641,9 +4645,12 @@ async function loadNote(id) {
             switchTab('preview');
         }
     } catch (error) {
+        if (error.name === 'AbortError') return;
         console.error('Failed to load note:', error);
         const errorMsg = i18n ? i18n.t('msg.loadFailed') || 'Failed to load note' : 'Failed to load note';
         alert(errorMsg);
+    } finally {
+        loadNoteController = null;
     }
 }
 

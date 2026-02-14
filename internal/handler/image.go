@@ -45,14 +45,14 @@ func (h *ImageHandler) getMetadataPath(username string) string {
 
 // loadMetadata loads file metadata from disk for a user
 func (h *ImageHandler) loadMetadata(username string) map[string]string {
-	imageMetadata.RLock()
+	imageMetadata.Lock()
+	defer imageMetadata.Unlock()
+
 	if data, ok := imageMetadata.cache[username]; ok {
-		imageMetadata.RUnlock()
 		return data
 	}
-	imageMetadata.RUnlock()
 
-	// Load from file
+	// Load from file (under write lock to prevent TOCTOU)
 	metaPath := h.getMetadataPath(username)
 	data := make(map[string]string)
 
@@ -61,10 +61,7 @@ func (h *ImageHandler) loadMetadata(username string) map[string]string {
 		json.Unmarshal(file, &data)
 	}
 
-	imageMetadata.Lock()
 	imageMetadata.cache[username] = data
-	imageMetadata.Unlock()
-
 	return data
 }
 

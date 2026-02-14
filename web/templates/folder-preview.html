@@ -750,11 +750,6 @@
                     link.setAttribute('rel', 'noopener noreferrer');
                 });
 
-                // Apply syntax highlighting
-                bodyEl.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-
                 // Render math
                 if (typeof renderMathInElement !== 'undefined') {
                     renderMathInElement(bodyEl, {
@@ -785,6 +780,32 @@
                 return escapeHtml(content);
             }
             const renderer = new marked.Renderer();
+
+            // Custom code renderer for proper syntax highlighting
+            renderer.code = function(code, language) {
+                // Handle object format (newer marked versions)
+                if (typeof code === 'object') {
+                    language = code.lang;
+                    code = code.text;
+                }
+
+                const validLang = language && hljs.getLanguage(language);
+                let highlighted;
+
+                try {
+                    if (validLang) {
+                        highlighted = hljs.highlight(code, { language: language }).value;
+                    } else {
+                        highlighted = hljs.highlightAuto(code).value;
+                    }
+                } catch (e) {
+                    highlighted = escapeHtml(code);
+                }
+
+                const langClass = validLang ? `language-${language}` : '';
+                return `<pre><code class="hljs ${langClass}">${highlighted}</code></pre>`;
+            };
+
             renderer.link = function(href, title, text) {
                 if (typeof href === 'object') {
                     title = href.title;

@@ -6004,7 +6004,8 @@ async function bulkMoveNotes(targetFolder) {
 function initMultiSelect() {
     const multiSelectBtn = document.getElementById('multiSelectBtn');
     if (multiSelectBtn) {
-        multiSelectBtn.addEventListener('click', () => {
+        multiSelectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (isMultiSelectMode) {
                 exitMultiSelectMode();
             } else {

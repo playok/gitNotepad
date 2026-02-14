@@ -9103,13 +9103,18 @@ function renderMiniCalendar() {
     miniCalGrid.innerHTML = html;
 }
 
-function createNoteForMiniCalDate(dateKey) {
+async function createNoteForMiniCalDate(dateKey) {
+    // Parse date and create YYYY/MM folder structure
+    const [year, month] = dateKey.split('-');
+    const folderPath = `${year}/${month}`;
+    await ensureCalendarFolderExists(year, month);
+
     // Create new note with the date as title prefix
     currentNote = null;
     currentPassword = null;
     isViewMode = false;
-    currentNoteFolderPath = '';
-    noteFolderPath.textContent = '';
+    currentNoteFolderPath = folderPath;
+    noteFolderPath.textContent = formatFolderPathForDisplay(folderPath);
     noteTitle.value = `${dateKey} `;
     setEditorContent('');
     noteType.value = localStorage.getItem('defaultNoteType') || 'markdown';
@@ -9288,11 +9293,11 @@ async function createNoteForDate(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    // Create folder path: Daily/YYYY.MM
-    const folderPath = `Daily/${year}.${month}`;
+    // Create folder path: YYYY/MM
+    const folderPath = `${year}/${month}`;
 
-    // Ensure Daily folder and year.month subfolder exist
-    await ensureDailyFolderExists(year, month);
+    // Ensure year and month folder exist
+    await ensureCalendarFolderExists(year, month);
 
     // Reset all fields (same as createNewNote)
     currentNote = null;
@@ -9333,28 +9338,28 @@ async function createNoteForDate(date) {
     }, 100);
 }
 
-// Ensure Daily/YYYY.MM folder structure exists
-async function ensureDailyFolderExists(year, month) {
+// Ensure YYYY/MM folder structure exists
+async function ensureCalendarFolderExists(year, month) {
     const monthStr = String(month).padStart(2, '0');
-    const yearMonthFolder = `${year}.${monthStr}`;
+    const yearStr = String(year);
 
-    // Check if Daily folder exists
-    const dailyExists = folders.some(f => f.path === 'Daily');
-    if (!dailyExists) {
-        await createFolderSilent('Daily', '');
-        // Set Daily folder to be collapsed by default
-        if (expandedFolders['Daily'] === undefined) {
-            expandedFolders['Daily'] = false;
+    // Check if YYYY folder exists
+    const yearExists = folders.some(f => f.path === yearStr);
+    if (!yearExists) {
+        await createFolderSilent(yearStr, '');
+        // Set year folder to be collapsed by default
+        if (expandedFolders[yearStr] === undefined) {
+            expandedFolders[yearStr] = false;
             localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
         }
     }
 
-    // Check if Daily/YYYY.MM folder exists
-    const monthFolderPath = `Daily/${yearMonthFolder}`;
+    // Check if YYYY/MM folder exists
+    const monthFolderPath = `${yearStr}/${monthStr}`;
     const monthExists = folders.some(f => f.path === monthFolderPath);
     if (!monthExists) {
-        await createFolderSilent(yearMonthFolder, 'Daily');
-        // Set year.month folder to be collapsed by default
+        await createFolderSilent(monthStr, yearStr);
+        // Set month folder to be collapsed by default
         if (expandedFolders[monthFolderPath] === undefined) {
             expandedFolders[monthFolderPath] = false;
             localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));

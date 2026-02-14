@@ -222,7 +222,7 @@ telegram:
 - **편집 툴바**: Markdown/AsciiDoc 서식 버튼, 표 그리드 선택기
 - **AsciiDoc 테이블 에디터**: 드래그로 셀 선택, 병합/해제, span 문법 자동 생성
 - **KaTeX 수식 렌더링**: LaTeX 문법 지원 ($...$, $$...$$)
-- **캘린더 뷰**: 사이드바 미니 캘린더, 날짜별 노트 관리, Daily 폴더 자동 생성
+- **캘린더 뷰**: 사이드바 미니 캘린더, 날짜별 노트 관리, YYYY/MM 폴더 자동 생성
 - **폴더 관리**: 드래그 앤 드롭, 폴더 펼치기/닫기, 아이콘 변경, 노트 이동 모달
 - **새 노트 위치 선택**: 노트 생성 시 폴더 선택 모달
 - **자동 저장**: 에디터 툴바에서 토글 가능 (기본: 비활성화)
@@ -299,7 +299,7 @@ telegram:
   - 편집 툴바: `applyFormat()`, `applyAsciiDocFormat()` - Markdown/AsciiDoc 서식 적용
   - 표 그리드 선택기: `initTableGridSelector()`, 8x8 드래그로 행/열 선택
   - AsciiDoc 테이블 에디터: `openTableEditor()`, `mergeCells()`, `insertTableFromEditor()`
-  - 캘린더 뷰: `initMiniCalendar()`, `renderMiniCalendar()`, Daily 폴더 자동 생성
+  - 캘린더 뷰: `initMiniCalendar()`, `renderMiniCalendar()`, YYYY/MM 폴더 자동 생성
   - 드래그 앤 드롭: 캘린더 날짜 이동, 폴더 드래그 앤 드롭
   - 자동 저장: `autoSaveEnabled` 플래그, `isSaving` 중복 저장 방지
   - 버전 히스토리: `showHistory()`, `selectVersion()`, `loadVersionDiff()` - 3-way diff
@@ -444,14 +444,14 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - 날짜별 노트 매핑 (노트의 created 날짜 기준)
 - 날짜 선택 시 에디터 영역에 해당 날짜 노트 패널 표시
 - 노트 드래그 앤 드롭으로 날짜 이동
-- **Daily 폴더 자동 생성**: 캘린더에서 새 노트 생성 시 `Daily/YYYY.MM/` 폴더에 저장
+- **캘린더 폴더 자동 생성**: 캘린더에서 새 노트 생성 시 `YYYY/MM/` 계층 폴더에 저장
 
 ### 구현 세부사항
 - **미니 캘린더**: `initMiniCalendar()`, `renderMiniCalendar()` - 사이드바에 표시
 - **날짜 노트 패널**: 날짜 클릭 시 에디터 영역에 해당 날짜 노트 목록 표시
 - **날짜-노트 매핑**: `buildNotesMapByDate()` - notes 배열에서 created 날짜 기준 맵 생성
-- **Daily 폴더 자동 생성**: `createNoteForDate()`, `ensureDailyFolderExists()`
-  - Daily 폴더와 년.월 하위 폴더 자동 생성
+- **캘린더 폴더 자동 생성**: `createNoteForDate()`, `createNoteForMiniCalDate()`, `ensureCalendarFolderExists()`
+  - YYYY 폴더와 MM 하위 폴더 자동 생성 (예: `2026/02/`)
   - 자동 생성된 폴더는 기본 collapsed 상태
 - **드래그 앤 드롭**: HTML5 Drag API 사용
   - PUT `/api/notes/:id`에 `created` 필드 전송하여 날짜 변경

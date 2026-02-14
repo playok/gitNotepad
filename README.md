@@ -22,7 +22,7 @@ A web-based note application with integrated Git version control
 - **Multi-language Support**: English/Korean (changeable in Settings)
 - **Offline Support**: All libraries included locally
 - **Short URLs**: Generate short links for note sharing (public/private, expiration date)
-- **Calendar View**: Sidebar mini calendar, date-based note management, auto Daily folder creation
+- **Calendar View**: Sidebar mini calendar, date-based note management, auto YYYY/MM folder creation
 - **Folder Management**: Drag & drop, expand/collapse, icon change, note move modal
 - **New Note Location**: Folder selection modal when creating notes
 - **Tablet Support**: Touch device optimization (44px minimum touch area)
@@ -278,7 +278,7 @@ Use layout control buttons at top of editor area for various layouts:
 
 **Creating New Notes:**
 1. Select date then click "+ New Note" button
-2. Auto-saved in `Daily/YYYY.MM/` folder
+2. Auto-saved in `YYYY/MM/` folder (e.g., `2026/02/`)
 3. Date automatically entered as title (YYYY-MM-DD format)
 
 ## Configuration

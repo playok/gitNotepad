@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.15.0](https://github.com/playok/gitNotepad/releases/tag/v0.15.0) - Multi-Select & Security Improvements
+
+**New Features:**
+- Bulk note selection and folder move (#46)
+  - Checkbox-based multi-select mode in sidebar
+  - Select All / Deselect All toggle
+  - Move multiple notes to a folder at once
+- Calendar folder structure changed from `Daily/YYYY.MM` to `YYYY/MM` hierarchy (#41)
+
+**Security Improvements:**
+- Path traversal protection for folder share links (`GetPublicFolder`, `GetPublicFolderNote`)
+- Short code collision resistance: 4-byte → 8-byte random generation
+- ExpiresIn validation: max 3650 days (10 years) limit
+- `save()` write mutex to prevent race condition on concurrent file writes
+- TOCTOU fix in `loadMetadata` for image/file handlers (single lock pattern)
+- XSS fix: escape `shortlinkInfo.code` in note info modal
+- `loadNote()` AbortController to cancel stale fetch on rapid note switching
+
+**Bug Fixes:**
+- Fix code block syntax highlighting in folder-preview page
+- Fix multi-select button click event propagation
+- Remove debug console logs
+
 ## [v0.13.0](https://github.com/playok/gitNotepad/releases/tag/v0.13.0) - Telegram Bot Integration
 
 **New Features:**

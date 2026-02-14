@@ -39,6 +39,17 @@ const i18n = {
             'sidebar.noNotes': 'No notes yet',
             'sidebar.notes': 'notes',
             'sidebar.clearSearch': 'Clear search',
+            'sidebar.multiSelect': 'Select',
+
+            // Multi-select
+            'multiSelect.selected': '{count} selected',
+            'multiSelect.selectAll': 'Select All',
+            'multiSelect.deselectAll': 'Deselect All',
+            'multiSelect.move': 'Move',
+            'multiSelect.moveTitle': 'Move {count} Notes',
+            'multiSelect.moved': '{count} notes moved',
+            'multiSelect.moveResult': '{success} moved, {fail} failed',
+            'multiSelect.cancel': 'Cancel',
 
             // User Menu
             'userMenu.admin': 'Admin',
@@ -579,6 +590,17 @@ const i18n = {
             'sidebar.noNotes': '노트가 없습니다',
             'sidebar.notes': '개의 노트',
             'sidebar.clearSearch': '검색 지우기',
+            'sidebar.multiSelect': '선택',
+
+            // Multi-select
+            'multiSelect.selected': '{count}개 선택됨',
+            'multiSelect.selectAll': '전체 선택',
+            'multiSelect.deselectAll': '전체 해제',
+            'multiSelect.move': '이동',
+            'multiSelect.moveTitle': '{count}개 노트 이동',
+            'multiSelect.moved': '{count}개 노트가 이동되었습니다',
+            'multiSelect.moveResult': '{success}개 이동, {fail}개 실패',
+            'multiSelect.cancel': '취소',
 
             // User Menu
             'userMenu.admin': '관리자',

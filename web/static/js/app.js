@@ -241,6 +241,12 @@ let originalContent = {
     tags: []
 };
 
+// Multi-select mode
+let isMultiSelectMode = false;
+let selectedNoteIds = new Set();
+let lastSelectedNoteId = null;
+let isBulkMoveMode = false;
+
 // WebSocket for real-time updates
 let ws = null;
 let wsReconnectTimer = null;
@@ -1051,6 +1057,12 @@ function handleKeyboardShortcut(e) {
 
     // Escape key
     if (e.key === 'Escape') {
+        // Exit multi-select mode first
+        if (isMultiSelectMode) {
+            exitMultiSelectMode();
+            return;
+        }
+
         // Close modals
         const modals = document.querySelectorAll('.modal');
         modals.forEach(modal => {
@@ -5205,6 +5217,11 @@ function buildNoteTree(notesList) {
 
 function renderNoteTree() {
     noteList.innerHTML = '';
+    if (isMultiSelectMode) {
+        noteList.classList.add('multi-select-mode');
+    } else {
+        noteList.classList.remove('multi-select-mode');
+    }
     const tree = buildNoteTree(notes);
     renderTreeLevel(tree, noteList, 0, '');
 }
@@ -5306,7 +5323,7 @@ function renderTreeLevel(tree, container, level, path) {
 function renderNoteItem(note, container, level, isChild) {
     const li = document.createElement('li');
     li.className = 'note-list-item';
-    li.draggable = true;
+    li.draggable = !isMultiSelectMode;
     li.dataset.noteId = note.id;
 
     if (currentNote && currentNote.id === note.id) {
@@ -5314,6 +5331,11 @@ function renderNoteItem(note, container, level, isChild) {
         if (!isViewMode) {
             li.classList.add('editing');
         }
+    }
+
+    // Multi-select highlight
+    if (isMultiSelectMode && selectedNoteIds.has(note.id)) {
+        li.classList.add('multi-selected');
     }
 
     // Use title directly when folder_path is separate, otherwise extract for backward compatibility
@@ -5324,8 +5346,14 @@ function renderNoteItem(note, container, level, isChild) {
     const typeLabel = note.type === 'markdown' ? 'MD' : (note.type === 'asciidoc' ? 'ADOC' : 'TXT');
     const editBtnTitle = (typeof i18n !== 'undefined') ? i18n.t('btn.edit') : 'Edit';
 
+    // Checkbox for multi-select mode
+    const checkboxHtml = isMultiSelectMode
+        ? `<span class="multi-select-checkbox${selectedNoteIds.has(note.id) ? ' checked' : ''}"></span>`
+        : '';
+
     li.style.paddingLeft = `${12 + level * 16}px`;
     li.innerHTML = `
+        ${checkboxHtml}
         <span class="drag-handle">&#8942;&#8942;</span>
         <span class="tree-note-icon">${noteIcon}</span>
         <div class="note-info">
@@ -5335,11 +5363,22 @@ function renderNoteItem(note, container, level, isChild) {
         <button class="note-edit-btn" title="${editBtnTitle}" data-note-id="${note.id}">&#9998;</button>
     `;
 
-    // Click on note item to view (preview only)
+    // Click on note item
     li.addEventListener('click', (e) => {
         // Don't trigger if clicking on edit button
         if (e.target.closest('.note-edit-btn')) return;
         e.stopPropagation();
+
+        if (isMultiSelectMode) {
+            // Shift+click for range selection
+            if (e.shiftKey && lastSelectedNoteId) {
+                selectNoteRange(lastSelectedNoteId, note.id);
+            } else {
+                toggleNoteSelection(note.id);
+            }
+            return;
+        }
+
         currentPassword = null;
         loadNote(note.id);
     });
@@ -5367,9 +5406,39 @@ function renderNoteItem(note, container, level, isChild) {
         showContextMenu(e, note.id);
     });
 
-    // Drag events
-    li.addEventListener('dragstart', (e) => handleDragStart(e, note.id));
-    li.addEventListener('dragend', handleDragEnd);
+    // Drag events (only in normal mode)
+    if (!isMultiSelectMode) {
+        li.addEventListener('dragstart', (e) => handleDragStart(e, note.id));
+        li.addEventListener('dragend', handleDragEnd);
+    }
+
+    // Long-press for touch devices to enter multi-select
+    let longPressTimer = null;
+    let touchMoved = false;
+    li.addEventListener('touchstart', (e) => {
+        if (isMultiSelectMode) return;
+        touchMoved = false;
+        longPressTimer = setTimeout(() => {
+            if (!touchMoved) {
+                e.preventDefault();
+                enterMultiSelectMode();
+                toggleNoteSelection(note.id);
+            }
+        }, 500);
+    }, { passive: false });
+    li.addEventListener('touchmove', () => {
+        touchMoved = true;
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
+    li.addEventListener('touchend', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
 
     container.appendChild(li);
 }
@@ -5565,6 +5634,13 @@ let selectedMoveFolder = '';
 function showMoveNoteModal(note) {
     moveTargetNote = note;
     selectedMoveFolder = '';
+    isBulkMoveMode = false;
+
+    // Restore modal title to single-note mode
+    const modalTitle = moveNoteModal.querySelector('h3');
+    if (modalTitle) {
+        modalTitle.textContent = i18n.t('move.title') || 'Move Note';
+    }
 
     // Get folder path from note.id (actual file location) rather than folder_path field
     // This ensures consistency with tree rendering which also uses note.id
@@ -5648,10 +5724,19 @@ function initMoveNoteModal() {
     moveNoteCancel.addEventListener('click', () => {
         moveNoteModal.style.display = 'none';
         moveTargetNote = null;
+        isBulkMoveMode = false;
     });
 
     // Confirm button
     moveNoteConfirm.addEventListener('click', async () => {
+        // Bulk move mode
+        if (isBulkMoveMode) {
+            await bulkMoveNotes(selectedMoveFolder);
+            moveNoteModal.style.display = 'none';
+            isBulkMoveMode = false;
+            return;
+        }
+
         if (!moveTargetNote) return;
 
         // Get folder path from note.id (actual file location)
@@ -5722,8 +5807,232 @@ function initMoveNoteModal() {
         if (e.target === moveNoteModal) {
             moveNoteModal.style.display = 'none';
             moveTargetNote = null;
+            isBulkMoveMode = false;
         }
     });
+}
+
+// ===== Multi-select mode =====
+
+function enterMultiSelectMode() {
+    if (isMultiSelectMode) return;
+    isMultiSelectMode = true;
+    selectedNoteIds.clear();
+    lastSelectedNoteId = null;
+
+    const multiSelectBtn = document.getElementById('multiSelectBtn');
+    if (multiSelectBtn) multiSelectBtn.classList.add('active');
+
+    const multiSelectBar = document.getElementById('multiSelectBar');
+    if (multiSelectBar) multiSelectBar.style.display = 'flex';
+
+    updateMultiSelectUI();
+    renderNoteTree();
+}
+
+function exitMultiSelectMode() {
+    if (!isMultiSelectMode) return;
+    isMultiSelectMode = false;
+    selectedNoteIds.clear();
+    lastSelectedNoteId = null;
+
+    const multiSelectBtn = document.getElementById('multiSelectBtn');
+    if (multiSelectBtn) multiSelectBtn.classList.remove('active');
+
+    const multiSelectBar = document.getElementById('multiSelectBar');
+    if (multiSelectBar) multiSelectBar.style.display = 'none';
+
+    renderNoteTree();
+}
+
+function toggleNoteSelection(noteId) {
+    if (selectedNoteIds.has(noteId)) {
+        selectedNoteIds.delete(noteId);
+    } else {
+        selectedNoteIds.add(noteId);
+    }
+    lastSelectedNoteId = noteId;
+    updateMultiSelectUI();
+    updateNoteItemUI(noteId);
+}
+
+function updateNoteItemUI(noteId) {
+    const li = noteList.querySelector(`.note-list-item[data-note-id="${CSS.escape(noteId)}"]`);
+    if (!li) return;
+
+    const checkbox = li.querySelector('.multi-select-checkbox');
+    if (selectedNoteIds.has(noteId)) {
+        li.classList.add('multi-selected');
+        if (checkbox) checkbox.classList.add('checked');
+    } else {
+        li.classList.remove('multi-selected');
+        if (checkbox) checkbox.classList.remove('checked');
+    }
+}
+
+function selectNoteRange(fromId, toId) {
+    // Collect all visible note IDs in DOM order
+    const allItems = Array.from(noteList.querySelectorAll('.note-list-item[data-note-id]'));
+    const allIds = allItems.map(item => item.dataset.noteId);
+
+    const fromIdx = allIds.indexOf(fromId);
+    const toIdx = allIds.indexOf(toId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const start = Math.min(fromIdx, toIdx);
+    const end = Math.max(fromIdx, toIdx);
+
+    for (let i = start; i <= end; i++) {
+        selectedNoteIds.add(allIds[i]);
+        updateNoteItemUI(allIds[i]);
+    }
+    lastSelectedNoteId = toId;
+    updateMultiSelectUI();
+}
+
+function updateMultiSelectUI() {
+    const count = selectedNoteIds.size;
+    const countEl = document.getElementById('multiSelectCount');
+    if (countEl) {
+        countEl.textContent = i18n.t('multiSelect.selected', { count }) || `${count} selected`;
+    }
+
+    const moveBtn = document.getElementById('multiSelectMoveBtn');
+    if (moveBtn) {
+        moveBtn.disabled = count === 0;
+    }
+
+    const allBtn = document.getElementById('multiSelectAllBtn');
+    if (allBtn) {
+        // Get all note ids from the visible list
+        const allNoteItems = noteList.querySelectorAll('.note-list-item[data-note-id]');
+        const allSelected = allNoteItems.length > 0 && count === allNoteItems.length;
+        allBtn.textContent = allSelected
+            ? (i18n.t('multiSelect.deselectAll') || 'Deselect All')
+            : (i18n.t('multiSelect.selectAll') || 'Select All');
+    }
+}
+
+function toggleSelectAll() {
+    const allItems = noteList.querySelectorAll('.note-list-item[data-note-id]');
+    const allIds = Array.from(allItems).map(item => item.dataset.noteId);
+
+    if (selectedNoteIds.size === allIds.length) {
+        // Deselect all
+        selectedNoteIds.clear();
+    } else {
+        // Select all
+        allIds.forEach(id => selectedNoteIds.add(id));
+    }
+
+    updateMultiSelectUI();
+    renderNoteTree();
+}
+
+function showBulkMoveModal() {
+    if (selectedNoteIds.size === 0) return;
+
+    isBulkMoveMode = true;
+    moveTargetNote = null;
+    selectedMoveFolder = '';
+
+    // Update modal title
+    const modalTitle = moveNoteModal.querySelector('.modal-title, h3');
+    if (modalTitle) {
+        modalTitle.textContent = i18n.t('multiSelect.moveTitle', { count: selectedNoteIds.size }) || `Move ${selectedNoteIds.size} Notes`;
+    }
+
+    // Show info
+    moveNoteInfo.textContent = i18n.t('multiSelect.selected', { count: selectedNoteIds.size }) || `${selectedNoteIds.size} selected`;
+
+    // Populate folder list without current folder highlighting
+    populateMoveFolderList('__none__');
+
+    moveNoteModal.style.display = 'flex';
+}
+
+async function bulkMoveNotes(targetFolder) {
+    const noteIds = Array.from(selectedNoteIds);
+    let success = 0;
+    let fail = 0;
+
+    for (const noteId of noteIds) {
+        try {
+            const getResponse = await fetch(`${basePath}/api/notes/${encodeNoteId(noteId)}`);
+            if (!getResponse.ok) {
+                fail++;
+                continue;
+            }
+            const fullNote = await getResponse.json();
+
+            const noteName = fullNote.title || noteId.split('/').pop() || '';
+
+            const response = await authFetch(`/api/notes/${encodeNoteId(noteId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folder_path: targetFolder,
+                    title: noteName,
+                    content: fullNote.content,
+                    type: fullNote.type,
+                    private: fullNote.private
+                })
+            });
+
+            if (response.ok) {
+                success++;
+            } else {
+                fail++;
+            }
+        } catch (error) {
+            console.error('Failed to move note:', noteId, error);
+            fail++;
+        }
+    }
+
+    await loadNotes();
+
+    if (fail === 0) {
+        showToast(i18n.t('multiSelect.moved', { count: success }) || `${success} notes moved`);
+    } else {
+        showToast(i18n.t('multiSelect.moveResult', { success, fail }) || `${success} moved, ${fail} failed`);
+    }
+
+    exitMultiSelectMode();
+}
+
+function initMultiSelect() {
+    const multiSelectBtn = document.getElementById('multiSelectBtn');
+    if (multiSelectBtn) {
+        multiSelectBtn.addEventListener('click', () => {
+            if (isMultiSelectMode) {
+                exitMultiSelectMode();
+            } else {
+                enterMultiSelectMode();
+            }
+        });
+    }
+
+    const multiSelectMoveBtn = document.getElementById('multiSelectMoveBtn');
+    if (multiSelectMoveBtn) {
+        multiSelectMoveBtn.addEventListener('click', () => {
+            showBulkMoveModal();
+        });
+    }
+
+    const multiSelectCancelBtn = document.getElementById('multiSelectCancelBtn');
+    if (multiSelectCancelBtn) {
+        multiSelectCancelBtn.addEventListener('click', () => {
+            exitMultiSelectMode();
+        });
+    }
+
+    const multiSelectAllBtn = document.getElementById('multiSelectAllBtn');
+    if (multiSelectAllBtn) {
+        multiSelectAllBtn.addEventListener('click', () => {
+            toggleSelectAll();
+        });
+    }
 }
 
 function createNewNoteInFolder(folderPath) {
@@ -8010,6 +8319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSyntaxHelpModal();
     initNewNoteLocationModal();
     initMoveNoteModal();
+    initMultiSelect();
 
     // Ensure i18n is applied after modal initialization
     if (typeof i18n !== 'undefined') {

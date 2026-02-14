@@ -90,6 +90,18 @@
                     <span class="folder-action-icon">📁</span>
                     <span class="folder-action-text" data-i18n="sidebar.collapseAll">Collapse All</span>
                 </button>
+                <button id="multiSelectBtn" class="folder-action-btn" title="Select" data-i18n-title="sidebar.multiSelect">
+                    <span class="folder-action-icon">☑</span>
+                    <span class="folder-action-text" data-i18n="sidebar.multiSelect">Select</span>
+                </button>
+            </div>
+            <div id="multiSelectBar" class="multi-select-bar" style="display:none;">
+                <span id="multiSelectCount" class="multi-select-count">0 selected</span>
+                <div class="multi-select-actions">
+                    <button id="multiSelectAllBtn" class="multi-select-action-btn" data-i18n="multiSelect.selectAll">Select All</button>
+                    <button id="multiSelectMoveBtn" class="multi-select-action-btn primary" disabled data-i18n="multiSelect.move">Move</button>
+                    <button id="multiSelectCancelBtn" class="multi-select-action-btn" data-i18n="multiSelect.cancel">Cancel</button>
+                </div>
             </div>
             <ul id="noteList" class="note-list">
                 <!-- Notes will be loaded here -->

@@ -6387,6 +6387,120 @@ code.hljs[data-line-count^="1000"] .line-number {
     font-size: 0.7rem;
 }
 
+/* Multi-select mode */
+.multi-select-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.multi-select-count {
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0 4px;
+}
+
+.multi-select-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.multi-select-action-btn {
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.multi-select-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.multi-select-action-btn.primary {
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.multi-select-action-btn.primary:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.multi-select-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.multi-select-checkbox {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border: 2px solid var(--text-muted);
+    border-radius: 3px;
+    margin-right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: transparent;
+}
+
+.multi-select-checkbox.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.multi-select-checkbox.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.note-list-item.multi-selected {
+    background: var(--accent-bg) !important;
+}
+
+.multi-select-mode .drag-handle {
+    display: none;
+}
+
+.multi-select-mode .note-edit-btn {
+    display: none;
+}
+
+.folder-action-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+@media (pointer: coarse) {
+    .multi-select-checkbox {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+    }
+
+    .multi-select-action-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        min-height: 36px;
+    }
+}
+
 /* Emoji Picker Modal */
 .emoji-picker-modal {
     width: 560px;

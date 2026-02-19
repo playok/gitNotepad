@@ -485,6 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initLocaleSelector();
     initEditorHeaderScroll();
     initFontSize();
+    initSidebarFontSize();
     initWebSocket(); // Real-time sync
     await loadFolderOrder();
     await loadAllTags();
@@ -8552,6 +8553,15 @@ function initGeneralSettings() {
             applyFontSize(fontSize);
         });
     }
+
+    const sidebarFontSizeSelect = document.getElementById('settingsSidebarFontSize');
+    if (sidebarFontSizeSelect) {
+        sidebarFontSizeSelect.addEventListener('change', () => {
+            const size = sidebarFontSizeSelect.value;
+            localStorage.setItem('sidebarFontSize', size);
+            applySidebarFontSize(size);
+        });
+    }
 }
 
 function applyLineNumbersSetting(enabled) {
@@ -8586,6 +8596,18 @@ function initFontSize() {
     applyFontSize(savedFontSize);
 }
 
+function applySidebarFontSize(size) {
+    const noteList = document.querySelector('.note-list');
+    if (noteList) {
+        noteList.style.fontSize = size + 'px';
+    }
+}
+
+function initSidebarFontSize() {
+    const savedSize = localStorage.getItem('sidebarFontSize') || '14';
+    applySidebarFontSize(savedSize);
+}
+
 function loadGeneralSettings() {
     const themeSelect = document.getElementById('settingsTheme');
     const defaultTypeSelect = document.getElementById('settingsDefaultType');
@@ -8615,6 +8637,13 @@ function loadGeneralSettings() {
         const savedFontSize = localStorage.getItem('editorFontSize') || '14';
         fontSizeSelect.value = savedFontSize;
         applyFontSize(savedFontSize);
+    }
+
+    const sidebarFontSizeSelect = document.getElementById('settingsSidebarFontSize');
+    if (sidebarFontSizeSelect) {
+        const savedSidebarFontSize = localStorage.getItem('sidebarFontSize') || '14';
+        sidebarFontSizeSelect.value = savedSidebarFontSize;
+        applySidebarFontSize(savedSidebarFontSize);
     }
 }
 

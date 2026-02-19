@@ -2,12 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v0.16.1] - Sidebar Font Size Setting
+## [v0.16.1] - Sidebar Font Size & UPX Compression
 
 **New Features:**
 - Sidebar font size setting in Settings > General
   - Adjustable note list tree font size (12px ~ 16px)
   - Saved to localStorage, persists across browser restarts
+
+**Build:**
+- UPX compression for Linux/Windows binaries (`--best --lzma`)
+  - Makefile, build.cmd, .goreleaser.yaml
+  - macOS excluded (code signing issue)
 
 ## [v0.16.0](https://github.com/playok/gitNotepad/releases/tag/v0.16.0) - Media Preview & Telegram Bot Enhancement
 

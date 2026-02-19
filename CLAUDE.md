@@ -337,6 +337,7 @@ telegram:
 - **임베디드 리소스**: 템플릿과 정적 파일이 바이너리에 포함됨 (go:embed)
 - **GoReleaser**: `.goreleaser.yaml`로 멀티 플랫폼 릴리즈 자동화
 - **지원 플랫폼**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64, arm64)
+- **UPX 압축**: Linux/Windows 바이너리 `--best --lzma` 압축 (Makefile, build.cmd, .goreleaser.yaml), macOS는 코드 서명 문제로 제외
 
 ## 문서 구조
 

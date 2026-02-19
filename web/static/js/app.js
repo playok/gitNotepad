@@ -2001,6 +2001,40 @@ function initMarked() {
         return `<pre>${langLabel}${copyBtn}<code class="hljs ${langClass}" data-line-count="${lineCount}">${numberedLines}</code></pre>`;
     };
 
+    // Custom renderer for images - handle video/audio by file extension
+    renderer.image = function(href, title, text) {
+        // Handle object format (newer marked versions)
+        if (typeof href === 'object') {
+            title = href.title;
+            text = href.text;
+            href = href.href;
+        }
+
+        // Extract file extension from URL (strip query params)
+        const urlPath = href.split('?')[0].toLowerCase();
+        const ext = urlPath.substring(urlPath.lastIndexOf('.'));
+        const titleAttr = title ? ` title="${title}"` : '';
+        const altText = text || '';
+
+        // Video extensions
+        if (['.mp4', '.webm', '.mov', '.avi', '.mkv'].includes(ext)) {
+            return `<video controls preload="metadata"${titleAttr}>` +
+                `<source src="${href}">` +
+                `${altText}</video>`;
+        }
+
+        // Audio extensions
+        if (['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.aac', '.wma'].includes(ext)) {
+            const label = altText && altText !== href ? `<span class="audio-label">${altText}</span>` : '';
+            return `<div class="audio-container">${label}<audio controls preload="metadata"${titleAttr}>` +
+                `<source src="${href}">` +
+                `${altText}</audio></div>`;
+        }
+
+        // Default: render as image
+        return `<img src="${href}" alt="${altText}"${titleAttr}>`;
+    };
+
     // Custom renderer for links - open in new tab
     renderer.link = function(href, title, text) {
         // Handle object format (newer marked versions)
@@ -4187,8 +4221,10 @@ async function uploadAndAttachFile(file) {
             renderAttachments();
             triggerAutoSave();
 
-            // For images, also insert into content
-            if (isImage) {
+            // For images, videos, and audio, also insert into content
+            const isVideo = file.type.startsWith('video/');
+            const isAudio = file.type.startsWith('audio/');
+            if (isImage || isVideo || isAudio) {
                 insertAttachmentToContent(attachment);
             }
             // For text/code files, ask if user wants to insert content
@@ -4215,17 +4251,21 @@ async function uploadAndAttachFile(file) {
 // Legacy function for backward compatibility (drag & drop images)
 async function uploadAndInsertFile(file) {
     const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    const isAudio = file.type.startsWith('audio/');
+    const isMedia = isImage || isVideo || isAudio;
     const isAsciiDoc = noteType.value === 'asciidoc';
     const fileName = file.name;
 
     // Use appropriate syntax based on note type
+    // Use ![name](url) for all media types (custom renderer handles video/audio)
     let placeholder;
     if (isAsciiDoc) {
         placeholder = isImage
             ? `image::uploading[Uploading ${fileName}...]`
             : `link:uploading[Uploading ${fileName}...]`;
     } else {
-        placeholder = isImage
+        placeholder = isMedia
             ? `![Uploading ${fileName}...]()`
             : `[Uploading ${fileName}...]()`;
     }
@@ -4251,7 +4291,7 @@ async function uploadAndInsertFile(file) {
                     ? `image::${data.url}[${fileName}]`
                     : `link:${data.url}[${fileName}]`;
             } else {
-                markup = isImage
+                markup = isMedia
                     ? `![${fileName}](${data.url})`
                     : `[${fileName}](${data.url})`;
             }
@@ -4342,6 +4382,11 @@ function insertAttachmentToContent(attachment) {
         ? attachment.url
         : `${attachment.url}?download=true`;
 
+    // Check if this is a video or audio file
+    const isVideo = attachment.type && attachment.type.startsWith('video/');
+    const isAudio = attachment.type && attachment.type.startsWith('audio/');
+    const isMedia = attachment.isImage || isVideo || isAudio;
+
     const isAsciiDoc = noteType.value === 'asciidoc';
     let markup;
 
@@ -4350,11 +4395,12 @@ function insertAttachmentToContent(attachment) {
         markup = attachment.isImage
             ? `image::${attachment.url}[${attachment.name}]`
             : `link:${downloadUrl}[${attachment.name}]`;
+    } else if (isMedia) {
+        // Use ![name](url) for all media types - custom renderer handles video/audio
+        markup = `![${attachment.name}](${attachment.url})`;
     } else {
-        // Markdown syntax: ![alt](url) or [text](url)
-        markup = attachment.isImage
-            ? `![${attachment.name}](${attachment.url})`
-            : `[${attachment.name}](${downloadUrl})`;
+        // Non-media files use link syntax
+        markup = `[${attachment.name}](${downloadUrl})`;
     }
 
     insertAtCursor(markup);
@@ -4479,8 +4525,12 @@ function parseAttachmentsFromContent(content) {
     const regex = /!?\[([^\]]+)\]\(([^)]+)\)/g;
     let match;
 
+    const videoExts = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+    const audioExts = ['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.aac', '.wma'];
+    const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+
     while ((match = regex.exec(content)) !== null) {
-        const isImage = match[0].startsWith('!');
+        const isImgSyntax = match[0].startsWith('!');
         const name = match[1];
         const url = match[2];
 
@@ -4488,12 +4538,33 @@ function parseAttachmentsFromContent(content) {
         const filesPath = basePath + '/files/';
         const imagesPath = basePath + '/images/';
         if (url.startsWith(filesPath) || url.startsWith(imagesPath) ||
-            url.startsWith('/files/') || url.startsWith('/images/')) {
+            url.startsWith('/files/') || url.startsWith('/images/') ||
+            url.includes('/u/') && url.includes('/files/')) {
+
+            // Determine type from URL extension
+            const urlPath = url.split('?')[0].toLowerCase();
+            const ext = urlPath.substring(urlPath.lastIndexOf('.'));
+            let type = 'application/octet-stream';
+            let isImage = false;
+
+            if (imageExts.includes(ext)) {
+                type = 'image/' + (ext === '.jpg' ? 'jpeg' : ext.substring(1));
+                isImage = true;
+            } else if (videoExts.includes(ext)) {
+                type = 'video/' + ext.substring(1);
+            } else if (audioExts.includes(ext)) {
+                type = 'audio/' + ext.substring(1);
+            } else if (isImgSyntax) {
+                // Fallback: if using ![](url) syntax, assume image
+                type = 'image/*';
+                isImage = true;
+            }
+
             attachments.push({
                 name: name,
                 url: url,
-                size: 0, // Unknown for existing files
-                type: isImage ? 'image/*' : 'application/octet-stream',
+                size: 0,
+                type: type,
                 isImage: isImage
             });
         }

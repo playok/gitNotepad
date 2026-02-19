@@ -220,6 +220,66 @@ func (r *Repository) RemoveAndCommit(filePath, message string) error {
 	return nil
 }
 
+func (r *Repository) AddMultipleAndCommit(filePaths []string, message string) error {
+	if r.repo == nil {
+		if err := r.Open(); err != nil {
+			return err
+		}
+	}
+
+	w, err := r.repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	for _, filePath := range filePaths {
+		relPath, err := filepath.Rel(r.path, filePath)
+		if err != nil {
+			relPath = filepath.Base(filePath)
+		}
+		relPath = filepath.ToSlash(relPath)
+
+		if _, err := w.Add(relPath); err != nil {
+			return fmt.Errorf("failed to add file %s: %w", relPath, err)
+		}
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get status: %w", err)
+	}
+
+	hasChanges := false
+	for _, s := range status {
+		if s.Staging == git.Added || s.Staging == git.Modified || s.Staging == git.Deleted ||
+			s.Staging == git.Renamed || s.Staging == git.Copied {
+			hasChanges = true
+			break
+		}
+	}
+
+	if !hasChanges {
+		return nil
+	}
+
+	_, err = w.Commit(message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "GitNotepad",
+			Email: "gitnotepad@local",
+			When:  time.Now(),
+		},
+	})
+
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		return fmt.Errorf("failed to commit: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repository) GetHistory(filePath string) ([]Commit, error) {
 
 	if r.repo == nil {

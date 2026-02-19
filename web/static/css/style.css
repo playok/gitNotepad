@@ -2016,6 +2016,36 @@ body {
     pointer-events: auto;
 }
 
+.preview-pane video {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin: 16px 0;
+    background: #000;
+}
+
+.preview-pane .audio-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: var(--radius);
+    background: hsl(var(--muted));
+}
+
+.preview-pane .audio-container .audio-label {
+    font-size: 0.85em;
+    color: hsl(var(--muted-foreground));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.preview-pane .audio-container audio {
+    width: 100%;
+}
+
 /* shadcn/ui inspired Modal */
 .modal {
     position: fixed;

@@ -28,6 +28,16 @@ builds:
       - -X main.commit={{.ShortCommit}}
       - -X main.date={{.Date}}
 
+upx:
+  - enabled: true
+    ids:
+      - gitnotepad
+    goos:
+      - linux
+      - windows
+    compress: best
+    lzma: true
+
 archives:
   - id: default
     formats:

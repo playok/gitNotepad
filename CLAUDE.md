@@ -240,7 +240,7 @@ telegram:
 - **텔레그램 봇 연동**: 텔레그램 메시지를 노트로 자동 저장, 사용자 인증, 폴더 지정 가능
 - **미디어 프리뷰**: 동영상/오디오 파일 프리뷰 재생 (HTML5 video/audio 태그)
 - **텔레그램 미디어 다운로드**: 사진/동영상/오디오/음성/문서 첨부파일 자동 다운로드 및 노트 저장
-- **사이드바 폰트 크기**: Settings > General에서 노트 목록 트리 글꼴 크기 조절 (12~16px, localStorage 저장)
+- **사이드바 폰트 크기**: Settings > General에서 폴더명/노트 제목 글꼴 크기 개별 조절 (8~16px, localStorage 저장)
 
 ## 핵심 모듈
 
@@ -390,7 +390,8 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 - 탭 구성: General, Data, About
 - 토글 스위치: 36x20px (iOS 스타일)
 - i18n 적용 (`data-i18n` 속성)
-- **사이드바 폰트 크기**: `settingsSidebarFontSize` select, `.note-list`에 font-size 적용, localStorage `sidebarFontSize` 키
+- **폴더 글꼴 크기**: `settingsFolderFontSize` select, `.tree-folder-name`에 font-size 적용, localStorage `folderFontSize` 키
+- **노트 제목 글꼴 크기**: `settingsNoteTitleFontSize` select, `.note-title`에 font-size 적용, localStorage `noteTitleFontSize` 키
 
 ### 에디터 툴바
 - Markdown/AsciiDoc 서식 버튼 (Bold, Italic, Heading, Link, Image, Code, List, Table 등)

@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [v0.16.1] - Sidebar Font Size & UPX Compression
 
 **New Features:**
-- Sidebar font size setting in Settings > General
-  - Adjustable note list tree font size (12px ~ 16px)
+- Separate font size settings for sidebar folders and note titles (Settings > General)
+  - Folder Font Size: sidebar folder name font size (8px ~ 16px)
+  - Note Title Font Size: sidebar note title font size (8px ~ 16px)
   - Saved to localStorage, persists across browser restarts
+- New Note button highlighted with green color
 
 **Build:**
 - UPX compression for Linux/Windows binaries (`--best --lzma`)

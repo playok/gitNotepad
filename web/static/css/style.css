@@ -368,6 +368,17 @@ body {
     transform: scale(0.95);
 }
 
+/* New Note Button */
+#newNoteBtn {
+    background: #22c55e;
+    color: white;
+}
+
+#newNoteBtn:hover {
+    background: #16a34a;
+    color: white;
+}
+
 /* Theme Toggle in header */
 .header-icon-btn .icon-sun,
 .header-icon-btn .icon-moon {

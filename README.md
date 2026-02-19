@@ -19,6 +19,7 @@ A web-based note application with integrated Git version control
 - **File Encryption**: AES-256-GCM encryption for stored files (optional)
 - **File Attachments**: Image and file upload (original filename restoration)
 - **4 Themes**: Light, Dark, Dark High Contrast, Dark Cyan
+- **Sidebar Font Size**: Adjustable note list tree font size (Settings > General)
 - **Multi-language Support**: English/Korean (changeable in Settings)
 - **Offline Support**: All libraries included locally
 - **Short URLs**: Generate short links for note sharing (public/private, expiration date)

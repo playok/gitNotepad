@@ -25,7 +25,13 @@ goto unknown
 :build
 echo Building for current OS...
 go build -ldflags "%LDFLAGS%" -o %BINARY_NAME%.exe %MAIN_FILE%
-if %errorlevel%==0 echo Build successful: %BINARY_NAME%.exe
+if %errorlevel%==0 (
+    echo Build successful: %BINARY_NAME%.exe
+    where upx >nul 2>&1 && (
+        echo Compressing with UPX...
+        upx --best --lzma %BINARY_NAME%.exe
+    )
+)
 goto end
 
 :run
@@ -79,6 +85,10 @@ go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-linux-arm64 %MAIN_FIL
 :linux_done
 set GOOS=
 set GOARCH=
+where upx >nul 2>&1 && (
+    echo Compressing Linux binaries with UPX...
+    for %%f in (%BUILD_DIR%\%BINARY_NAME%-linux-*) do upx --best --lzma "%%f"
+)
 echo Linux build completed
 goto end
 
@@ -100,6 +110,10 @@ go build -ldflags "%LDFLAGS%" -o %BUILD_DIR%\%BINARY_NAME%-windows-arm64.exe %MA
 :windows_done
 set GOOS=
 set GOARCH=
+where upx >nul 2>&1 && (
+    echo Compressing Windows binaries with UPX...
+    for %%f in (%BUILD_DIR%\%BINARY_NAME%-windows-*.exe) do upx --best --lzma "%%f"
+)
 echo Windows build completed
 goto end
 

@@ -34,6 +34,8 @@ A web-based note application with integrated Git version control
 - **Daemon Mode**: Background execution (start/stop/restart/status)
 - **Log Rolling**: Daily log file creation (`gitnotepad.log.YYYY-MM-DD`)
 - **Telegram Bot**: Auto-save Telegram messages as notes (Long Polling)
+- **Media Preview**: Video/audio playback in note preview (HTML5 video/audio)
+- **Telegram Media**: Auto-download photos, videos, audio, voice messages, documents from Telegram
 
 ## Screenshots
 
@@ -612,19 +614,34 @@ telegram:
 
 ### Usage
 
-1. Send any text message to your bot
-2. Bot saves it as a Markdown note
+1. Send text, photos, videos, audio, or documents to your bot
+2. Bot saves them as a Markdown note with attachments
 3. Note title = first line (max 50 chars)
 4. Auto-tagged with `telegram`
 5. Saved in configured folder (default: `Telegram`)
 
+### Supported Media
+
+| Type | Format | Description |
+|------|--------|-------------|
+| Photos | JPG, PNG, GIF, WebP | Highest resolution downloaded |
+| Videos | MP4 | Saved with original filename |
+| Audio | MP3, OGG, WAV, FLAC, M4A | Title/performer metadata preserved |
+| Voice | OGG | Voice messages from Telegram |
+| Animation | GIF | Animated GIFs |
+| Documents | PDF, ZIP, etc. | Original filename preserved |
+
+- **Media Groups (Albums)**: Multiple media sent together are saved as a single note
+- **Media Preview**: Videos and audio files are playable directly in note preview
+
 ### Features
 
 - **Security**: Only allowed users can create notes
-- **Auto Git Commit**: Each note is automatically committed
+- **Auto Git Commit**: Note + attachments committed in single commit
 - **Folder Organization**: All Telegram notes in one folder
 - **Title Generation**: First line of message becomes title
 - **Real-time Sync**: Browser note list auto-refreshes via WebSocket
+- **Media Download**: Files stored with UUID names, original filenames preserved in metadata
 
 ## Troubleshooting
 

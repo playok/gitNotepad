@@ -238,11 +238,15 @@ telegram:
 - **노트/캘린더 Splitter**: 노트 목록과 캘린더 영역 크기 조절 가능
 - **에디터 헤더 스와이프**: 태블릿에서 헤더 좌우 스와이프 스크롤, 모멘텀 효과
 - **텔레그램 봇 연동**: 텔레그램 메시지를 노트로 자동 저장, 사용자 인증, 폴더 지정 가능
+- **미디어 프리뷰**: 동영상/오디오 파일 프리뷰 재생 (HTML5 video/audio 태그)
+- **텔레그램 미디어 다운로드**: 사진/동영상/오디오/음성/문서 첨부파일 자동 다운로드 및 노트 저장
 
 ## 핵심 모듈
 
 - **model/note.go**: 노트 구조체, bcrypt 해싱, YAML frontmatter 파싱
 - **git/repository.go**: go-git 래퍼, 커밋/히스토리/파일 조회
+  - `AddAndCommit()`: 단일 파일 staging 및 커밋
+  - `AddMultipleAndCommit()`: 여러 파일을 한 번에 staging하고 단일 커밋 (텔레그램 노트+첨부파일용)
   - EOF 에러 처리 (빈 커밋 방지)
   - staged 변경사항 체크 (Added, Modified, Deleted만 커밋)
   - Windows 경로 호환성: `filepath.ToSlash()` 적용 (go-git은 forward slash 필요)
@@ -289,8 +293,14 @@ telegram:
   - `Start()`: 메시지 리스닝 시작 (Long Polling, goroutine)
   - `Stop()`: 봇 종료
   - `SetHub()`: WebSocket Hub 설정 (실시간 노트 목록 갱신용)
-  - `handleMessage()`: 텍스트/사진/문서 메시지 처리
-  - `createNoteFromMessage()`: 메시지 내용으로 노트 생성, WebSocket 브로드캐스트
+  - `handleMessage()`: 텍스트/사진/동영상/오디오/음성/문서 메시지 처리
+  - `processMediaAttachments()`: 미디어 파일 다운로드 및 첨부파일 생성
+  - `downloadTelegramMedia()`: 텔레그램 파일 다운로드, UUID 저장, 메타데이터 매핑
+  - `handleMediaGroupMessage()`, `processMediaGroup()`: 미디어 그룹(앨범) 처리
+  - `buildContentWithAttachments()`: 첨부파일 `![name](url)` 형식으로 콘텐츠 생성
+  - `createNoteFromMessage()`: 노트 생성, 첨부파일 포함, `AddMultipleAndCommit()` 단일 커밋
+  - `detectMimeTypeAndExtension()`: MIME 타입/파일명에서 확장자 감지
+  - `MediaGroup` 타입: 미디어 그룹 메시지 수집, 2초 타이머 후 일괄 처리
   - 지원 명령어: `/start` (도움말), `/info` (봇 정보)
   - 허용된 사용자만 노트 생성 가능 (`allowed_users`)
   - 자동 Git 커밋, 실시간 노트 목록 갱신
@@ -311,6 +321,9 @@ telegram:
   - 태그 노트 팝업: `showNotesByTag()`, `closeTagNotesModal()` - 태그별 노트 필터링
   - 노트/캘린더 Splitter: `initNoteCalendarSplitter()` - 드래그로 영역 크기 조절, 터치 지원
   - 에디터 헤더 스크롤: `initEditorHeaderScroll()` - 터치 스와이프, 모멘텀 효과, 스크롤 표시기
+  - 미디어 프리뷰: `initMarked()`의 커스텀 `renderer.image` - URL 확장자로 `<video>`, `<audio>`, `<img>` 분기
+  - 첨부파일 삽입: `insertAttachmentToContent()` - 동영상/오디오도 `![name](url)` 형식 사용
+  - 첨부파일 파싱: `parseAttachmentsFromContent()` - URL 확장자 기반 type/isImage 판단
 - **web/static/js/i18n.js**: 다국어 지원 (영어/한국어)
   - 전체 UI 번역: 메뉴, 모달, 툴바, 테이블 에디터, alert/confirm 메시지
   - 파라미터 치환 지원: `{key}` 형식 (`i18n.t('key', { param: value })`)
@@ -490,9 +503,11 @@ const response = await fetch(`${basePath}/api/notes/${id}`);
 
 ### 기능
 - 텔레그램 메시지를 Git Notepad 노트로 자동 저장
+- **미디어 다운로드**: 사진, 동영상, 오디오(음악), 음성 메시지, 애니메이션(GIF), 문서
+- **미디어 그룹(앨범)**: 여러 미디어를 하나의 노트로 저장 (2초 타이머 일괄 처리)
 - 허용된 사용자만 봇 사용 가능 (보안)
 - 지정된 폴더에 노트 자동 분류
-- Git 자동 커밋
+- Git 자동 커밋 (노트+첨부파일 단일 커밋)
 
 ### 설정 방법
 1. [@BotFather](https://t.me/BotFather)에서 봇 생성하여 토큰 획득
@@ -517,8 +532,37 @@ telegram:
 - `telegram` 태그 자동 추가
 - Markdown 형식으로 저장
 - 파일명: UUID 기반
+- 미디어 첨부: `![name](url)` 형식 (커스텀 렌더러가 video/audio 처리)
+
+### 미디어 처리
+- **사진**: 최대 해상도 다운로드, `image/jpeg`
+- **동영상**: MP4 다운로드, `video/mp4`
+- **오디오**: 음악 파일 (title, performer 메타데이터), MP3/OGG
+- **음성 메시지**: `.ogg` 포맷, `audio/ogg`
+- **애니메이션**: GIF 다운로드, `image/gif`
+- **문서**: 원본 파일명 보존, MIME 타입 자동 감지
+- **저장**: UUID 기반 파일명, `.imagemeta.json`에 원본 파일명 매핑
 
 ### 실시간 동기화
 - 노트 생성 시 WebSocket으로 브라우저에 알림
 - 브라우저에서 노트 목록 자동 갱신
 - `Server.GetHub()`, `Bot.SetHub()` 메서드로 연동
+
+## 미디어 프리뷰
+
+### 기능
+- 노트 프리뷰에서 동영상/오디오 파일 재생
+- `![name](url)` 마크다운 이미지 문법을 URL 확장자로 분기 렌더링
+- 기존 이미지 렌더링은 영향 없음
+
+### 지원 포맷
+- **동영상**: `.mp4`, `.webm`, `.mov`, `.avi`, `.mkv` → `<video controls>`
+- **오디오**: `.mp3`, `.ogg`, `.wav`, `.flac`, `.m4a`, `.aac`, `.wma` → `<audio controls>`
+- **이미지**: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg` → `<img>`
+
+### 구현 세부사항
+- **커스텀 렌더러**: `initMarked()`의 `renderer.image` 함수
+- **첨부파일 삽입**: `insertAttachmentToContent()` - 동영상/오디오도 `![name](url)` 사용
+- **파일 업로드**: `uploadAndAttachFile()`, `uploadAndInsertFile()` - 미디어 파일 자동 삽입
+- **첨부파일 파싱**: `parseAttachmentsFromContent()` - URL 확장자 기반 type 판단
+- **CSS 스타일**: `.preview-pane video`, `.preview-pane .audio-container`

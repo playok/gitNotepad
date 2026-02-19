@@ -12,6 +12,10 @@ GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
 GOCLEAN=$(GOCMD) clean
 
+# UPX 압축 (macOS는 코드 서명 문제로 제외)
+UPX=upx
+UPXFLAGS=--best --lzma
+
 # 빌드 플래그
 LDFLAGS=-ldflags "-s -w"
 
@@ -20,9 +24,12 @@ LDFLAGS=-ldflags "-s -w"
 # 기본 타겟
 all: build
 
-# 현재 OS용 빌드
+# 현재 OS용 빌드 (macOS는 UPX 미적용)
 build:
 	$(GOBUILD) $(LDFLAGS) -o $(BINARY_NAME) $(MAIN_FILE)
+	@if [ "$$(uname)" != "Darwin" ] && command -v $(UPX) > /dev/null 2>&1; then \
+		$(UPX) $(UPXFLAGS) $(BINARY_NAME); \
+	fi
 
 # 실행
 run:
@@ -55,13 +62,15 @@ linux:
 	mkdir -p $(BUILD_DIR)
 	GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 $(MAIN_FILE)
 	GOOS=linux GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 $(MAIN_FILE)
+	@command -v $(UPX) > /dev/null 2>&1 && $(UPX) $(UPXFLAGS) $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 || true
 
 # 크로스 컴파일 - Windows
 windows:
 	mkdir -p $(BUILD_DIR)
 	GOOS=windows GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_FILE)
+	@command -v $(UPX) > /dev/null 2>&1 && $(UPX) $(UPXFLAGS) $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe || true
 
-# 크로스 컴파일 - macOS
+# 크로스 컴파일 - macOS (UPX 미적용 - 코드 서명 문제)
 darwin:
 	mkdir -p $(BUILD_DIR)
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(MAIN_FILE)

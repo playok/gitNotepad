@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.16.0](https://github.com/playok/gitNotepad/releases/tag/v0.16.0) - Media Preview & Telegram Bot Enhancement
+
+**New Features:**
+- Telegram bot media download & attachment support (#56)
+  - Photo, video, audio, voice message, animation (GIF), document download
+  - Media group (album) handling - multiple media saved as single note
+  - Audio file metadata support (title, performer)
+  - Voice message (.ogg) support
+- Video/Audio preview playback in note preview
+  - Custom marked.js renderer: `.mp4`, `.webm`, `.mov` → `<video>` tag
+  - Custom marked.js renderer: `.mp3`, `.ogg`, `.wav`, `.flac`, `.m4a` → `<audio>` tag
+  - Existing image rendering unchanged
+- Video/Audio auto-insert on file upload (drag & drop, attachment)
+
+**Improvements:**
+- Git: `AddMultipleAndCommit()` - note + attachments in single commit (was N+1 commits)
+- Attachment type detection based on URL file extension
+- All media types use `![name](url)` syntax for unified rendering
+
 ## [v0.15.0](https://github.com/playok/gitNotepad/releases/tag/v0.15.0) - Multi-Select & Security Improvements
 
 **New Features:**

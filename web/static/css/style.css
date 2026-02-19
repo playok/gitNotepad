@@ -731,7 +731,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     color: var(--text-primary);
-    font-size: 1em;
+    font-size: 0.875rem;
 }
 
 .note-list-item.active .note-title {
@@ -745,7 +745,7 @@ body {
 }
 
 .note-list-item .note-meta {
-    font-size: 0.85em;
+    font-size: 0.75rem;
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -758,7 +758,7 @@ body {
     padding: 0.0625rem 0.375rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-sm);
-    font-size: 0.7em;
+    font-size: 0.625rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.025em;
@@ -2991,7 +2991,7 @@ body {
     flex: 1;
     font-weight: 500;
     color: var(--text-primary);
-    font-size: 1em;
+    font-size: 0.875rem;
 }
 
 .tree-count {

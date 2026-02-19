@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initLocaleSelector();
     initEditorHeaderScroll();
     initFontSize();
-    initSidebarFontSize();
+    initSidebarFontSizes();
     initWebSocket(); // Real-time sync
     await loadFolderOrder();
     await loadAllTags();
@@ -5303,6 +5303,9 @@ function renderNoteTree() {
     }
     const tree = buildNoteTree(notes);
     renderTreeLevel(tree, noteList, 0, '');
+    // Re-apply saved sidebar font sizes after DOM rebuild
+    applyFolderFontSize(localStorage.getItem('folderFontSize') || '14');
+    applyNoteTitleFontSize(localStorage.getItem('noteTitleFontSize') || '14');
 }
 
 function renderTreeLevel(tree, container, level, path) {
@@ -8554,12 +8557,21 @@ function initGeneralSettings() {
         });
     }
 
-    const sidebarFontSizeSelect = document.getElementById('settingsSidebarFontSize');
-    if (sidebarFontSizeSelect) {
-        sidebarFontSizeSelect.addEventListener('change', () => {
-            const size = sidebarFontSizeSelect.value;
-            localStorage.setItem('sidebarFontSize', size);
-            applySidebarFontSize(size);
+    const folderFontSizeSelect = document.getElementById('settingsFolderFontSize');
+    if (folderFontSizeSelect) {
+        folderFontSizeSelect.addEventListener('change', () => {
+            const size = folderFontSizeSelect.value;
+            localStorage.setItem('folderFontSize', size);
+            applyFolderFontSize(size);
+        });
+    }
+
+    const noteTitleFontSizeSelect = document.getElementById('settingsNoteTitleFontSize');
+    if (noteTitleFontSizeSelect) {
+        noteTitleFontSizeSelect.addEventListener('change', () => {
+            const size = noteTitleFontSizeSelect.value;
+            localStorage.setItem('noteTitleFontSize', size);
+            applyNoteTitleFontSize(size);
         });
     }
 }
@@ -8596,16 +8608,28 @@ function initFontSize() {
     applyFontSize(savedFontSize);
 }
 
-function applySidebarFontSize(size) {
-    const noteList = document.querySelector('.note-list');
-    if (noteList) {
-        noteList.style.fontSize = size + 'px';
-    }
+function applyFolderFontSize(size) {
+    document.querySelectorAll('.tree-folder-name').forEach(el => {
+        el.style.fontSize = size + 'px';
+    });
 }
 
-function initSidebarFontSize() {
-    const savedSize = localStorage.getItem('sidebarFontSize') || '14';
-    applySidebarFontSize(savedSize);
+function applyNoteTitleFontSize(size) {
+    document.querySelectorAll('.note-list-item .note-title').forEach(el => {
+        el.style.fontSize = size + 'px';
+    });
+}
+
+function initSidebarFontSizes() {
+    // Migrate old sidebarFontSize key
+    const oldSize = localStorage.getItem('sidebarFontSize');
+    if (oldSize) {
+        if (!localStorage.getItem('folderFontSize')) localStorage.setItem('folderFontSize', oldSize);
+        if (!localStorage.getItem('noteTitleFontSize')) localStorage.setItem('noteTitleFontSize', oldSize);
+        localStorage.removeItem('sidebarFontSize');
+    }
+    applyFolderFontSize(localStorage.getItem('folderFontSize') || '14');
+    applyNoteTitleFontSize(localStorage.getItem('noteTitleFontSize') || '14');
 }
 
 function loadGeneralSettings() {
@@ -8639,11 +8663,18 @@ function loadGeneralSettings() {
         applyFontSize(savedFontSize);
     }
 
-    const sidebarFontSizeSelect = document.getElementById('settingsSidebarFontSize');
-    if (sidebarFontSizeSelect) {
-        const savedSidebarFontSize = localStorage.getItem('sidebarFontSize') || '14';
-        sidebarFontSizeSelect.value = savedSidebarFontSize;
-        applySidebarFontSize(savedSidebarFontSize);
+    const folderFontSizeSelect = document.getElementById('settingsFolderFontSize');
+    if (folderFontSizeSelect) {
+        const savedFolderFontSize = localStorage.getItem('folderFontSize') || '14';
+        folderFontSizeSelect.value = savedFolderFontSize;
+        applyFolderFontSize(savedFolderFontSize);
+    }
+
+    const noteTitleFontSizeSelect = document.getElementById('settingsNoteTitleFontSize');
+    if (noteTitleFontSizeSelect) {
+        const savedNoteTitleFontSize = localStorage.getItem('noteTitleFontSize') || '14';
+        noteTitleFontSizeSelect.value = savedNoteTitleFontSize;
+        applyNoteTitleFontSize(savedNoteTitleFontSize);
     }
 }
 

@@ -59,7 +59,9 @@ func (h *FileHandler) loadMetadata(username string) map[string]string {
 
 	file, err := os.ReadFile(metaPath)
 	if err == nil {
-		json.Unmarshal(file, &data)
+		if err := json.Unmarshal(file, &data); err != nil {
+			encoding.Warn("Failed to parse file metadata for %s: %v", username, err)
+		}
 	}
 
 	fileMetadata.cache[username] = data
@@ -445,7 +447,9 @@ func loadMetadataFile(path string) map[string]string {
 	data := make(map[string]string)
 	content, err := os.ReadFile(path)
 	if err == nil {
-		json.Unmarshal(content, &data)
+		if err := json.Unmarshal(content, &data); err != nil {
+			encoding.Warn("Failed to parse metadata file %s: %v", path, err)
+		}
 	}
 	return data
 }

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -119,6 +120,22 @@ func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Serv
 		wsHub:  wsHub,
 	}
 
+	// Start expired session cleanup scheduler
+	sessionRepo := repository.NewSessionRepository(db.DB)
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		// Run once at startup
+		if err := sessionRepo.DeleteExpired(); err != nil {
+			encoding.Warn("Session cleanup failed: %v", err)
+		}
+		for range ticker.C {
+			if err := sessionRepo.DeleteExpired(); err != nil {
+				encoding.Warn("Session cleanup failed: %v", err)
+			}
+		}
+	}()
+
 	s.setupRoutes()
 	return s, nil
 }
@@ -130,6 +147,7 @@ func (s *Server) setupRoutes() {
 
 	// Create middleware
 	authMiddleware := middleware.NewAuthMiddleware(userRepo, sessionRepo, s.config.Server.BasePath)
+	loginRateLimiter := middleware.NewRateLimiter(10, 5*time.Minute) // 10 attempts per 5 minutes
 
 	// Create handlers
 	noteHandler := handler.NewNoteHandler(s.repo, s.config, s.wsHub)
@@ -185,8 +203,8 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
-	// Public API routes
-	base.POST("/api/auth/login", authHandler.Login)
+	// Public API routes (with rate limiting)
+	base.POST("/api/auth/login", loginRateLimiter.Middleware(), authHandler.Login)
 
 	// Short link redirect (public)
 	base.GET("/s/:code", shortLinkHandler.Redirect)

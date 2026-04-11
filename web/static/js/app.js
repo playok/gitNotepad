@@ -31,7 +31,14 @@ function showConfirmModal(options = {}) {
         message.textContent = options.message || '';
         icon.textContent = options.icon || (options.danger ? '⚠️' : 'ℹ️');
         okBtn.textContent = options.confirmText || (i18n ? i18n.t('common.confirm') : 'OK');
-        cancelBtn.textContent = options.cancelText || (i18n ? i18n.t('common.cancel') : 'Cancel');
+
+        // Hide cancel button for alert-style modals (cancelText === '')
+        if (options.cancelText === '') {
+            cancelBtn.style.display = 'none';
+        } else {
+            cancelBtn.style.display = '';
+            cancelBtn.textContent = options.cancelText || (i18n ? i18n.t('common.cancel') : 'Cancel');
+        }
 
         // Apply danger styling
         if (options.danger) {
@@ -83,6 +90,17 @@ function showConfirmModal(options = {}) {
         cancelBtn.addEventListener('click', handleCancel);
         modal.addEventListener('click', handleBackdrop);
         document.addEventListener('keydown', handleKeydown);
+    });
+}
+
+// Alert Modal (single OK button) - replaces native showAlertModal()
+function showAlertModal(message, title) {
+    return showConfirmModal({
+        title: title || (i18n ? i18n.t('common.info') || 'Info' : 'Info'),
+        message: message,
+        confirmText: 'OK',
+        cancelText: '',
+        icon: 'ℹ️'
     });
 }
 
@@ -2392,7 +2410,7 @@ async function showNoteInfo(note) {
             <div class="note-info-content">
                 <div class="note-info-row">
                     <span class="note-info-label">${i18n.t('noteInfo.location') || 'Location'}:</span>
-                    <span class="note-info-value note-info-path">${filePath}</span>
+                    <span class="note-info-value note-info-path">${escapeHtml(filePath)}</span>
                 </div>
                 <div class="note-info-row">
                     <span class="note-info-label">${i18n.t('noteInfo.type') || 'Type'}:</span>
@@ -2720,7 +2738,7 @@ async function createFolder(name, parentPath) {
             showToast(msg);
         } else {
             const data = await response.json();
-            alert(data.error || i18n.t('folder.createFailed'));
+            showAlertModal(data.error || i18n.t('folder.createFailed'));
         }
     } catch (error) {
         console.error('Failed to create folder:', error);
@@ -2739,7 +2757,7 @@ async function deleteFolder(path) {
             showToast(msg);
         } else {
             const data = await response.json();
-            alert(data.error || i18n.t('folder.deleteFailed'));
+            showAlertModal(data.error || i18n.t('folder.deleteFailed'));
         }
     } catch (error) {
         console.error('Failed to delete folder:', error);
@@ -2846,7 +2864,7 @@ async function renameFolder(oldPath, newName) {
         showToast(msg);
     } catch (error) {
         console.error('Failed to rename folder:', error);
-        alert(i18n.t('folder.renameFailed'));
+        showAlertModal(i18n.t('folder.renameFailed'));
     }
 }
 
@@ -3718,7 +3736,7 @@ function prettyJson() {
             }
         }
 
-        alert(i18n.t('error.invalidJson') + ': ' + e.message);
+        showAlertModal(i18n.t('error.invalidJson') + ': ' + e.message);
     }
 }
 
@@ -3926,13 +3944,13 @@ async function uploadAndInsertImage(file) {
             // Remove placeholder on error
             replaceInEditor(placeholder, '');
             updatePreview();
-            alert(i18n.t('error.uploadImageFailed'));
+            showAlertModal(i18n.t('error.uploadImageFailed'));
         }
     } catch (error) {
         console.error('Image upload failed:', error);
         replaceInEditor(placeholder, '');
         updatePreview();
-        alert(i18n.t('error.uploadImageFailed'));
+        showAlertModal(i18n.t('error.uploadImageFailed'));
     }
 }
 
@@ -4240,12 +4258,12 @@ async function uploadAndAttachFile(file) {
             }
         } else {
             const errorMsg = i18n ? i18n.t('msg.uploadFailed') || 'Failed to upload file' : 'Failed to upload file';
-            alert(errorMsg);
+            showAlertModal(errorMsg);
         }
     } catch (error) {
         console.error('File upload failed:', error);
         const errorMsg = i18n ? i18n.t('msg.uploadFailed') || 'Failed to upload file' : 'Failed to upload file';
-        alert(errorMsg);
+        showAlertModal(errorMsg);
     }
 }
 
@@ -4314,13 +4332,13 @@ async function uploadAndInsertFile(file) {
         } else {
             replaceInEditor(placeholder, '');
             updatePreview();
-            alert(i18n.t('error.uploadFileFailed'));
+            showAlertModal(i18n.t('error.uploadFileFailed'));
         }
     } catch (error) {
         console.error('File upload failed:', error);
         replaceInEditor(placeholder, '');
         updatePreview();
-        alert(i18n.t('error.uploadFileFailed'));
+        showAlertModal(i18n.t('error.uploadFileFailed'));
     }
 }
 
@@ -4693,7 +4711,7 @@ async function loadNote(id) {
                 } catch (e) {
                     // JSON parse failed, show generic error
                 }
-                alert(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
+                showAlertModal(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
                 return;
             }
             throw new Error(`HTTP ${response.status}`);
@@ -4720,7 +4738,7 @@ async function loadNote(id) {
         if (error.name === 'AbortError') return;
         console.error('Failed to load note:', error);
         const errorMsg = i18n ? i18n.t('msg.loadFailed') || 'Failed to load note' : 'Failed to load note';
-        alert(errorMsg);
+        showAlertModal(errorMsg);
     } finally {
         loadNoteController = null;
     }
@@ -4751,7 +4769,7 @@ async function editNote(id) {
                 } catch (e) {
                     // JSON parse failed, show generic error
                 }
-                alert(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
+                showAlertModal(i18n ? i18n.t('msg.invalidPassword') || 'Invalid password' : 'Invalid password');
                 return;
             }
             throw new Error(`HTTP ${response.status}`);
@@ -4777,7 +4795,7 @@ async function editNote(id) {
     } catch (error) {
         console.error('Failed to load note:', error);
         const errorMsg = i18n ? i18n.t('msg.loadFailed') || 'Failed to load note' : 'Failed to load note';
-        alert(errorMsg);
+        showAlertModal(errorMsg);
     }
 }
 
@@ -4821,7 +4839,7 @@ async function verifyPassword() {
             passwordInput.value = '';
             loadNote(pendingNoteId);
         } else {
-            alert('Invalid password');
+            showAlertModal('Invalid password');
         }
     } catch (error) {
         console.error('Failed to verify password:', error);
@@ -4838,7 +4856,7 @@ async function saveNote() {
     const isPrivate = notePrivate.checked;
 
     if (!noteTitle.value.trim()) {
-        alert(i18n.t('msg.enterTitle'));
+        showAlertModal(i18n.t('msg.enterTitle'));
         return;
     }
 
@@ -4913,7 +4931,7 @@ async function saveNote() {
             updateNoteInList(savedNote);
         } else {
             const error = await response.json();
-            alert(error.error || i18n.t('error.saveFailed'));
+            showAlertModal(error.error || i18n.t('error.saveFailed'));
         }
     } catch (error) {
         console.error('Failed to save note:', error);
@@ -4947,7 +4965,7 @@ async function deleteNote() {
             removeNoteFromList(deletedNoteId);
         } else {
             const error = await response.json();
-            alert(error.error || i18n.t('error.deleteFailed'));
+            showAlertModal(error.error || i18n.t('error.deleteFailed'));
         }
     } catch (error) {
         console.error('Failed to delete note:', error);
@@ -4973,7 +4991,11 @@ async function showHistory() {
         if (!response.ok) {
             console.error('History API error:', data.error);
             if (versionHistoryList) {
-                versionHistoryList.innerHTML = `<p style="padding: 20px; color: var(--text-secondary);">${data.error || i18n.t('history.loadFailed')}</p>`;
+                const errorP = document.createElement('p');
+                errorP.style.cssText = 'padding: 20px; color: var(--text-secondary);';
+                errorP.textContent = data.error || i18n.t('history.loadFailed');
+                versionHistoryList.innerHTML = '';
+                versionHistoryList.appendChild(errorP);
             }
             versionModal.style.display = 'flex';
             return;
@@ -5675,13 +5697,13 @@ function initNewNoteLocationModal() {
         if (selectedNewNoteLocation === 'existing') {
             folderPath = selectedFolderPath;
             if (!folderPath) {
-                alert(i18n.t('newNote.pleaseSelectFolder'));
+                showAlertModal(i18n.t('newNote.pleaseSelectFolder'));
                 return;
             }
         } else if (selectedNewNoteLocation === 'new') {
             folderPath = newFolderInput.value.trim();
             if (!folderPath) {
-                alert(i18n.t('newNote.pleaseEnterFolderName'));
+                showAlertModal(i18n.t('newNote.pleaseEnterFolderName'));
                 return;
             }
             // Convert / to :>: for internal path format
@@ -5843,7 +5865,7 @@ function initMoveNoteModal() {
         if (selectedMoveFolder === '' && currentFolderPath !== '') {
             // Moving to root
         } else if (selectedMoveFolder === '') {
-            alert(i18n.t('move.pleaseSelectFolder') || 'Please select a folder');
+            showAlertModal(i18n.t('move.pleaseSelectFolder') || 'Please select a folder');
             return;
         }
 
@@ -5877,7 +5899,7 @@ function initMoveNoteModal() {
             }
         } catch (error) {
             console.error('Failed to move note:', error);
-            alert(i18n.t('move.failed') || 'Failed to move note');
+            showAlertModal(i18n.t('move.failed') || 'Failed to move note');
         }
 
         moveNoteModal.style.display = 'none';
@@ -7967,12 +7989,12 @@ function setPassword() {
     const confirm = confirmPasswordInput.value;
 
     if (!password) {
-        alert(i18n.t('password.required'));
+        showAlertModal(i18n.t('password.required'));
         return;
     }
 
     if (password !== confirm) {
-        alert(i18n.t('password.mismatch'));
+        showAlertModal(i18n.t('password.mismatch'));
         return;
     }
 
@@ -8220,7 +8242,7 @@ async function deleteUser(userId, username) {
 
         if (!response.ok) {
             const data = await response.json();
-            alert(data.error || i18n.t('admin.failedToDeleteUser'));
+            showAlertModal(data.error || i18n.t('admin.failedToDeleteUser'));
             return;
         }
 
@@ -8228,7 +8250,7 @@ async function deleteUser(userId, username) {
         await loadSettingsUsersList();
     } catch (err) {
         console.error('Error deleting user:', err);
-        alert(i18n.t('admin.failedToDeleteUser'));
+        showAlertModal(i18n.t('admin.failedToDeleteUser'));
     }
 }
 
@@ -8264,19 +8286,19 @@ async function submitPasswordChange(userId, context = 'admin') {
     const confirmPassword = confirmPasswordInput.value;
 
     if (!newPassword) {
-        alert(i18n.t('admin.enterNewPassword'));
+        showAlertModal(i18n.t('admin.enterNewPassword'));
         newPasswordInput.focus();
         return;
     }
 
     if (newPassword.length < 6) {
-        alert(i18n.t('admin.passwordMinLength'));
+        showAlertModal(i18n.t('admin.passwordMinLength'));
         newPasswordInput.focus();
         return;
     }
 
     if (newPassword !== confirmPassword) {
-        alert(i18n.t('admin.passwordMismatch'));
+        showAlertModal(i18n.t('admin.passwordMismatch'));
         confirmPasswordInput.focus();
         return;
     }
@@ -8290,15 +8312,15 @@ async function submitPasswordChange(userId, context = 'admin') {
 
         if (!response.ok) {
             const data = await response.json();
-            alert(data.error || i18n.t('admin.failedToUpdatePassword'));
+            showAlertModal(data.error || i18n.t('admin.failedToUpdatePassword'));
             return;
         }
 
-        alert(i18n.t('admin.passwordUpdated'));
+        showToast(i18n.t('admin.passwordUpdated'));
         togglePasswordForm(userId, context);
     } catch (err) {
         console.error('Error updating password:', err);
-        alert(i18n.t('admin.failedToUpdatePassword'));
+        showAlertModal(i18n.t('admin.failedToUpdatePassword'));
     }
 }
 
@@ -8331,7 +8353,7 @@ function initAddUserModal() {
         const isAdmin = document.getElementById('newIsAdmin').checked;
 
         if (!username || !password) {
-            alert(i18n.t('admin.fillRequiredFields'));
+            showAlertModal(i18n.t('admin.fillRequiredFields'));
             return;
         }
 
@@ -8348,7 +8370,7 @@ function initAddUserModal() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || i18n.t('admin.failedToCreateUser'));
+                showAlertModal(data.error || i18n.t('admin.failedToCreateUser'));
                 return;
             }
 
@@ -8357,7 +8379,7 @@ function initAddUserModal() {
             await loadSettingsUsersList();
         } catch (err) {
             console.error('Error creating user:', err);
-            alert(i18n.t('admin.failedToCreateUser'));
+            showAlertModal(i18n.t('admin.failedToCreateUser'));
         }
     });
 }
@@ -8892,7 +8914,7 @@ async function updateSharedLinkExpiry(code, expiresIn) {
         await loadSharedLinks();
     } catch (err) {
         console.error('Error updating shared link:', err);
-        alert(i18n.t('settings.updateFailed') || 'Failed to update expiry');
+        showAlertModal(i18n.t('settings.updateFailed') || 'Failed to update expiry');
     }
 }
 
@@ -8909,7 +8931,7 @@ async function updateSharedLinkExpiryDate(code, dateStr) {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 1) {
-        alert(i18n.t('settings.selectFutureDate') || 'Please select a future date');
+        showAlertModal(i18n.t('settings.selectFutureDate') || 'Please select a future date');
         return;
     }
 
@@ -8932,7 +8954,7 @@ async function deleteSharedLink(code) {
         await loadSharedLinks();
     } catch (err) {
         console.error('Error deleting shared link:', err);
-        alert(i18n.t('settings.deleteFailed') || 'Failed to delete shared link');
+        showAlertModal(i18n.t('settings.deleteFailed') || 'Failed to delete shared link');
     }
 }
 
@@ -8965,7 +8987,7 @@ async function deleteAllSharedLinks() {
         await loadSharedLinks();
     } catch (err) {
         console.error('Error deleting all shared links:', err);
-        alert(i18n.t('settings.deleteFailed') || 'Failed to delete shared links');
+        showAlertModal(i18n.t('settings.deleteFailed') || 'Failed to delete shared links');
     } finally {
         if (deleteAllBtn) {
             deleteAllBtn.disabled = false;
@@ -9056,7 +9078,7 @@ async function exportNotes() {
         window.URL.revokeObjectURL(url);
     } catch (err) {
         console.error('Export error:', err);
-        alert(i18n.t('error.exportFailed'));
+        showAlertModal(i18n.t('error.exportFailed'));
     } finally {
         if (exportBtn) {
             exportBtn.disabled = false;
@@ -9070,7 +9092,7 @@ async function handleImportFile(e) {
     if (!file) return;
 
     if (!file.name.endsWith('.zip')) {
-        alert(i18n.t('import.selectZipFile'));
+        showAlertModal(i18n.t('import.selectZipFile'));
         e.target.value = '';
         return;
     }
@@ -9101,13 +9123,13 @@ async function handleImportFile(e) {
         }
 
         const result = await response.json();
-        alert(i18n.t('import.success', { count: result.imported }));
+        showToast(i18n.t('import.success', { count: result.imported }));
 
         // Reload notes list
         await loadNotes();
     } catch (err) {
         console.error('Import error:', err);
-        alert(i18n.t('error.importFailed') + ': ' + err.message);
+        showAlertModal(i18n.t('error.importFailed') + ': ' + err.message);
     } finally {
         if (importBtn) {
             importBtn.disabled = false;
@@ -9142,11 +9164,11 @@ async function exportFolder(folderPath) {
         window.URL.revokeObjectURL(url);
 
         const successMsg = i18n ? i18n.t('folderExport.success', { folder: folderName }) : `Folder "${folderName}" exported successfully.`;
-        alert(successMsg);
+        showToast(successMsg);
     } catch (err) {
         console.error('Folder export error:', err);
         const errorMsg = i18n ? i18n.t('error.exportFailed') : 'Export failed';
-        alert(errorMsg);
+        showAlertModal(errorMsg);
     }
 }
 
@@ -9168,7 +9190,7 @@ async function importToFolder(folderPath) {
         }
 
         if (!file.name.endsWith('.zip')) {
-            alert(i18n ? i18n.t('import.selectZipFile') : 'Please select a ZIP file');
+            showAlertModal(i18n ? i18n.t('import.selectZipFile') : 'Please select a ZIP file');
             document.body.removeChild(fileInput);
             return;
         }
@@ -9197,14 +9219,14 @@ async function importToFolder(folderPath) {
 
             const result = await response.json();
             const successMsg = i18n ? i18n.t('folderImport.success', { count: result.imported, folder: folderName }) : `Imported ${result.imported} note(s) into "${folderName}".`;
-            alert(successMsg);
+            showToast(successMsg);
 
             // Reload notes list
             await loadNotes();
         } catch (err) {
             console.error('Folder import error:', err);
             const errorMsg = i18n ? i18n.t('error.importFailed') : 'Import failed';
-            alert(errorMsg + ': ' + err.message);
+            showAlertModal(errorMsg + ': ' + err.message);
         } finally {
             document.body.removeChild(fileInput);
         }
@@ -9232,7 +9254,7 @@ async function deleteAllNotes() {
 
         if (!response.ok) throw new Error('Delete failed');
 
-        alert(i18n.t('msg.allNotesDeleted'));
+        showToast(i18n.t('msg.allNotesDeleted'));
 
         // Reload notes list and hide editor
         await loadNotes();
@@ -9243,7 +9265,7 @@ async function deleteAllNotes() {
         loadUsageStats();
     } catch (err) {
         console.error('Delete all error:', err);
-        alert(i18n.t('error.deleteAllFailed'));
+        showAlertModal(i18n.t('error.deleteAllFailed'));
     } finally {
         if (deleteBtn) {
             deleteBtn.disabled = false;

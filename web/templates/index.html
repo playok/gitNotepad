@@ -319,6 +319,10 @@
                     <p data-i18n="password.setDescription">Enter a password for this private note:</p>
                     <input type="password" id="setPasswordInput" placeholder="Password" data-i18n-placeholder="password.placeholder">
                     <input type="password" id="confirmPasswordInput" placeholder="Confirm password" data-i18n-placeholder="password.confirmPlaceholder">
+                    <label id="removePasswordLabel" class="remove-password-label" style="display: none;">
+                        <input type="checkbox" id="removePasswordCheck">
+                        <span data-i18n="password.remove">Remove password</span>
+                    </label>
                     <div class="modal-actions">
                         <button id="setPasswordCancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
                         <button id="setPasswordSubmit" class="btn btn-primary" data-i18n="password.set">Set Password</button>

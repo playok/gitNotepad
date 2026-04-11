@@ -2104,6 +2104,9 @@ function initContextMenu() {
         <div class="context-menu-item" data-action="info">
             <span class="context-icon">&#9432;</span> <span data-i18n="context.info">Info</span>
         </div>
+        <div class="context-menu-item" data-action="remove-password" id="context-remove-password-item" style="display: none;">
+            <span class="context-icon">&#128275;</span> <span data-i18n="context.removePassword">Remove Password</span>
+        </div>
         <div class="context-menu-item" data-action="decrypt" id="context-decrypt-item" style="display: none;">
             <span class="context-icon">&#128275;</span> <span data-i18n="context.decrypt">Remove Encryption</span>
         </div>
@@ -2234,6 +2237,12 @@ function showContextMenu(e, noteId) {
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
+    // Show/hide remove password menu item based on private status
+    const removePasswordItem = document.getElementById('context-remove-password-item');
+    if (removePasswordItem) {
+        removePasswordItem.style.display = note.private ? 'flex' : 'none';
+    }
+
     // Show/hide decrypt menu item based on encryption status
     const decryptItem = document.getElementById('context-decrypt-item');
     if (decryptItem) {
@@ -2322,6 +2331,18 @@ async function handleContextMenuAction(e) {
             }
             break;
 
+        case 'remove-password':
+            const removePassConfirmed = await showConfirmModal({
+                title: i18n ? i18n.t('context.removePassword') : 'Remove Password',
+                message: i18n ? i18n.t('confirm.removePassword') : 'Are you sure you want to remove the password? The note will become public.',
+                confirmText: i18n ? i18n.t('common.confirm') : 'Confirm',
+                icon: '🔓'
+            });
+            if (removePassConfirmed) {
+                await removeNotePassword(contextTarget);
+            }
+            break;
+
         case 'decrypt':
             const decryptConfirmed = await showConfirmModal({
                 title: i18n ? i18n.t('contextMenu.decrypt') : 'Remove Encryption',
@@ -2357,6 +2378,63 @@ async function decryptNote(noteId) {
     } catch (error) {
         console.error('Error decrypting note:', error);
         showToast('Error decrypting note', 'error');
+    }
+}
+
+async function removeNotePassword(noteId) {
+    // Show password verification modal
+    pendingNoteId = noteId;
+    pendingPasswordAction = 'remove';
+    passwordModal.style.display = 'flex';
+    passwordInput.focus();
+}
+
+async function executeRemovePassword(noteId, password) {
+    try {
+        const note = notes.find(n => n.id === noteId);
+        if (!note) return;
+
+        // Fetch full note content first
+        const getResponse = await fetch(`${basePath}/api/notes/${encodeNoteId(noteId)}`, {
+            headers: { 'X-Note-Password': password }
+        });
+        if (!getResponse.ok) {
+            showToast('Failed to load note', 'error');
+            return;
+        }
+        const fullNote = await getResponse.json();
+
+        const response = await fetch(`${basePath}/api/notes/${encodeNoteId(noteId)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Note-Password': password
+            },
+            body: JSON.stringify({
+                title: fullNote.title,
+                content: fullNote.content,
+                type: fullNote.type || 'markdown',
+                tags: fullNote.tags || [],
+                private: false,
+                password: ''
+            })
+        });
+
+        if (response.ok) {
+            showToast(i18n.t('toast.passwordRemoved') || 'Password removed successfully');
+            currentPassword = null;
+            // Reload the note if it's currently open
+            if (currentNote && currentNote.id === noteId) {
+                notePrivate.checked = false;
+            }
+            await loadNotes();
+        } else {
+            const data = await response.json();
+            showToast(data.error || 'Failed to remove password', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing password:', error);
+        showToast('Error removing password', 'error');
     }
 }
 
@@ -3857,6 +3935,7 @@ function setupEventListeners() {
     passwordCancel.addEventListener('click', () => {
         passwordModal.style.display = 'none';
         passwordInput.value = '';
+        pendingPasswordAction = null;
     });
     passwordInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') verifyPassword();
@@ -3868,8 +3947,25 @@ function setupEventListeners() {
         setPasswordModal.style.display = 'none';
         setPasswordInput.value = '';
         confirmPasswordInput.value = '';
-        notePrivate.checked = false;
+        // Restore private checkbox to its original state
+        if (currentNote) {
+            notePrivate.checked = currentNote.private;
+        } else {
+            notePrivate.checked = false;
+        }
     });
+
+    // Remove password checkbox toggle
+    const removePasswordCheck = document.getElementById('removePasswordCheck');
+    if (removePasswordCheck) {
+        removePasswordCheck.addEventListener('change', () => {
+            togglePasswordInputs(!removePasswordCheck.checked);
+            if (removePasswordCheck.checked) {
+                setPasswordInput.value = '';
+                confirmPasswordInput.value = '';
+            }
+        });
+    }
 
     // History modal
     historyClose.addEventListener('click', () => {
@@ -4816,6 +4912,7 @@ function updateNoteListSelection(noteId) {
 }
 
 let pendingNoteId = null;
+let pendingPasswordAction = null; // 'load' or 'remove'
 
 async function verifyPassword() {
     const password = passwordInput.value;
@@ -4837,7 +4934,13 @@ async function verifyPassword() {
             currentPassword = password;
             passwordModal.style.display = 'none';
             passwordInput.value = '';
-            loadNote(pendingNoteId);
+            if (pendingPasswordAction === 'remove') {
+                pendingPasswordAction = null;
+                await executeRemovePassword(pendingNoteId, password);
+            } else {
+                pendingPasswordAction = null;
+                loadNote(pendingNoteId);
+            }
         } else {
             showAlertModal('Invalid password');
         }
@@ -7977,6 +8080,19 @@ let pendingPassword = null;
 
 function handlePrivateToggle() {
     if (notePrivate.checked) {
+        // Show remove option if note already has a password
+        const hasExistingPassword = currentNote && currentNote.private;
+        const removeLabel = document.getElementById('removePasswordLabel');
+        const removeCheck = document.getElementById('removePasswordCheck');
+        if (removeLabel) {
+            removeLabel.style.display = hasExistingPassword ? 'flex' : 'none';
+        }
+        if (removeCheck) {
+            removeCheck.checked = false;
+        }
+        setPasswordInput.disabled = false;
+        confirmPasswordInput.disabled = false;
+
         setPasswordModal.style.display = 'flex';
         setPasswordInput.focus();
     } else {
@@ -7984,7 +8100,32 @@ function handlePrivateToggle() {
     }
 }
 
+function togglePasswordInputs(enabled) {
+    setPasswordInput.disabled = !enabled;
+    confirmPasswordInput.disabled = !enabled;
+    if (enabled) {
+        setPasswordInput.style.opacity = '1';
+        confirmPasswordInput.style.opacity = '1';
+    } else {
+        setPasswordInput.style.opacity = '0.5';
+        confirmPasswordInput.style.opacity = '0.5';
+    }
+}
+
 function setPassword() {
+    const removeCheck = document.getElementById('removePasswordCheck');
+
+    // Remove password mode
+    if (removeCheck && removeCheck.checked) {
+        pendingPassword = '';
+        notePrivate.checked = false;
+        setPasswordModal.style.display = 'none';
+        setPasswordInput.value = '';
+        confirmPasswordInput.value = '';
+        saveNote();
+        return;
+    }
+
     const password = setPasswordInput.value;
     const confirm = confirmPasswordInput.value;
 

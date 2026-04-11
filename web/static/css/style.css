@@ -2410,6 +2410,23 @@ body {
     border-top: 1px solid var(--border);
 }
 
+/* Remove Password Checkbox */
+.remove-password-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.remove-password-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 /* History List */
 .history-list {
     max-height: 400px;

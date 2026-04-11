@@ -199,6 +199,7 @@ const i18n = {
             'password.enterToAccess': 'Enter password to access this note:',
             'password.setDescription': 'Enter a password for this private note:',
             'password.unlock': 'Unlock',
+            'password.remove': 'Remove password',
 
             // Share
             'share.title': 'Share Note',
@@ -425,6 +426,7 @@ const i18n = {
             'context.changeIcon': 'Change Icon',
             'context.history': 'History',
             'context.info': 'Info',
+            'context.removePassword': 'Remove Password',
             'context.decrypt': 'Remove Encryption',
             'context.delete': 'Delete',
             'context.newNote': 'New Note',
@@ -510,9 +512,11 @@ const i18n = {
 
             // Confirm
             'confirm.deleteFolder': 'Delete folder "{folder}"? (Must be empty)',
+            'confirm.removePassword': 'Are you sure you want to remove the password? The note will become public.',
             'confirm.decryptNote': 'Remove encryption from this note? The file will be stored in plain text.',
 
             // Toast
+            'toast.passwordRemoved': 'Password removed successfully',
             'toast.noteDecrypted': 'Note decrypted successfully',
             'toast.codeCopied': 'Code copied!',
             'toast.copyFailed': 'Failed to copy',
@@ -754,6 +758,7 @@ const i18n = {
             'password.enterToAccess': '이 노트에 접근하려면 비밀번호를 입력하세요:',
             'password.setDescription': '비공개 노트의 비밀번호를 설정하세요:',
             'password.unlock': '잠금 해제',
+            'password.remove': '비밀번호 제거',
 
             // Share
             'share.title': '노트 공유',
@@ -980,6 +985,7 @@ const i18n = {
             'context.changeIcon': '아이콘 변경',
             'context.history': '히스토리',
             'context.info': '정보',
+            'context.removePassword': '비밀번호 제거',
             'context.decrypt': '암호화 해제',
             'context.delete': '삭제',
             'context.newNote': '새 노트',
@@ -1065,9 +1071,11 @@ const i18n = {
 
             // Confirm
             'confirm.deleteFolder': '"{folder}" 폴더를 삭제하시겠습니까? (비어있어야 합니다)',
+            'confirm.removePassword': '비밀번호를 제거하시겠습니까? 노트가 공개 상태가 됩니다.',
             'confirm.decryptNote': '이 노트의 암호화를 해제하시겠습니까? 파일이 평문으로 저장됩니다.',
 
             // Toast
+            'toast.passwordRemoved': '비밀번호가 제거되었습니다',
             'toast.noteDecrypted': '노트 암호화가 해제되었습니다',
             'toast.codeCopied': '코드가 복사되었습니다!',
             'toast.copyFailed': '복사 실패',

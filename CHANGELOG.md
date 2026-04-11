@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.17.0] - Security & Quality Improvements
+
+**Security Fixes:**
+- Admin password hashing: SHA-512 → bcrypt (consistent with user password hashing)
+- Path traversal validation: `filepath.Clean()` + prefix containment check
+- File upload size limits: files 50MB, images 20MB (`MaxBytesReader`)
+- WebSocket Origin validation: prevents Cross-Site WebSocket Hijacking (CSWSH)
+- Login rate limiting: 10 attempts per 5 minutes per IP
+- Session/shortlink token generation: removed predictable timestamp fallback
+- innerHTML XSS: server error messages and file paths now properly escaped
+- Replaced 50+ native `alert()` calls with custom modal (`showAlertModal`/`showToast`)
+
+**Improvements:**
+- Health check endpoint: `GET /health` (DB connectivity + version)
+- Expired session auto-cleanup scheduler (hourly)
+- SQLite connection pool settings (`MaxOpenConns=1` for write safety)
+- `json.Unmarshal` error handling in file/image metadata loading
+- CI/CD: GitHub Actions test workflow (`go vet`, `go build`, `go test`)
+
 ## [v0.16.1] - Sidebar Font Size & UPX Compression
 
 **New Features:**

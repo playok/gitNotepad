@@ -16,22 +16,26 @@ type Session struct {
 
 // NewSession creates a new session with a random token
 func NewSession(userID int64, duration time.Duration) *Session {
+	token, err := generateToken(32)
+	if err != nil {
+		// This should never happen; if it does, the system's entropy source is broken
+		panic("failed to generate secure session token: " + err.Error())
+	}
 	return &Session{
 		UserID:    userID,
-		Token:     generateToken(32),
+		Token:     token,
 		ExpiresAt: time.Now().Add(duration),
 		CreatedAt: time.Now(),
 	}
 }
 
 // generateToken generates a cryptographically secure random token
-func generateToken(length int) string {
+func generateToken(length int) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based token (not recommended for production)
-		return hex.EncodeToString([]byte(time.Now().String()))
+		return "", err
 	}
-	return hex.EncodeToString(bytes)
+	return hex.EncodeToString(bytes), nil
 }
 
 // IsExpired checks if the session has expired

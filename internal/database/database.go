@@ -27,6 +27,11 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// SQLite connection pool settings
+	db.SetMaxOpenConns(1)  // SQLite supports only one writer at a time
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0) // No expiry
+
 	// Test connection
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)

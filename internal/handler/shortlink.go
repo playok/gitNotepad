@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"io/fs"
@@ -156,8 +155,7 @@ func (h *ShortLinkHandler) cleanupExpiredLinks() {
 func generateShortCode() string {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
-		// fallback: use timestamp
-		binary.BigEndian.PutUint64(bytes, uint64(time.Now().UnixNano()))
+		panic("failed to generate secure random bytes: " + err.Error())
 	}
 	return hex.EncodeToString(bytes)
 }

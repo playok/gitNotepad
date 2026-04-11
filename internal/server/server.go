@@ -203,6 +203,15 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
+	// Health check endpoint (public, no auth)
+	base.GET("/health", func(c *gin.Context) {
+		if err := s.db.Ping(); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": "database unavailable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "version": appVersion.Version})
+	})
+
 	// Public API routes (with rate limiting)
 	base.POST("/api/auth/login", loginRateLimiter.Middleware(), authHandler.Login)
 

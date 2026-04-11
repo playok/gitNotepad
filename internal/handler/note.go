@@ -706,7 +706,7 @@ func (h *NoteHandler) Create(c *gin.Context) {
 
 	if folderPath != "" {
 		// Validate folder path (prevent path traversal)
-		if strings.Contains(folderPath, "..") {
+		if !validatePathContainment(notesPath, folderPath) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
 			return
 		}
@@ -863,6 +863,11 @@ func (h *NoteHandler) Update(c *gin.Context) {
 	// Determine target folder from folder_path field
 	targetFolder := notesPath
 	if req.FolderPath != "" {
+		// Validate folder path (prevent path traversal)
+		if !validatePathContainment(notesPath, req.FolderPath) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
+			return
+		}
 		targetFolder = filepath.Join(notesPath, filepath.FromSlash(req.FolderPath))
 		// Create folder if it doesn't exist
 		if err := os.MkdirAll(targetFolder, 0755); err != nil {
@@ -1120,7 +1125,7 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 	}
 
 	// Prevent path traversal
-	if strings.Contains(folderName, "..") || strings.Contains(folderName, "/") || strings.Contains(folderName, "\\") {
+	if !validateSimpleName(folderName) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder name"})
 		return
 	}
@@ -1130,7 +1135,11 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 	// Build full path
 	var folderPath string
 	if req.Path != "" {
-		// Validate parent path
+		// Validate parent path containment
+		if !validatePathContainment(notesPath, req.Path) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parent path"})
+			return
+		}
 		parentPath := filepath.Join(notesPath, req.Path)
 		if _, err := os.Stat(parentPath); os.IsNotExist(err) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Parent folder does not exist"})
@@ -1184,13 +1193,14 @@ func (h *NoteHandler) CreateFolder(c *gin.Context) {
 func (h *NoteHandler) DeleteFolder(c *gin.Context) {
 	folderPath := c.Param("path")
 
+	notesPath := h.getNotesPath(c)
+
 	// Prevent path traversal
-	if strings.Contains(folderPath, "..") {
+	if !validatePathContainment(notesPath, folderPath) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder path"})
 		return
 	}
 
-	notesPath := h.getNotesPath(c)
 	fullPath := filepath.Join(notesPath, folderPath)
 
 	// Check if folder exists

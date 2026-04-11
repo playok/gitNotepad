@@ -2,13 +2,12 @@ package config
 
 import (
 	"bufio"
-	"crypto/sha512"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
 	"syscall"
 
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 )
@@ -62,7 +61,7 @@ type AuthConfig struct {
 	Enabled           bool   `yaml:"enabled"`
 	SessionTimeout    int    `yaml:"session_timeout"` // hours
 	AdminUsername     string `yaml:"admin_username"`
-	AdminPasswordHash string `yaml:"admin_password_hash"` // SHA-512 hash
+	AdminPasswordHash string `yaml:"admin_password_hash"` // bcrypt hash (legacy: SHA-512)
 }
 
 type DatabaseConfig struct {
@@ -218,15 +217,23 @@ func Default() *Config {
 	}
 }
 
-// HashPassword creates a SHA-512 hash of the password
+// HashPassword creates a bcrypt hash of the password
 func HashPassword(password string) string {
-	hash := sha512.Sum512([]byte(password))
-	return hex.EncodeToString(hash[:])
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return ""
+	}
+	return string(hash)
 }
 
-// VerifyPassword checks if the password matches the hash
+// VerifyPassword checks if the password matches the hash (supports both bcrypt and legacy SHA-512)
 func VerifyPassword(password, hash string) bool {
-	return HashPassword(password) == hash
+	// bcrypt hashes start with "$2a$" or "$2b$"
+	if strings.HasPrefix(hash, "$2a$") || strings.HasPrefix(hash, "$2b$") {
+		return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+	}
+	// Legacy SHA-512 hashes are 128 hex characters - treat as "set" flag only
+	return false
 }
 
 // NeedsAdminPassword returns true if admin password hash is not set

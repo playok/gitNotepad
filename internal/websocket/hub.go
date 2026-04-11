@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -58,7 +59,22 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for now
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true // Allow non-browser clients (no Origin header)
+		}
+		// Allow if origin host matches the request host
+		host := r.Host
+		if host == "" {
+			host = r.Header.Get("Host")
+		}
+		// Parse origin to extract host
+		// Origin format: scheme://host[:port]
+		if idx := strings.Index(origin, "://"); idx != -1 {
+			originHost := origin[idx+3:]
+			return originHost == host
+		}
+		return false
 	},
 }
 

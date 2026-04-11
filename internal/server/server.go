@@ -102,6 +102,7 @@ func newServer(cfg *config.Config, repo *git.Repository, db *database.DB) (*Serv
 	router := gin.Default()
 	router.UseRawPath = true
 	router.UnescapePathValues = true
+	router.MaxMultipartMemory = 50 << 20 // 50 MB max upload size
 
 	// GZip compression for text-based responses (HTML, JS, CSS, JSON)
 	router.Use(gzip.Gzip(gzip.DefaultCompression))

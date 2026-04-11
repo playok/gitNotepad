@@ -107,13 +107,28 @@ func (h *ImageHandler) getUserFilesPath(c *gin.Context) string {
 	return userFilesPath
 }
 
+const maxImageUploadSize = 20 << 20 // 20 MB
+
 func (h *ImageHandler) Upload(c *gin.Context) {
+	// Limit request body size
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxImageUploadSize)
+
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {
+		if err.Error() == "http: request body too large" {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image too large (max 20MB)"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No image provided"})
 		return
 	}
 	defer file.Close()
+
+	// Check file size
+	if header.Size > maxImageUploadSize {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image too large (max 20MB)"})
+		return
+	}
 
 	// Get original filename
 	originalName := header.Filename
